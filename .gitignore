@@ -10,7 +10,9 @@
 # Ignore logs
 # logs/
 # *.log
+backend/logs/
 
 # Ignore environment files (optional)
 .env
 .env.local
+backend/.env
