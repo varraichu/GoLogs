@@ -1,0 +1,2 @@
+# GoLogs
+Log collection microservice
