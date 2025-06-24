@@ -1,0 +1,221 @@
+
+services:
+  # fluentbit:
+  #   image: fluent/fluent-bit:latest
+  #   container_name: fluentbit
+  #   volumes:
+  #     - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+  #     - ./logs:/var/log/myapp              # bind mount for log sources
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - logging_net
+  # fluentbit:
+  #   build:
+  #     context: ./fluent-bit
+  #   container_name: fluentbit
+  #   volumes:
+  #     - ./logs:/var/log/myapp    # Your app logs to be picked up
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - logging_net\
+  # fluentbit:
+  #   # image: majst01/fluent-bit-go-redis-output
+  #   # container_name: fluentbit
+  #   # volumes:
+  #   #   - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+  #   #   - ./fluent-bit/logs:/logs
+  #   # depends_on:
+  #   #   - redis
+  #   # networks:
+  #   #   - logging_net
+  # fluentbit:
+  #   image: majst01/fluent-bit-go-redis-output
+  #   platform: linux/amd64
+  #   container_name: fluentbit
+  #   volumes:
+  #     - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+  #     - ./logs:/logs
+  #     - ./fluent-bit/plugins.conf:/fluent-bit/etc/plugins.conf
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - logging_net
+
+  bridge:
+    build:
+      context: ./log-collector
+    container_name: bridge
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOST: redis
+    networks:
+      - logging_net   
+  worker:
+    build:
+      context: ./log-parser
+    container_name: worker
+    environment:
+      - REDIS_HOST=redis
+    volumes:
+      - ./logs:/app/logs   # To persist the processed_logs.log
+    depends_on:
+      - redis
+    networks:
+      - logging_net
+  # bridgeworker:
+  #   build:
+  #     context: ./log-parser
+  #     dockerfile: Dockerfile
+  #   container_name: bridgeworker
+  #   environment:
+  #     - REDIS_HOST=redis
+  #   volumes:
+  #     - ./logs:/app/logs
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - logging_net
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-server
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - logging_net
+
+  fluent-bit:
+    image: majst01/fluent-bit-go-redis-output
+    container_name: fluent-bit
+    volumes:
+      - ./log-collector/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - ./logs:/logs
+    depends_on:
+      - redis
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"               # Vite dev server default
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules         # Avoids overwriting container's node_modules
+    command: npm run dev -- --host
+    depends_on:
+      - bridge
+      - worker
+    networks:
+      - logging_net
+
+  backend:
+    build: ./backend
+    container_name: backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules     # Prevents overwrite of container's node_modules
+    ports:
+      - "4000:4000"
+    depends_on:
+      - worker
+    networks:
+      - logging_net
+
+  # redis:
+  #   image: redis:7
+  #   container_name: redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+  #   command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+  #   networks:
+  #     - logging_net
+
+
+  # logparser:
+  #   build:
+  #     context: ./log-parser
+  #   container_name: logparser
+  #   environment:
+  #     - REDIS_HOST=redis
+  #     - MONGODB_URI=mongodb://mongo:27017/logs
+  #   depends_on:
+  #     - redis
+  #     - mongo
+  #   networks:
+  #     - logging_net
+  # bridge:
+  #   build:
+  #     context: ./log-parser
+  #   container_name: bridge
+  #   command: ["node", "bridge.js"]
+  #   environment:
+  #     - REDIS_HOST=redis
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - logging_net
+
+  # worker:
+  #   build:
+  #     context: ./log-parser
+  #   container_name: worker
+  #   command: ["node", "worker.js"]
+  #   environment:
+  #     - REDIS_HOST=redis
+  #   volumes:
+  #     - ./logs:/app/logs       # To write processed_logs.log here
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - logging_net
+
+  # mongo:
+  #   image: mongo:6
+  #   container_name: mongo
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo-data:/data/db
+  #   networks:
+  #     - logging_net
+
+  # backend:
+  #   build:
+  #     context: ./backend
+  #   container_name: backend
+  #   ports:
+  #     - "4000:4000"
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongo:27017/logs
+  #   depends_on:
+  #     - mongo
+  #   networks:
+  #     - logging_net
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #   container_name: frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - logging_net
+
+volumes:
+  redis-data:
+  # mongo-data:
+
+networks:
+  logging_net:
+    driver: bridge
