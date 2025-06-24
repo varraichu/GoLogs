@@ -3,6 +3,7 @@ dotenv.config();
 
 import app from './app';
 import logger from './config/logger';
+import config from 'config';
 
 process.on('uncaughtException', (err) => {
   logger.error(`Uncaught Exception: ${err.message}`);
@@ -11,7 +12,7 @@ process.on('uncaughtException', (err) => {
 
 const startServer = async () => {
   try {
-    const PORT = process.env.PORT || 5000;
+    const PORT = config.get('app.port');
     app.listen(PORT, () => logger.debug(`Server running on port ${PORT}`));
   } catch (error) {
     logger.error('Server startup failed', error);

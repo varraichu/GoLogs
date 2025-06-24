@@ -1,7 +1,7 @@
 import winston from 'winston';
-import config from './index';
+import config from 'config';
 
-const { combine, timestamp, printf, colorize } = winston.format;
+const { combine, timestamp, printf } = winston.format;
 
 const getTraceId = (): string => {
   return 'traceid';
@@ -13,7 +13,7 @@ const logFormat = printf(({ level, message, timestamp }) => {
 });
 
 const logger = winston.createLogger({
-  level: config.logLevel,
+  level: config.get('logger.level'),
   format: combine(timestamp(), logFormat),
   transports: [
     new winston.transports.Console({

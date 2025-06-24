@@ -1,0 +1,15 @@
+{
+  "mongodb": {
+    "uri": "MONGO_URI"
+  },
+  "jwt": {
+    "secret": "JWT_SECRET"
+  },
+  "app": {
+    "port": "PORT"
+  },
+  "debug": {
+    "pattern": "DEBUG"
+  },
+  "env": "NODE_ENV"
+}

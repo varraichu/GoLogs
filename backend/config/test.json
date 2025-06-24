@@ -1,0 +1,9 @@
+{
+  "logger": {
+    "level": "error"
+  },
+  "app": {
+    "port": 9999
+  },
+  "env": "test"
+}

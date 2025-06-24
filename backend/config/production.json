@@ -1,0 +1,9 @@
+{
+  "logger": {
+    "level": "warn"
+  },
+  "app": {
+    "port": 80
+  },
+  "env": "production"
+}

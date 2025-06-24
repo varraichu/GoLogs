@@ -1,0 +1,18 @@
+{
+  "logger": {
+    "level": "debug"
+  },
+  "mongodb": {
+    "uri": "mongodb://localhost:27017/myapp"
+  },
+  "jwt": {
+    "secret": ""
+  },
+  "app": {
+    "port": 3000
+  },
+  "debug": {
+    "pattern": ""
+  },
+  "env": "development"
+}
