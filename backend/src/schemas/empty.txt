@@ -1,0 +1,2 @@
+Remove this file once another file with content has been added to the schemas folder.
+This folder will be used for zod schemas (not for mongoose schemas).
