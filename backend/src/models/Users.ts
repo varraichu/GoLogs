@@ -13,7 +13,7 @@ const userSchema: Schema<IUser> = new Schema({
   email: { type: String, required: true },
   role: { type: String, required: true },
   picture_url: { type: String },
-  pinned_apps: [{ type: Schema.Types.ObjectId, ref: 'Applications' }]
+  pinned_apps: [{ type: Schema.Types.ObjectId, ref: 'Applications' }],
 });
 
 export default mongoose.model<IUser>('Users', userSchema);

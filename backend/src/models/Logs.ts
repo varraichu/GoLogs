@@ -16,8 +16,8 @@ const logSchema: Schema<ILog> = new Schema({
   ingested_at: {
     type: Date,
     default: Date.now,
-    expires: '30d' // TTL: auto-delete after 30 days
-  }
+    expires: '30d', // TTL: auto-delete after 30 days
+  },
 });
 
 export default mongoose.model<ILog>('Logs', logSchema);

@@ -11,7 +11,7 @@ const userGroupSchema: Schema<IUserGroup> = new Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
   created_at: { type: Date, default: Date.now },
-  is_deleted: { type: Boolean, default: false }
+  is_deleted: { type: Boolean, default: false },
 });
 
 export default mongoose.model<IUserGroup>('UserGroups', userGroupSchema);

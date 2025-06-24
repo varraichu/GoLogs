@@ -9,7 +9,7 @@ export interface IUserGroupMember extends Document {
 const userGroupMemberSchema: Schema<IUserGroupMember> = new Schema({
   user_id: { type: Schema.Types.ObjectId, ref: 'Users', required: true },
   group_id: { type: Schema.Types.ObjectId, ref: 'UserGroups', required: true },
-  is_active: { type: Boolean, default: true }
+  is_active: { type: Boolean, default: true },
 });
 
 export default mongoose.model<IUserGroupMember>('UserGroupMembers', userGroupMemberSchema);

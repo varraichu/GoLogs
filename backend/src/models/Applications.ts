@@ -11,7 +11,7 @@ const applicationSchema: Schema<IApplication> = new Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
   created_at: { type: Date, default: Date.now },
-  is_active: { type: Boolean, default: true }
+  is_active: { type: Boolean, default: true },
 });
 
 export default mongoose.model<IApplication>('Applications', applicationSchema);

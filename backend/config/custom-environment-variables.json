@@ -1,15 +1,15 @@
 {
-    "mongodb": {
-        "uri": "MONGODB_URI"
-    },
-    "jwt": {
-        "secret": "JWT_SECRET"
-    },
-    "app": {
-        "port": "PORT"
-    },
-    "debug": {
-        "pattern": "DEBUG"
-    },
-    "env": "NODE_ENV"
+  "mongodb": {
+    "uri": "MONGODB_URI"
+  },
+  "jwt": {
+    "secret": "JWT_SECRET"
+  },
+  "app": {
+    "port": "PORT"
+  },
+  "debug": {
+    "pattern": "DEBUG"
+  },
+  "env": "NODE_ENV"
 }
