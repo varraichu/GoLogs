@@ -4,6 +4,7 @@ dotenv.config();
 import app from './app';
 import logger from './config/logger';
 import config from 'config';
+import { connectDB } from './config/db';
 
 process.on('uncaughtException', (err) => {
   logger.error(`Uncaught Exception: ${err.message}`);
@@ -12,6 +13,7 @@ process.on('uncaughtException', (err) => {
 
 const startServer = async () => {
   try {
+    //await connectDB();
     const PORT = config.get('app.port');
     app.listen(PORT, () => logger.debug(`Server running on port ${PORT}`));
   } catch (error) {
