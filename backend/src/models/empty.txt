@@ -1,1 +1,0 @@
-Remove this file once another file with content has been added to the models folder.
