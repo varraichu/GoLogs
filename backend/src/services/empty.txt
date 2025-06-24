@@ -1,0 +1,2 @@
+Remove this file once another file with content has been added to the services folder.
+Unsure whether we need this folder or not.
