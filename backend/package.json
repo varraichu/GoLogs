@@ -14,18 +14,22 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "config": "^4.0.0",
     "cors": "^2.8.5",
     "debug": "^4.4.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
     "winston": "^3.17.0",
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@types/config": "^3.3.5",
     "@types/cors": "^2.8.19",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
