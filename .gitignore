@@ -8,11 +8,14 @@
 *.tsbuildinfo
 
 # Ignore logs
-# logs/
-# *.log
+logs/
+*.log
 backend/logs/
 
 # Ignore environment files (optional)
 .env
 .env.local
 backend/.env
+
+log-collector/fluent-bit-db/
+log-collector/fluent-bit-storage/
