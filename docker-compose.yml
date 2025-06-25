@@ -28,8 +28,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis-server
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped
@@ -39,7 +39,7 @@ services:
   fluent-bit:
     container_name: fluent-bit
     tty: true
-    network_mode: host
+    # network_mode: host
     build:
       context: ./log-collector
     volumes:
@@ -54,6 +54,8 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
+    networks:
+      - logging_net
       
 
   frontend:

@@ -15,7 +15,6 @@ const IN_PROCESSING_LIST_KEY = 'logs:in-processing';
 const REDIS_CONNECTION = {
   host: process.env.REDIS_HOST || 'redis',
   port: 6379,
-  password: 'foobared',
   maxRetriesPerRequest: null,
 };
 

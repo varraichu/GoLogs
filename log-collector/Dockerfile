@@ -3,7 +3,7 @@ FROM golang:1.19-bullseye AS builder
 
 WORKDIR /go/src/github.com/majst01/fluent-bit-go-redis-output/
 
-COPY .git Makefile go.* *.go /go/src/github.com/majst01/fluent-bit-go-redis-output/
+COPY Makefile go.* *.go /go/src/github.com/majst01/fluent-bit-go-redis-output/
 
 # Build the plugin
 RUN make
