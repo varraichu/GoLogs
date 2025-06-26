@@ -1,0 +1,12 @@
+services:
+  demo-app:
+    build:
+      context: ./demo-app
+      
+    container_name: demo-app
+    volumes:
+      - log-data:/demo-app/src/logs
+
+  
+volumes:
+  log-data:

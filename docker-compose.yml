@@ -44,7 +44,7 @@ services:
       context: ./log-collector
     volumes:
       # Mount your logs directory - adjust the path as needed
-      - ./logs:/logs
+      - shared-logs:/logs
       # If your logs are in a different location, use:
       # - /path/to/your/logs:/logs
       - ./log-collector/fluent-bit-db:/fluent-bit/db
@@ -88,6 +88,10 @@ services:
 
 volumes:
   redis-data:
+  shared-logs:
+    # Use the environment variable to specify the *actual* external volume name.
+    name: "${SHARED_LOG_VOLUME}"
+    external: true
 
 networks:
   logging_net:
