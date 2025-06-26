@@ -5,7 +5,7 @@ import {
 
 export const updateUserGroupAppAccess = async (req: Request, res: Response): Promise<void> => {
   const { groupId } = req.params;
-  const { appIds } = req.body; // appIds: string[]
+  const { appIds } = req.body; 
 
   if (!Array.isArray(appIds)) {
     res.status(400).json({ message: 'appIds must be an array' });

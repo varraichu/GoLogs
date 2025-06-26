@@ -42,7 +42,6 @@
 import { Request, Response, NextFunction } from 'express';
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // Hardcoded mock authentication: always passes
   next();
 };
 
@@ -51,7 +50,7 @@ export const authorizeAdmin = (req: Request, res: Response, next: NextFunction):
 
   if (!isAdmin) {
     res.status(403).json({ message: 'Forbidden: Admins only' });
-    return; // Important: stop execution
+    return; 
   }
 
   next();

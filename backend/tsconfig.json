@@ -1,18 +1,3 @@
-// {
-//   "compilerOptions": {
-//     "target": "ES2020",
-//     "module": "CommonJS",
-//     "outDir": "./dist",
-//     "rootDir": "./src",
-//     "esModuleInterop": true,
-//     "strict": true,
-//     "skipLibCheck": true,
-//     "forceConsistentCasingInFileNames": true,
-//     "typeRoots": ["./node_modules/@types", "./src/types"],
-//     "types": ["node", "express"]
-//   }
-// }
-
 {
   "compilerOptions": {
     "target": "ES2020",
