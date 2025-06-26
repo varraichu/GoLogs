@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { Writable } from 'stream';
 
 // Define the new structure of a log entry for type safety
 interface LogEntry {
@@ -34,49 +35,68 @@ function generateLogLine(index: number): string {
 }
 
 /**
- * Writes a batch of log lines to the provided write stream.
- * @param stream - The file stream to write to.
+ * Writes a single log entry to all provided writable streams.
+ * This is our new centralized logging function.
+ * @param logLine - The complete log string to write.
+ * @param streams - An array of Writable streams (e.g., file stream, process.stdout).
+ */
+function writeLogEntry(logLine: string, streams: Writable[]): void {
+  for (const stream of streams) {
+    stream.write(logLine);
+  }
+}
+
+/**
+ * Generates and writes a batch of log lines to the designated streams.
+ * @param streams - The array of streams to write to.
  * @param indexStart - The starting index for the log entries in this batch.
  */
-function writeLogsToFile(stream: fs.WriteStream, indexStart: number): void {
+function writeLogBatch(streams: Writable[], indexStart: number): void {
   for (let i = 0; i < LOGS_PER_SECOND; i++) {
     const logLine = generateLogLine(indexStart + i);
-    stream.write(logLine);
+    writeLogEntry(logLine, streams);
   }
 }
 
 /**
  * Main function to start the log generation process.
  * It creates a directory and file if they don't exist,
- * then writes logs periodically.
+ * then writes logs periodically to all streams.
  */
 async function startLogGeneration(): Promise<void> {
+  const statusLogger = console; // Use console for status messages, separate from log data
+  
   try {
     // Ensure the 'logs' directory exists
     const logDir = path.dirname(LOG_FILE_PATH);
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
-      console.log(`📂 Created log directory at: ${logDir}`);
+      statusLogger.log(`📂 Created log directory at: ${logDir}`);
     }
     
     // Create a writable stream to the log file in append mode
-    const stream = fs.createWriteStream(LOG_FILE_PATH, { flags: 'a' });
+    const fileStream = fs.createWriteStream(LOG_FILE_PATH, { flags: 'a' });
+    
+    // Define all our log destinations
+    const logStreams: Writable[] = [fileStream, process.stdout];
+    
     let count: number = 0;
 
-    console.log(`🚀 Writing ${LOGS_PER_SECOND} logs/sec to ${LOG_FILE_PATH} for ${TOTAL_DURATION_SECONDS} seconds...`);
+    statusLogger.log(`🚀 Writing ${LOGS_PER_SECOND} logs/sec to ${LOG_FILE_PATH} AND stdout for ${TOTAL_DURATION_SECONDS} seconds...`);
 
-    for (let i = 0; i < TOTAL_DURATION_SECONDS; i++) {
-      writeLogsToFile(stream, count);
+    const intervalId = setInterval(() => {
+      writeLogBatch(logStreams, count);
       count += LOGS_PER_SECOND;
-      console.log(`✅ Wrote batch #${i + 1}`);
-      // Wait for 1 second before writing the next batch
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+      statusLogger.log(`✅ Wrote batch #${(count / LOGS_PER_SECOND)}`);
 
-    stream.end(() => console.log('✅ Finished writing logs.'));
+      if (count >= TOTAL_DURATION_SECONDS * LOGS_PER_SECOND) {
+        clearInterval(intervalId);
+        fileStream.end(() => statusLogger.log('✅ Finished writing logs. File stream closed.'));
+      }
+    }, 1000);
 
   } catch (error) {
-    console.error('❌ An error occurred during log generation:', error);
+    statusLogger.error('❌ An error occurred during log generation:', error);
   }
 }
 

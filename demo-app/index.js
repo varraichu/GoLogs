@@ -47,7 +47,7 @@ const path = __importStar(require("path"));
 // --- Configuration ---
 const LOG_FILE_PATH = path.join(__dirname, 'logs', 'app.log');
 const LOGS_PER_SECOND = 10;
-const TOTAL_DURATION_SECONDS = 1;
+const TOTAL_DURATION_SECONDS = 360;
 const APP_ID = 'demo-app'; // Example App ID
 const LOG_TYPES = ['info', 'warn', 'error', 'debug'];
 /**
@@ -62,50 +62,64 @@ function generateLogLine(index) {
         message: `Synthetic log entry #${index}`,
         timestamp: new Date().toISOString(),
         log_type: randomLogType,
-        ingested_at: new Date().toISOString(),
     };
     return JSON.stringify(log) + '\n';
 }
 /**
- * Writes a batch of log lines to the provided write stream.
- * @param stream - The file stream to write to.
+ * Writes a single log entry to all provided writable streams.
+ * This is our new centralized logging function.
+ * @param logLine - The complete log string to write.
+ * @param streams - An array of Writable streams (e.g., file stream, process.stdout).
+ */
+function writeLogEntry(logLine, streams) {
+    for (const stream of streams) {
+        stream.write(logLine);
+    }
+}
+/**
+ * Generates and writes a batch of log lines to the designated streams.
+ * @param streams - The array of streams to write to.
  * @param indexStart - The starting index for the log entries in this batch.
  */
-function writeLogsToFile(stream, indexStart) {
+function writeLogBatch(streams, indexStart) {
     for (let i = 0; i < LOGS_PER_SECOND; i++) {
         const logLine = generateLogLine(indexStart + i);
-        stream.write(logLine);
+        writeLogEntry(logLine, streams);
     }
 }
 /**
  * Main function to start the log generation process.
  * It creates a directory and file if they don't exist,
- * then writes logs periodically.
+ * then writes logs periodically to all streams.
  */
 function startLogGeneration() {
     return __awaiter(this, void 0, void 0, function* () {
+        const statusLogger = console; // Use console for status messages, separate from log data
         try {
             // Ensure the 'logs' directory exists
             const logDir = path.dirname(LOG_FILE_PATH);
             if (!fs.existsSync(logDir)) {
                 fs.mkdirSync(logDir, { recursive: true });
-                console.log(`📂 Created log directory at: ${logDir}`);
+                statusLogger.log(`📂 Created log directory at: ${logDir}`);
             }
             // Create a writable stream to the log file in append mode
-            const stream = fs.createWriteStream(LOG_FILE_PATH, { flags: 'a' });
+            const fileStream = fs.createWriteStream(LOG_FILE_PATH, { flags: 'a' });
+            // Define all our log destinations
+            const logStreams = [fileStream, process.stdout];
             let count = 0;
-            console.log(`🚀 Writing ${LOGS_PER_SECOND} logs/sec to ${LOG_FILE_PATH} for ${TOTAL_DURATION_SECONDS} seconds...`);
-            for (let i = 0; i < TOTAL_DURATION_SECONDS; i++) {
-                writeLogsToFile(stream, count);
+            statusLogger.log(`🚀 Writing ${LOGS_PER_SECOND} logs/sec to ${LOG_FILE_PATH} AND stdout for ${TOTAL_DURATION_SECONDS} seconds...`);
+            const intervalId = setInterval(() => {
+                writeLogBatch(logStreams, count);
                 count += LOGS_PER_SECOND;
-                console.log(`✅ Wrote batch #${i + 1}`);
-                // Wait for 1 second before writing the next batch
-                yield new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            stream.end(() => console.log('✅ Finished writing logs.'));
+                statusLogger.log(`✅ Wrote batch #${(count / LOGS_PER_SECOND)}`);
+                if (count >= TOTAL_DURATION_SECONDS * LOGS_PER_SECOND) {
+                    clearInterval(intervalId);
+                    fileStream.end(() => statusLogger.log('✅ Finished writing logs. File stream closed.'));
+                }
+            }, 1000);
         }
         catch (error) {
-            console.error('❌ An error occurred during log generation:', error);
+            statusLogger.error('❌ An error occurred during log generation:', error);
         }
     });
 }
