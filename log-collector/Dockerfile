@@ -1,26 +1,17 @@
-FROM node:20-alpine
+# Use Ubuntu-based golang to match fluent-bit's GLIBC
+FROM golang:1.19-bullseye AS builder
 
-# Create app directory
-WORKDIR /app
+WORKDIR /go/src/github.com/majst01/fluent-bit-go-redis-output/
 
-# Copy package files
-COPY package*.json ./
+COPY Makefile go.* *.go /go/src/github.com/majst01/fluent-bit-go-redis-output/
 
-# Install dependencies
-RUN npm install
+# Build the plugin
+RUN make
 
-# Copy app files
-COPY . .
+# Use fluent-bit 1.9 which has better compatibility
+FROM fluent/fluent-bit:1.9
 
-# Default command overridden in docker-compose
-CMD ["node", "bridge.js"]
-# FROM node:20-alpine
+COPY --from=builder /go/src/github.com/majst01/fluent-bit-go-redis-output/out_redis.so /fluent-bit/bin/
+COPY *.conf /fluent-bit/etc/
 
-# WORKDIR /app
-
-# COPY package*.json ./
-# RUN npm install
-
-# COPY . .
-
-# CMD sh -c "node worker.js"
+CMD ["/fluent-bit/bin/fluent-bit", "-c", "/fluent-bit/etc/fluent-bit.conf", "-e", "/fluent-bit/bin/out_redis.so"]
