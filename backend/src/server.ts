@@ -20,6 +20,8 @@ const startServer = async () => {
     logger.error('Server startup failed', error);
     process.exit(1);
   }
+  connectDB();
+  
 };
 
 process.on('unhandledRejection', (err) => {
