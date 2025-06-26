@@ -13,7 +13,7 @@ interface LogEntry {
 // --- Configuration ---
 const LOG_FILE_PATH: string = path.join(__dirname, 'logs', 'app.log');
 const LOGS_PER_SECOND: number = 10;
-const TOTAL_DURATION_SECONDS: number = 360;
+const TOTAL_DURATION_SECONDS: number = 5;
 const APP_ID: string = 'demo-app'; // Example App ID
 const LOG_TYPES: LogEntry['log_type'][] = ['info', 'warn', 'error', 'debug'];
 
@@ -51,9 +51,10 @@ function writeLogEntry(logLine: string, streams: Writable[]): void {
  * @param streams - The array of streams to write to.
  * @param indexStart - The starting index for the log entries in this batch.
  */
-function writeLogBatch(streams: Writable[], indexStart: number): void {
+function writeLogBatch(streams: Writable[], indexStart: number, isFileStream: boolean = false): void {
   for (let i = 0; i < LOGS_PER_SECOND; i++) {
-    const logLine = generateLogLine(indexStart + i);
+    const offset = isFileStream ? 10 : 0;
+    const logLine = generateLogLine(indexStart + i + offset);
     writeLogEntry(logLine, streams);
   }
 }
@@ -71,7 +72,7 @@ async function startLogGeneration(): Promise<void> {
     const logDir = path.dirname(LOG_FILE_PATH);
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
-      statusLogger.log(`📂 Created log directory at: ${logDir}`);
+      statusLogger.error(`📂 Created log directory at: ${logDir}`);
     }
     
     // Create a writable stream to the log file in append mode
@@ -79,19 +80,20 @@ async function startLogGeneration(): Promise<void> {
     
     // Define all our log destinations
     const logStreams: Writable[] = [fileStream, process.stdout];
+    // const logStreams: Writable[] = [process.stdout];
     
     let count: number = 0;
 
-    statusLogger.log(`🚀 Writing ${LOGS_PER_SECOND} logs/sec to ${LOG_FILE_PATH} AND stdout for ${TOTAL_DURATION_SECONDS} seconds...`);
+    statusLogger.error(`🚀 Writing ${LOGS_PER_SECOND} logs/sec to ${LOG_FILE_PATH} AND stdout for ${TOTAL_DURATION_SECONDS} seconds...`);
 
     const intervalId = setInterval(() => {
       writeLogBatch(logStreams, count);
       count += LOGS_PER_SECOND;
-      statusLogger.log(`✅ Wrote batch #${(count / LOGS_PER_SECOND)}`);
+      statusLogger.error(`✅ Wrote batch #${(count / LOGS_PER_SECOND)}`);
 
       if (count >= TOTAL_DURATION_SECONDS * LOGS_PER_SECOND) {
         clearInterval(intervalId);
-        fileStream.end(() => statusLogger.log('✅ Finished writing logs. File stream closed.'));
+        fileStream.end(() => statusLogger.error('✅ Finished writing logs. File stream closed.'));
       }
     }, 1000);
 

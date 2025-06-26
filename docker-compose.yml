@@ -9,7 +9,6 @@ services:
       # Persistent buffering for fluent-bit
       - ./log-collector/fluent-bit-db:/fluent-bit/db
       - ./log-collector/fluent-bit-storage:/tmp/flb-storage
-      # App logs directory (internal to container now)
       - app-logs:/demo-app/src/logs
     depends_on:
       - redis
@@ -20,29 +19,29 @@ services:
     ports:
       - "2020:2020"
 
-  bridge:
-    build:
-      context: ./bridge
-    container_name: bridge
-    depends_on:
-      - redis
-    environment:
-      REDIS_HOST: redis
-    networks:
-      - logging_net   
+  # bridge:
+  #   build:
+  #     context: ./bridge
+  #   container_name: bridge
+  #   depends_on:
+  #     - redis
+  #   environment:
+  #     REDIS_HOST: redis
+  #   networks:
+  #     - logging_net   
       
-  worker:
-    build:
-      context: ./log-parser
-    container_name: worker
-    environment:
-      - REDIS_HOST=redis
-    volumes:
-      - ./logs:/app/logs   # To persist the processed_logs.log
-    depends_on:
-      - redis
-    networks:
-      - logging_net
+  # worker:
+  #   build:
+  #     context: ./log-parser
+  #   container_name: worker
+  #   environment:
+  #     - REDIS_HOST=redis
+  #   volumes:
+  #     - ./logs:/app/logs   # To persist the processed_logs.log
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - logging_net
 
   redis:
     image: redis:7-alpine
@@ -53,33 +52,33 @@ services:
     networks:
       - logging_net
 
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "5173:5173"               # Vite dev server default
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules         # Avoids overwriting container's node_modules
-    command: npm run dev -- --host
-    depends_on:
-      - bridge
-      - worker
-    networks:
-      - logging_net
+  # frontend:
+  #   build: ./frontend
+  #   container_name: frontend
+  #   ports:
+  #     - "5173:5173"               # Vite dev server default
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules         # Avoids overwriting container's node_modules
+  #   command: npm run dev -- --host
+  #   depends_on:
+  #     - bridge
+  #     - worker
+  #   networks:
+  #     - logging_net
 
-  backend:
-    build: ./backend
-    container_name: backend
-    volumes:
-      - ./backend:/app
-      - /app/node_modules     # Prevents overwrite of container's node_modules
-    ports:
-      - "4000:4000"
-    depends_on:
-      - worker
-    networks:
-      - logging_net
+  # backend:
+  #   build: ./backend
+  #   container_name: backend
+  #   volumes:
+  #     - ./backend:/app
+  #     - /app/node_modules     # Prevents overwrite of container's node_modules
+  #   ports:
+  #     - "4000:4000"
+  #   depends_on:
+  #     - worker
+  #   networks:
+  #     - logging_net
 
 volumes:
   redis-data:
