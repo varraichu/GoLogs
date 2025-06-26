@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import logger from './config/logger';
+import authRoutes from './routes/auth.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
@@ -12,6 +13,8 @@ app.get('/', (req, res) => {
   logger.info('Incoming request');
   res.send('Hello World!');
 });
+
+app.use('/api/oauth', authRoutes);
 
 app.use(errorHandler);
 

@@ -14,5 +14,11 @@
   "debug": {
     "pattern": ""
   },
+  "google": {
+    "client_id": "",
+    "client_secret": "",
+    "redirect_uri": ""
+  },
+  "FRONTEND_URL": "http://localhost:5173/",
   "env": "development"
 }
