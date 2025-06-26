@@ -12,8 +12,8 @@ interface LogEntry {
 
 // --- Configuration ---
 const LOG_FILE_PATH: string = path.join(__dirname, 'logs', 'app.log');
-const LOGS_PER_SECOND: number = 10;
-const TOTAL_DURATION_SECONDS: number = 5;
+const LOGS_PER_SECOND: number = 1000;
+const TOTAL_DURATION_SECONDS: number = 10;
 const APP_ID: string = 'demo-app'; // Example App ID
 const LOG_TYPES: LogEntry['log_type'][] = ['info', 'warn', 'error', 'debug'];
 
@@ -80,6 +80,7 @@ async function startLogGeneration(): Promise<void> {
     
     // Define all our log destinations
     const logStreams: Writable[] = [fileStream, process.stdout];
+    // const logStreams: Writable[] = [fileStream];
     // const logStreams: Writable[] = [process.stdout];
     
     let count: number = 0;

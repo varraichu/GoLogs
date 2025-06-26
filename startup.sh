@@ -3,11 +3,15 @@
 echo "Starting Node.js application..."
 cd /demo-app/src
 
+# Create logs directory if it doesn't exist
+mkdir -p /demo-app/src/logs
 
-echo "Starting application and Fluent Bit in a pipeline..."
-# The 'exec' command replaces the shell with the pipeline, making it PID 1.
+# Start the app and tee stdout to a file (in the background)
+node index.js | tee -a /demo-app/src/logs/stdout.log 
+echo "App started"
 
-# ADD THE -e FLAG HERE TO LOAD YOUR CUSTOM PLUGIN
-exec node index.js | /opt/fluent-bit/bin/fluent-bit \
+# Start Fluent Bit independently
+echo "Starting Fluent Bit..."
+/opt/fluent-bit/bin/fluent-bit \
     -c /etc/fluent-bit/fluent-bit.conf \
     -e /opt/fluent-bit/lib/out_redis.so
