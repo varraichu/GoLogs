@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-app.use('/user-groups', userGroupRoutes);
+app.use('/api/user-groups', userGroupRoutes);
 
 app.use(errorHandler);
 
