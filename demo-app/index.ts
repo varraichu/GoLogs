@@ -13,7 +13,7 @@ interface LogEntry {
 
 // --- Configuration ---
 const LOG_FILE_PATH: string = path.join(__dirname, 'logs', 'app.log');
-const LOGS_PER_SECOND: number = 1;
+const LOGS_PER_SECOND: number = 1000;
 const TOTAL_DURATION_SECONDS: number = 10;
 const APP_ID: string = 'demo-app'; // Example App ID
 const LOG_TYPES: LogEntry['log_type'][] = ['info', 'warn', 'error', 'debug'];
@@ -26,7 +26,7 @@ const db = new Pool({
   database: process.env.POSTGRES_DB || 'mydb',
   port: 5432,
 });
-db.query('SELECT 1').then(() => console.log('DB connected')).catch(console.error);
+db.query('SELECT 1').then(() => console.error('DB connected')).catch(console.error);
 
 /**
  * Generates a single log line as a JSON string with a random log type.
@@ -47,13 +47,13 @@ function generateLogLine(index: number): string {
 
 // Insert log into DB
 async function insertLogToDB(log: LogEntry) {
-  console.log('Attempting to insert log:', log);
+  // console.error('Attempting to insert log:', log);
   try {
     await db.query(
       'INSERT INTO logs (app_id, message, timestamp, log_type) VALUES ($1, $2, $3, $4)',
       [log.app_id, log.message, log.timestamp, log.log_type]
     );
-    console.log('Log inserted successfully');
+    // console.error('Log inserted successfully');
   } catch (err) {
     console.error('❌ Failed to insert log to DB:', err);
   }
@@ -120,27 +120,15 @@ async function startLogGeneration(): Promise<void> {
     statusLogger.error(`🚀 Writing ${LOGS_PER_SECOND} logs/sec to ${LOG_FILE_PATH} AND stdout for ${TOTAL_DURATION_SECONDS} seconds...`);
 
     // Start writing logs every second
-    const intervalId = setInterval(async () => {
+    for (let sec = 0; sec < TOTAL_DURATION_SECONDS; sec++) {
       await writeLogBatch(logStreams, count);
       count += LOGS_PER_SECOND;
-      statusLogger.error(`✅ Wrote batch #${(count / LOGS_PER_SECOND)}`);
+      statusLogger.error(`✅ Wrote batch #${sec + 1}`);
+      await new Promise(res => setTimeout(res, 1000));
+    }
 
-      // Clear logs table every 5 minutes
-      // setInterval(async () => {
-      //   try {
-      //     await db.query("DELETE FROM logs WHERE timestamp < NOW() - INTERVAL '5 minutes'");
-      //     statusLogger.error('🧹 Old logs cleared from the table!');
-      //   } catch (err) {
-      //     statusLogger.error('❌ Failed to clear old logs from table:', err);
-      //   }
-      // }, 5 * 60 * 1000);
-
-      if (count >= TOTAL_DURATION_SECONDS * LOGS_PER_SECOND) {
-        clearInterval(intervalId);
-        fileStream.end(() => statusLogger.error('✅ Finished writing logs. File stream closed.'));
-        await db.end();
-      }
-    }, 1000);
+    fileStream.end(() => statusLogger.error('✅ Finished writing logs. File stream closed.'));
+    await db.end();
 
 
   } catch (error) {
