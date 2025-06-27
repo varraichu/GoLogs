@@ -1,7 +1,6 @@
 import { object, string, z, array } from 'zod';
 import config from 'config';
 
-// Schema for creating a new user group
 export const createUserGroupSchema = object({
   body: object({
     name: string({ required_error: 'Name is required' }).min(
@@ -20,19 +19,16 @@ export const createUserGroupSchema = object({
   }),
 });
 
-// Schema for requests involving a groupId in the URL parameters
 const params = {
   params: object({
     groupId: string({ required_error: 'Group ID is required' }),
   }),
 };
 
-// Schema for reading or deleting a single user group
 export const userGroupParamsSchema = object({
   ...params,
 });
 
-// Schema for updating a user group
 export const updateUserGroupSchema = object({
   ...params,
   body: object({
@@ -49,7 +45,6 @@ export const updateUserGroupSchema = object({
   }),
 });
 
-// Define types inferred from schemas for controller usage
 export type CreateUserGroupInput = z.infer<typeof createUserGroupSchema>['body'];
 export type UpdateUserGroupInput = z.infer<typeof updateUserGroupSchema>['body'];
 export type UserGroupParams = z.infer<typeof userGroupParamsSchema>['params'];

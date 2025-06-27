@@ -5,7 +5,7 @@ export const googleOauthCallbackSchema = object({
     code: string({
       required_error: 'Google authorization code is required',
     }),
-    state: string().optional(), // Often used for CSRF protection
+    state: string().optional(),
   }),
 });
 

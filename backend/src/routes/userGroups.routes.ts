@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect, isAdmin } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validate.middleware'; // Assuming you have this middleware
+import { validate } from '../middleware/validate.middleware';
 import {
   createUserGroupSchema,
   updateUserGroupSchema,
@@ -22,7 +22,7 @@ router.get('/', getAllUserGroups);
 router.post('/', validate(createUserGroupSchema), createUserGroup);
 
 router.get('/:groupId', validate(userGroupParamsSchema), getUserGroupById);
-router.patch('/:groupId', validate(updateUserGroupSchema), updateUserGroup); // PATCH is semantically better for partial updates
+router.patch('/:groupId', validate(updateUserGroupSchema), updateUserGroup);
 router.delete('/:groupId', validate(userGroupParamsSchema), deleteUserGroup);
 
 export default router;
