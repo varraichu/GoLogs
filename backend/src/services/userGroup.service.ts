@@ -1,24 +1,52 @@
 import mongoose from 'mongoose';
-import UserGroupApplications from '../models/UserGroupApplications';
-import Applications from '../models/Applications';
-import UserGroups from '../models/UserGroups';
+import UserGroup from '../models/UserGroups'; // Assuming paths are correct
 
-export const assignApplicationsToGroup = async (
-  groupId: string,
-  appIds: string[]
-) => {
-  const groupExists = await UserGroups.exists({ _id: groupId });
-  if (!groupExists) throw new Error('Group not found');
+export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[]) => {
+  const detailedGroups = await UserGroup.aggregate([
+    // 1. Filter for the requested, non-deleted groups
+    {
+      $match: {
+        _id: { $in: groupIds },
+        is_deleted: false,
+      },
+    },
+    // 2. Lookup active members from the UserGroupMembers collection
+    {
+      $lookup: {
+        from: 'usergroupmembers', // The actual collection name in MongoDB (usually plural and lowercase)
+        localField: '_id',
+        foreignField: 'group_id',
+        as: 'members',
+        pipeline: [
+          { $match: { is_active: true } }, // Only count active members
+        ],
+      },
+    },
+    // 3. Placeholder for application lookup.
+    // In a real scenario, you would have a similar $lookup stage here:
+    // {
+    //   $lookup: {
+    //     from: 'applicationassignments',
+    //     localField: '_id',
+    //     foreignField: 'group_id',
+    //     as: 'applications',
+    //   }
+    // },
 
-  await UserGroupApplications.deleteMany({ group_id: groupId });
+    // 4. Project the final shape of the output
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        created_at: 1,
+        userCount: { $size: '$members' },
+        // Placeholder values for applications
+        applicationCount: { $const: 0 }, // Replace with { $size: '$applications' }
+        applicationNames: { $const: [] }, // Replace with '$applications.name'
+      },
+    },
+  ]);
 
-  const bulkInsert = appIds.map(appId => ({
-    group_id: new mongoose.Types.ObjectId(groupId),
-    app_id: new mongoose.Types.ObjectId(appId),
-    user_id: null, 
-  }));
-
-  if (bulkInsert.length > 0) {
-    await UserGroupApplications.insertMany(bulkInsert);
-  }
+  return detailedGroups;
 };

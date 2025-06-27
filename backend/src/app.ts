@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import logger from './config/logger';
+import authRoutes from './routes/auth.routes';
+import userGroupRoutes from './routes/userGroups.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 import userGroupRoutes from './routes/userGroup.routes';
@@ -15,6 +17,10 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/user-groups', userGroupRoutes);
+
+app.use('/api/oauth', authRoutes);
+
+app.use('/api/userGroup', userGroupRoutes);
 
 app.use(errorHandler);
 
