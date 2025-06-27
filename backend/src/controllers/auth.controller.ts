@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import config from 'config';
 import User from '../models/Users';
+import UserGroup from '../models/UserGroups';
+import UserGroupMembers from '../models/UserGroupMembers';
 import { generateToken } from '../utils/jwt.util';
 import { GoogleOauthCallbackInput } from '../schemas/auth.validator';
 
@@ -43,20 +45,34 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
     }
 
     let user = await User.findOne({ email: payload.email });
+    let isAdmin = false;
+    const adminGroup = await UserGroup.findOne(
+      { name: config.get('admin_group_name'), is_deleted: false },
+      { _id: 1 }
+    );
 
     if (!user) {
       user = await User.create({
         email: payload.email,
         username: payload.name || payload.email.split('@')[0],
         picture_url: payload.picture,
-        role: 'user',
       });
+    } else if (adminGroup) {
+      let isAdminGroupMember = await UserGroupMembers.findOne({
+        group_id: adminGroup._id,
+        user_id: user._id,
+        is_active: true,
+      });
+
+      if (isAdminGroupMember) {
+        isAdmin = true;
+      }
     }
 
     const jwtPayload = {
       _id: user._id,
       email: user.email,
-      role: user.role,
+      isAdmin,
     };
     const token = generateToken(jwtPayload);
 

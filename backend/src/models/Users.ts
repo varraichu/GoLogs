@@ -3,7 +3,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IUser extends Document {
   username: string;
   email: string;
-  role: 'admin' | 'user';
   picture_url?: string;
   pinned_apps: mongoose.Types.ObjectId[];
 }
@@ -18,7 +17,6 @@ const userSchema: Schema<IUser> = new Schema({
     lowercase: true,
     match: [/^[^\s@]+@gosaas\.io$/, 'Email must be a valid @gosaas.io address'],
   },
-  role: { type: String, required: true, enum: ['admin', 'user'], default: 'user' },
   picture_url: { type: String, default: '' },
   pinned_apps: [{ type: Schema.Types.ObjectId, ref: 'Applications' }],
 });
