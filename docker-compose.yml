@@ -1,5 +1,19 @@
 services:
   # Combined app and fluent-bit container
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - logging_net
+    ports:
+      - "5432:5432"
   app-fluent:
     build:
       context: .  # Build from root directory to access both demo-app and log-collector
@@ -12,6 +26,12 @@ services:
       - app-logs:/demo-app/src/logs
     depends_on:
       - redis
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
     restart: unless-stopped
     networks:
       - logging_net
@@ -80,6 +100,7 @@ services:
   #     - logging_net
 
 volumes:
+  pgdata:  # Persistent volume for PostgreSQL data
   redis-data:
   app-logs:  # Internal volume for app logs
 
