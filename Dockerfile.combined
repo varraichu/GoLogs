@@ -39,6 +39,8 @@ RUN apt-get update && \
     apt-get install -y nodejs && \
     # Install Fluent Bit
     curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh && \
+    # Install PostgreSQL client
+    apt-get install -y postgresql-client && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

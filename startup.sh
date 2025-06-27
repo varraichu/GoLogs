@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Wait for Postgres to be ready
+echo "Waiting for Postgres to be ready..."
+until pg_isready -h "$POSTGRES_HOST" -p 5432 -U "$POSTGRES_USER"; do
+  >&2 echo "Postgres is unavailable - sleeping"
+  sleep 2
+done
+echo "Postgres is up!"
+
 echo "Starting Node.js application..."
 cd /demo-app/src
 

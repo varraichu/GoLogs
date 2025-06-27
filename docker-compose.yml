@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: mydb
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./demo-app/postgres-init:/docker-entrypoint-initdb.d
     restart: unless-stopped
     networks:
       - logging_net
