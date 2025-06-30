@@ -15,7 +15,6 @@ const db = new Pool({
 
 interface LogRow {
   id: number;
-  app_id: string;
   message: string;
   timestamp: string;
   log_type: string;

@@ -5,7 +5,6 @@ import { Pool } from 'pg';
 
 // Define the new structure of a log entry for type safety
 interface LogEntry {
-  app_id: string;
   message: string;
   timestamp: string;
   log_type: 'info' | 'warn' | 'error' | 'debug';
@@ -13,9 +12,8 @@ interface LogEntry {
 
 // --- Configuration ---
 const LOG_FILE_PATH: string = path.join(__dirname, 'logs', 'app.log');
-const LOGS_PER_SECOND: number = 1000;
-const TOTAL_DURATION_SECONDS: number = 10;
-const APP_ID: string = 'demo-app'; // Example App ID
+const LOGS_PER_SECOND: number = 10;
+const TOTAL_DURATION_SECONDS: number = 1;
 const LOG_TYPES: LogEntry['log_type'][] = ['info', 'warn', 'error', 'debug'];
 
 // --- Database Connection ---
@@ -37,7 +35,6 @@ function generateLogLine(index: number): string {
   const randomLogType = LOG_TYPES[Math.floor(Math.random() * LOG_TYPES.length)];
 
   const log: LogEntry = {
-    app_id: APP_ID,
     message: `Synthetic log entry #${index}`,
     timestamp: new Date().toISOString(),
     log_type: randomLogType,
@@ -50,12 +47,12 @@ async function insertLogToDB(log: LogEntry) {
   // console.error('Attempting to insert log:', log);
   try {
     await db.query(
-      'INSERT INTO logs (app_id, message, timestamp, log_type) VALUES ($1, $2, $3, $4)',
-      [log.app_id, log.message, log.timestamp, log.log_type]
+      'INSERT INTO logs (message, timestamp, log_type) VALUES ($1, $2, $3)',
+      [log.message, log.timestamp, log.log_type]
     );
     // console.error('Log inserted successfully');
   } catch (err) {
-    console.error('❌ Failed to insert log to DB:', err);
+    console.error('Failed to insert log to DB:', err);
   }
 }
 
@@ -74,7 +71,7 @@ async function writeLogEntry(logLine: string, streams: Writable[]): Promise<void
     const log: LogEntry = JSON.parse(logLine);
     await insertLogToDB(log);
   } catch (err) {
-    console.error('❌ Failed to insert log to DB:', err);
+    console.error('Failed to insert log to DB:', err);
   }
 }
 
@@ -104,7 +101,7 @@ async function startLogGeneration(): Promise<void> {
     const logDir = path.dirname(LOG_FILE_PATH);
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
-      statusLogger.error(`📂 Created log directory at: ${logDir}`);
+      statusLogger.error(`Created log directory at: ${logDir}`);
     }
 
     // Create a writable stream to the log file in append mode
@@ -123,7 +120,7 @@ async function startLogGeneration(): Promise<void> {
     for (let sec = 0; sec < TOTAL_DURATION_SECONDS; sec++) {
       await writeLogBatch(logStreams, count);
       count += LOGS_PER_SECOND;
-      statusLogger.error(`✅ Wrote batch #${sec + 1}`);
+      statusLogger.error(`Wrote batch #${sec + 1}`);
       await new Promise(res => setTimeout(res, 1000));
     }
 
@@ -132,7 +129,7 @@ async function startLogGeneration(): Promise<void> {
 
 
   } catch (error) {
-    statusLogger.error('❌ An error occurred during log generation:', error);
+    statusLogger.error('An error occurred during log generation:', error);
   }
 }
 

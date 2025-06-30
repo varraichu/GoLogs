@@ -3,10 +3,12 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: postgres-db
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydb
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./demo-app/postgres-init:/docker-entrypoint-initdb.d
@@ -19,13 +21,15 @@ services:
   poller:
     build:
       context: .
-      dockerfile: Dockerfile.combined
+      dockerfile: log-collector/Dockerfile.combined
     container_name: poller
+    env_file:
+      - .env
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydb
+      - POSTGRES_HOST
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     command: ["node", "polling-script.js"]
     volumes:
       - app-logs:/demo-app/src/logs
@@ -37,7 +41,7 @@ services:
   app-fluent:
     build:
       context: .  # Build from root directory to access both demo-app and log-collector
-      dockerfile: Dockerfile.combined
+      dockerfile: log-collector/Dockerfile.combined
     container_name: app-fluent
     volumes:
       # Persistent buffering for fluent-bit
@@ -47,11 +51,14 @@ services:
     depends_on:
       - redis
       - postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydb
+    - POSTGRES_HOST
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_DB
+    - APP_ID
     restart: unless-stopped
     networks:
       - logging_net
@@ -67,29 +74,35 @@ services:
     networks:
       - logging_net
 
-  # bridge:
-  #   build:
-  #     context: ./bridge
-  #   container_name: bridge
-  #   depends_on:
-  #     - redis
-  #   environment:
-  #     REDIS_HOST: redis
-  #   networks:
-  #     - logging_net   
+  bridge:
+    build:
+      context: ./bridge
+    container_name: bridge
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST
+    networks:
+      - logging_net   
       
-  # worker:
-  #   build:
-  #     context: ./log-parser
-  #   container_name: worker
-  #   environment:
-  #     - REDIS_HOST=redis
-  #   volumes:
-  #     - ./logs:/app/logs   # To persist the processed_logs.log
-  #   depends_on:
-  #     - redis
-  #   networks:
-  #     - logging_net
+  worker:
+    build:
+      context: ./log-parser
+    container_name: worker
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST
+      - APP_ID
+      - MONGO_URI
+    volumes:
+      - ./logs:/app/logs   # To persist the processed_logs.log
+    depends_on:
+      - redis
+    networks:
+      - logging_net
 
   # frontend:
   #   build: ./frontend

@@ -60,7 +60,7 @@ WORKDIR /demo-app/src
 RUN mkdir -p /demo-app/src/logs /fluent-bit/db /tmp/flb-storage
 
 # Copy startup script
-COPY startup.sh /startup.sh
+COPY log-collector/startup.sh /startup.sh
 RUN chmod +x /startup.sh
 
 # Expose ports (if needed)
