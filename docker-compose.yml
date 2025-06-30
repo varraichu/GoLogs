@@ -58,7 +58,7 @@ services:
     - POSTGRES_USER
     - POSTGRES_PASSWORD
     - POSTGRES_DB
-    - APP_ID
+    - APP_NAME
     restart: unless-stopped
     networks:
       - logging_net
@@ -95,8 +95,8 @@ services:
       - .env
     environment:
       - REDIS_HOST
-      - APP_ID
-      - MONGO_URI
+      - APP_NAME
+      - MONGODB_URI
     volumes:
       - ./logs:/app/logs   # To persist the processed_logs.log
     depends_on:

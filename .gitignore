@@ -19,3 +19,6 @@ backend/.env
 
 log-collector/fluent-bit-db/
 log-collector/fluent-bit-storage/
+
+
+log-parser/**/*.js
