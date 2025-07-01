@@ -1,0 +1,69 @@
+# Multi-stage build
+# Stage 1: Build the Fluent Bit plugin
+FROM golang:1.19-bullseye AS plugin-builder
+
+WORKDIR /go/src/github.com/majst01/fluent-bit-go-redis-output/
+
+COPY log-collector/Makefile log-collector/go.* log-collector/*.go /go/src/github.com/majst01/fluent-bit-go-redis-output/
+
+# Build the plugin
+RUN make
+
+# Stage 2: Build the Node.js app
+FROM node:20-alpine AS app-builder
+
+WORKDIR /demo-app/src
+
+COPY demo-app/package*.json ./
+RUN npm install
+
+COPY demo-app/ .
+RUN npx tsc
+
+# Stage 3: Final combined image - use Ubuntu base and install fluent-bit
+FROM ubuntu:20.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    curl \
+    wget \
+    gnupg \
+    lsb-release \
+    ca-certificates && \
+    # Install Node.js 20
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    # Install Fluent Bit
+    curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh && \
+    # Install PostgreSQL client
+    apt-get install -y postgresql-client && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the Fluent Bit plugin
+COPY --from=plugin-builder /go/src/github.com/majst01/fluent-bit-go-redis-output/out_redis.so /opt/fluent-bit/lib/
+
+# Copy Fluent Bit configuration
+COPY log-collector/*.conf /etc/fluent-bit/
+
+# Copy the built Node.js application
+COPY --from=app-builder /demo-app/src /demo-app/src
+
+# Set working directory for the app
+WORKDIR /demo-app/src
+
+# Create logs directory and fluent-bit directories
+RUN mkdir -p /demo-app/src/logs /fluent-bit/db /tmp/flb-storage
+
+# Copy startup script
+COPY log-collector/startup.sh /startup.sh
+RUN chmod +x /startup.sh
+
+# Expose ports (if needed)
+EXPOSE 2020
+
+CMD ["/startup.sh"]
