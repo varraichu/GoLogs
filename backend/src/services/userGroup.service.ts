@@ -1,6 +1,17 @@
 import mongoose from 'mongoose';
 import UserGroup from '../models/UserGroups'; // Assuming paths are correct
 
+/**
+ * This service file abstracts complex database queries away from the controller.
+ * It's responsible for aggregating detailed information about user groups.
+ */
+
+/**
+ * Fetches detailed information for a given list of user group IDs.
+ * It calculates the number of active users and applications for each group.
+ * @param groupIds - An array of mongoose.Types.ObjectId for the groups to fetch.
+ * @returns A promise that resolves to an array of detailed user group objects.
+ */
 export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[]) => {
   const detailedGroups = await UserGroup.aggregate([
     // 1. Filter for the requested, non-deleted groups
@@ -10,10 +21,10 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         is_deleted: false,
       },
     },
-    // 2. Lookup active members from the UserGroupMembers collection
+    // 2. Lookup active members from the UserGroupMembers collection (this part is correct)
     {
       $lookup: {
-        from: 'usergroupmembers', // The actual collection name in MongoDB (usually plural and lowercase)
+        from: 'usergroupmembers',
         localField: '_id',
         foreignField: 'group_id',
         as: 'members',
@@ -22,17 +33,40 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         ],
       },
     },
-    // 3. Placeholder for application lookup.
-    // In a real scenario, you would have a similar $lookup stage here:
-    // {
-    //   $lookup: {
-    //     from: 'applicationassignments',
-    //     localField: '_id',
-    //     foreignField: 'group_id',
-    //     as: 'applications',
-    //   }
-    // },
-
+    // 3. Perform a multi-stage lookup to get application names
+    {
+      $lookup: {
+        from: 'usergroupapplications', // FIX: Corrected collection name typo
+        localField: '_id',
+        foreignField: 'group_id',
+        as: 'assignedApplications',
+        // This pipeline will run on the 'usergroupapplications' collection
+        pipeline: [
+          // First, join with the 'applications' collection to get details
+          {
+            $lookup: {
+              from: 'applications',
+              localField: 'app_id',
+              foreignField: '_id',
+              as: 'applicationDetails'
+            }
+          },
+          // We only want active applications
+          {
+            $match: {
+              "applicationDetails.is_active": true
+            }
+          },
+          // Reshape the document to only include the application name
+          {
+            $project: {
+              _id: 0, // Exclude the id of the link table
+              name: { $arrayElemAt: ["$applicationDetails.name", 0] }
+            }
+          }
+        ]
+      }
+    },
     // 4. Project the final shape of the output
     {
       $project: {
@@ -41,9 +75,9 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         description: 1,
         created_at: 1,
         userCount: { $size: '$members' },
-        // Placeholder values for applications
-        applicationCount: { $const: 0 }, // Replace with { $size: '$applications' }
-        applicationNames: { $const: [] }, // Replace with '$applications.name'
+        // FIX: Use the result of our new lookup
+        applicationCount: { $size: '$assignedApplications' },
+        applicationNames: '$assignedApplications.name',
       },
     },
   ]);
