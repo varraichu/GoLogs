@@ -21,7 +21,7 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
     for (const groupId of groupIds) {
         // Get all active users in this group
         const members: IUserGroupMember[] = await UserGroupMembers.find({ group_id: groupId, is_active: true });
-
+        // console.log(`Found ${members} active members in group ${groupId}`);
         const bulkOps = members.map(member => ({
             updateOne: {
                 filter: {
@@ -29,16 +29,17 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
                     group_id: groupId,
                 },
                 update: {
+                    $set: { is_active: true },
                     $setOnInsert: {
-                        user_id: member.user_id,
                         app_id: appId,
                         group_id: groupId,
-                        is_active: true,
+                        // is_active: true,
                     },
                 },
                 upsert: true,
             },
         }));
+        // console.log(`Preparing to assign app ${appId} to group ${groupId} with ${members.length} members`);
 
         if (bulkOps.length > 0) {
             await UserGroupApplications.bulkWrite(bulkOps);
