@@ -84,3 +84,37 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
       .redirect(`${frontendUrl}/auth/error?message=${encodeURIComponent(error.message)}`);
   }
 };
+
+// This is for development purposes only, allowing login without OAuth
+export const devLoginHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    console.log('🚀 Dev login hit:', email);
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    const adminGroup = await UserGroup.findOne({ name: 'Admin Group', is_deleted: false });
+    const isAdmin = await UserGroupMembers.exists({
+      user_id: user._id,
+      group_id: adminGroup?._id,
+      is_active: true,
+    });
+
+    const token = generateToken({
+      _id: user._id,
+      email: user.email,
+      isAdmin: !!isAdmin,
+    });
+
+    res.status(200).json({ token });
+  } catch (error) {
+    console.error('Dev login error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// This route is for development purposes only, allowing login without OAuth

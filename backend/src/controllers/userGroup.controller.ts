@@ -1,14 +1,24 @@
-<<<<<<< HEAD
 import { Request, Response } from 'express';
+import { IAuthRequest } from '../middleware/auth.middleware';
+import UserGroup from '../models/UserGroups';
+import UserGroupMember from '../models/UserGroupMembers';
+import User from '../models/Users';
+import { findOrCreateUsersByEmail } from '../services/createUsers.services';
 import {
   assignApplicationsToGroup,
+  getDetailedUserGroups,
 } from '../services/userGroup.service';
-// Update the import path below to the correct location of your UserGroups model
-import UserGroups from '../models/UserGroups'; // Example: adjust '../models/UserGroups' as needed
+import {
+  CreateUserGroupInput,
+  UpdateUserGroupInput,
+  UserGroupParams,
+} from '../schemas/userGroup.validator';
+import mongoose from 'mongoose';
+import config from 'config';
 
 export const updateUserGroupAppAccess = async (req: Request, res: Response): Promise<void> => {
   const { groupId } = req.params;
-  const { appIds } = req.body; 
+  const { appIds } = req.body;
 
   if (!Array.isArray(appIds)) {
     res.status(400).json({ message: 'appIds must be an array' });
@@ -17,34 +27,12 @@ export const updateUserGroupAppAccess = async (req: Request, res: Response): Pro
 
   try {
     await assignApplicationsToGroup(groupId, appIds);
-    res.status(200).json({ message: 'Application access updated' });
+    res.status(200).json({ message: 'Application access updated 🚀 ' });
   } catch (error) {
     console.error('Error updating app access:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
-export const getAllUserGroups = async (req: Request, res: Response) => {
-  try {
-    const groups = await UserGroups.find(); // Adjust model name if different
-    res.json(groups);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch user groups' });
-=======
-import { Response } from 'express';
-import { IAuthRequest } from '../middleware/auth.middleware';
-import UserGroup from '../models/UserGroups';
-import UserGroupMember from '../models/UserGroupMembers';
-import User from '../models/Users';
-import { findOrCreateUsersByEmail } from '../services/createUsers.services';
-import { getDetailedUserGroups } from '../services/userGroup.service';
-import {
-  CreateUserGroupInput,
-  UpdateUserGroupInput,
-  UserGroupParams,
-} from '../schemas/userGroup.validator';
-import mongoose from 'mongoose';
-import config from 'config';
 
 export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   try {
@@ -62,11 +50,9 @@ export const createUserGroup = async (req: IAuthRequest, res: Response) => {
     const detailedGroup = await getDetailedUserGroups([newGroup._id as mongoose.Types.ObjectId]);
 
     res.status(201).json(detailedGroup[0]);
-    return;
   } catch (error: any) {
     console.error('Error creating user group:', error);
     res.status(500).json({ message: 'Server error' });
-    return;
   }
 };
 
@@ -81,13 +67,10 @@ export const getAllUserGroups = async (req: IAuthRequest, res: Response) => {
     }
 
     const detailedGroups = await getDetailedUserGroups(groupIds);
-
     res.status(200).json(detailedGroups);
-    return;
   } catch (error) {
     console.error('Error fetching all user groups:', error);
     res.status(500).json({ message: 'Server error' });
-    return;
   }
 };
 
@@ -102,11 +85,9 @@ export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
     }
 
     res.status(200).json(detailedGroup[0]);
-    return;
   } catch (error) {
     console.error('Error fetching user group by ID:', error);
     res.status(500).json({ message: 'Server error' });
-    return;
   }
 };
 
@@ -154,11 +135,9 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
 
     const detailedGroup = await getDetailedUserGroups([group._id as mongoose.Types.ObjectId]);
     res.status(200).json(detailedGroup[0]);
-    return;
   } catch (error) {
     console.error('Error updating user group:', error);
     res.status(500).json({ message: 'Server error' });
-    return;
   }
 };
 
@@ -184,11 +163,8 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
     await UserGroupMember.updateMany({ group_id: groupId }, { is_active: false });
 
     res.status(204).send();
-    return;
   } catch (error) {
     console.error('Error deleting user group:', error);
     res.status(500).json({ message: 'Server error' });
-    return;
->>>>>>> feature/google-login
   }
 };
