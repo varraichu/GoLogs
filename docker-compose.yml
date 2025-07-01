@@ -66,13 +66,19 @@ services:
       - "2020:2020"
 
   redis:
-    image: redis:7-alpine
+    build: 
+      context: ./redis
+      dockerfile: Dockerfile
     container_name: redis-server
+    ports:
+      - "6379:6379"  # Expose Redis on default port
     volumes:
       - redis-data:/data
     restart: unless-stopped
     networks:
       - logging_net
+  
+ 
 
   bridge:
     build:

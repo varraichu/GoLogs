@@ -14,7 +14,8 @@ const redisConnection = new IORedis({
     host: process.env.REDIS_HOST || 'localhost',
     port: 6379,
     maxRetriesPerRequest: null, // Disable automatic retries
-    // password: "your_redis_password", // Replace with your actual Redis password
+    password: "redis1234PASS", // Replace with your actual Redis password
+
 });
 
 
