@@ -13,15 +13,15 @@ export const createApplicationSchema = object({
   }),
 });
 
-// const params = {
-//   params: object({
-//     groupId: string({ required_error: 'Group ID is required' }),
-//   }),
-// };
+const params = {
+  params: object({
+    appId: string({ required_error: 'App ID is required' }),
+  }),
+};
 
-// export const applicationParamsSchema = object({
-//   ...params,
-// });
+export const applicationParamsSchema = object({
+  ...params,
+});
 
 // export const updateApplicationSchema = object({
 //   ...params,
@@ -41,4 +41,4 @@ export const createApplicationSchema = object({
 
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>['body'];
 // export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>['body'];
-// export type applicationParams = z.infer<typeof applicationParamsSchema>['params'];
+export type ApplicationParams = z.infer<typeof applicationParamsSchema>['params'];

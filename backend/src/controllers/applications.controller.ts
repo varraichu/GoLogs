@@ -1,9 +1,10 @@
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import Applications from '../models/Applications';
+import UserGroupApplications from '../models/UserGroupApplications';
 // import { findOrCreateUsersByEmail } from '../services/createUsers.services';
 // import { getDetailedUserGroups } from '../services/userGroup.service';
-import { CreateApplicationInput } from '../schemas/application.validator';
+import { CreateApplicationInput, ApplicationParams } from '../schemas/application.validator';
 import mongoose from 'mongoose';
 import config from 'config';
 import logger from '../config/logger';
@@ -15,7 +16,7 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
     const newApp = await Applications.create({
       name,
       description,
-      is_active: true,
+      is_deleted: false,
       created_at: new Date(),
     });
 
@@ -130,32 +131,26 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
 //   }
 // };
 
-// export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
-//   try {
-//     const { groupId } = req.params as UserGroupParams;
-//     const group = await UserGroup.findById(groupId);
+export const deleteApplication = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { appId } = req.params as ApplicationParams;
+    // console.log('Deleting application with ID:', appId);
+    const app = await Applications.findById(appId);
 
-//     if (!group || group.is_deleted) {
-//       res.status(404).json({ message: 'User group not found' });
-//       return;
-//     }
+    if (!app || app.is_deleted) {
+      res.status(404).json({ message: 'Application not found' });
+      return;
+    }
 
-//     if (group.name === config.get<string>('admin_group_name')) {
-//       res.status(403).json({
-//         message: `The '${config.get<string>('admin_group_name')}' group is protected and cannot be deleted.`,
-//       });
-//       return;
-//     }
+    app.is_deleted = true;
+    await app.save();
+    await UserGroupApplications.updateMany({ app_id: appId }, { is_active: false });
 
-//     group.is_deleted = true;
-//     await group.save();
-//     await UserGroupMember.updateMany({ group_id: groupId }, { is_active: false });
-
-//     res.status(204).send();
-//     return;
-//   } catch (error) {
-//     logger.error('Error deleting user group:', error);
-//     res.status(500).json({ message: 'Server error' });
-//     return;
-//   }
-// };
+    res.status(204).send();
+    return;
+  } catch (error) {
+    logger.error('Error deleting application:', error);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
