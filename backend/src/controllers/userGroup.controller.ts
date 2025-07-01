@@ -12,6 +12,7 @@ import {
 } from '../schemas/userGroup.validator';
 import mongoose from 'mongoose';
 import config from 'config';
+import logger from '../config/logger';
 
 export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   try {
@@ -31,7 +32,7 @@ export const createUserGroup = async (req: IAuthRequest, res: Response) => {
     res.status(201).json(detailedGroup[0]);
     return;
   } catch (error: any) {
-    console.error('Error creating user group:', error);
+    logger.error('Error creating user group:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }
@@ -52,7 +53,7 @@ export const getAllUserGroups = async (req: IAuthRequest, res: Response) => {
     res.status(200).json(detailedGroups);
     return;
   } catch (error) {
-    console.error('Error fetching all user groups:', error);
+    logger.error('Error fetching all user groups:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }
@@ -71,7 +72,7 @@ export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
     res.status(200).json(detailedGroup[0]);
     return;
   } catch (error) {
-    console.error('Error fetching user group by ID:', error);
+    logger.error('Error fetching user group by ID:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }
@@ -99,6 +100,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
     }
 
     group.description = description || group.description;
+    group.name = name || group.name;
     await group.save();
 
     if (addMemberEmails && addMemberEmails.length > 0) {
@@ -123,7 +125,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
     res.status(200).json(detailedGroup[0]);
     return;
   } catch (error) {
-    console.error('Error updating user group:', error);
+    logger.error('Error updating user group:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }
@@ -153,7 +155,7 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
     res.status(204).send();
     return;
   } catch (error) {
-    console.error('Error deleting user group:', error);
+    logger.error('Error deleting user group:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }

@@ -6,6 +6,7 @@ import UserGroup from '../models/UserGroups';
 import UserGroupMembers from '../models/UserGroupMembers';
 import { generateToken } from '../utils/jwt.util';
 import { GoogleOauthCallbackInput } from '../schemas/auth.validator';
+import logger from '../config/logger';
 
 const googleClient = new OAuth2Client({
   clientId: config.get<string>('google.client_id'),
@@ -78,7 +79,7 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 
     return res.redirect(`${frontendUrl}?token=${token}`);
   } catch (error: any) {
-    console.error('Error during Google OAuth:', error);
+    logger.error('Error during Google OAuth:', error);
     res
       .status(500)
       .redirect(`${frontendUrl}/auth/error?message=${encodeURIComponent(error.message)}`);
