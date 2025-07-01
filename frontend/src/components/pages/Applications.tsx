@@ -5,9 +5,8 @@ import { useEffect, useState } from 'preact/hooks'
 import { CardView } from '../Applications/CardView'
 import { Application } from '../Applications/CardItem'
 
-
 const Applications = (props: { path?: string }) => {
-//   const [applications, setApplications] = useState<Application[]>([])
+  //   const [applications, setApplications] = useState<Application[]>([])
   useEffect(() => {
     fetchGroups().catch((error) => {
       console.error('Failed to fetch applications:', error)
@@ -28,12 +27,11 @@ const Applications = (props: { path?: string }) => {
     setApps(data)
     console.log('Fetched applications:', data)
   }
-  return( 
-  <div>
+  return (
+    <div>
       <h2>Applications</h2>
-        <CardView application={apps}/>
-  </div>
+      <CardView application={apps} />
+    </div>
   )
-
 }
 export default Applications

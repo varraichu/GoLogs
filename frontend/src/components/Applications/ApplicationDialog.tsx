@@ -57,14 +57,12 @@ export function ApplicationDialog({ data, isCLicked, closePopup }: Props) {
     })
       .then((res) => res.json())
       .then((res) => {
-        console.log('Fetched assigned groups:', res)
-        return res.groupIds // Ensure we handle cases where groupIds might not be present
-      })
-      // .then((res) => res.groupIds)
-      .then((ids: string[]) => {
-        setAssignedGroupIds(new Set(ids.map(String)))
-        setInitialAssignedGroupIds(new Set(ids.map(String)))
-      })
+        const validIds = (res.groupIds || [])
+        .map(String)
+        .filter((id: string) => userGroups.some(g => String(g._id) === id))
+      setAssignedGroupIds(new Set(validIds))
+      setInitialAssignedGroupIds(new Set(validIds))
+    })
   }, [isCLicked, data._id, userGroups])
 
   // Memoize groupOptions and optionsData so they update only when userGroups changes

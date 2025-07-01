@@ -1,14 +1,14 @@
-import "ojs/ojnavigationlist";
-import "ojs/ojavatar";
-import "ojs/ojlistitemlayout";
-import { h } from "preact";
-import { Slot } from "ojs/ojvcomponent";
+import 'ojs/ojnavigationlist'
+import 'ojs/ojavatar'
+import 'ojs/ojlistitemlayout'
+import { h } from 'preact'
+import { Slot } from 'ojs/ojvcomponent'
 
 type Props = {
-  slot?: Slot;
-};
+  slot?: Slot
+}
 
-export function SideBar({ slot = "start" }:Props) {
+export function SideBar({ slot = 'start' }: Props) {
   return (
     <div
       slot={slot as string}
@@ -22,27 +22,17 @@ export function SideBar({ slot = "start" }:Props) {
           class="oj-flex oj-sm-flex-direction-column oj-sm-justify-content-flex-start"
         >
           <div class="oj-flex oj-sm-align-items-center oj-sm-margin-bottom-1x">
-            <div style="font-size: 24px; font-weight: bold; margin-right: 8px;">
-              GL
-            </div>
+            <div style="font-size: 24px; font-weight: bold; margin-right: 8px;">GL</div>
             <span class="oj-typography-heading-sm">GoLogs</span>
           </div>
         </div>
         {/* Middle Section 1: User Profile */}
         <div>
           <div class="oj-flex oj-align-items-center oj-sm-margin-bottom-6x">
-            <oj-avatar
-              initials="C"
-              size="sm"
-              class="oj-sm-margin-end-2x"
-            ></oj-avatar>
+            <oj-avatar initials="C" size="sm" class="oj-sm-margin-end-2x"></oj-avatar>
             <div>
-              <div class="oj-typography-body-md oj-text-color-primary">
-                Client User
-              </div>
-              <div class="oj-typography-subbody-sm oj-text-color-secondary">
-                Client
-              </div>
+              <div class="oj-typography-body-md oj-text-color-primary">Client User</div>
+              <div class="oj-typography-subbody-sm oj-text-color-secondary">Client</div>
             </div>
           </div>
           {/* Middle Section 2: Navigation */}
@@ -82,5 +72,5 @@ export function SideBar({ slot = "start" }:Props) {
         </a>
       </div>
     </div>
-  );
+  )
 }
