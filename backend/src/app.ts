@@ -3,6 +3,7 @@ import cors from 'cors';
 import logger from './config/logger';
 import authRoutes from './routes/auth.routes';
 import userGroupRoutes from './routes/userGroups.routes';
+import applicationRoutes from './routes/applications.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
@@ -18,6 +19,7 @@ app.get('/', (req, res) => {
 app.use('/api/oauth', authRoutes);
 
 app.use('/api/userGroup', userGroupRoutes);
+app.use('/api/applications', applicationRoutes);
 
 app.use(errorHandler);
 
