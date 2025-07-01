@@ -39,6 +39,7 @@ const UserGroups = (props: { path?: string }) => {
     });
     const data = await res.json();
     setGroups(data);
+    console.log(groups);
   };
 
   const openDialog = (group?: UserGroup) => {
@@ -97,8 +98,8 @@ const UserGroups = (props: { path?: string }) => {
 
   return (
     <div class="oj-flex oj-sm-padding-4x">
-      <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between">
-        <div class="oj-panel" >
+      <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
+        <div class="" >
             <h1 class="oj-typography-heading-lg">User Groups</h1>
             <p class="oj-typography-body-md">Manage user groups and their application access</p>
         </div>
@@ -107,7 +108,7 @@ const UserGroups = (props: { path?: string }) => {
         </div>
       </div>
 
-        <div class="oj-flex oj-sm-flex-wrap oj-sm-justify-content-center oj-sm-padding-4x">
+        <div class="oj-flex oj-sm-flex-wrap oj-sm-justify-content-center oj-sm-padding-4x ">
             {groups.map((group) => (
                 <div
                 class="oj-sm-12 oj-md-4 oj-flex-item oj-panel oj-panel-shadow-md oj-sm-margin-4x"
@@ -118,6 +119,11 @@ const UserGroups = (props: { path?: string }) => {
                     <div class="oj-typography-body-sm oj-sm-margin-bottom-2x">{group.description}</div>
                     <div class="oj-typography-body-xs oj-sm-margin-bottom">👤 Users: {group.userCount}</div>
                     <div class="oj-typography-body-xs oj-sm-margin-bottom">📦 Apps: {group.applicationCount}</div>
+                </div>
+                <div class="oj-sm-margin-4x">
+                  {group.applicationNames.map((app) => (
+                    <span class="oj-badge oj-badge-subtle oj-sm-margin-2x">{app}</span>
+                  ))}
                 </div>
 
                 <div class="oj-flex oj-sm-justify-content-space-between oj-sm-margin-top-2x">
