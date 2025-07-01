@@ -75,3 +75,8 @@ export const getAppAssignedGroups = async (appId: string) => {
     return await UserGroupApplications.find({ app_id: appId }).distinct('group_id');
 
 };
+
+
+export const getAllApps = async () => {
+    return Applications.find();
+};

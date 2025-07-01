@@ -1,4 +1,4 @@
-import { assignAppToGroups, unassignAppFromGroup, getAppAssignedGroups } from "../services/appGroupService"
+import { assignAppToGroups, unassignAppFromGroup, getAppAssignedGroups,getAllApps } from "../services/appGroupService"
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 
@@ -49,5 +49,14 @@ export const getAssignedGroups = async (req: Request, res: Response, next: NextF
     } catch (error) {
         const err = error as Error
         res.status((err as any).status || 500).json({ error: 'Could not fetch group assignments', details: err.message || "Server Error" });
+    }
+};
+
+export const getApps = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const apps = await getAllApps();
+        res.status(200).json(apps);
+    } catch (error) {
+        res.status(500).json({ error: 'Could not fetch applications' });
     }
 };
