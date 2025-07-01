@@ -28,10 +28,10 @@ export function ApplicationDialog({ data, isCLicked, closePopup }: Props) {
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [assignedGroupIds, setAssignedGroupIds] = useState<any>(new Set([]));
   const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]));
+  const [token,setToken] = useState(localStorage.getItem('jwt'))
 
   useEffect(() => {
     if (!isCLicked) return;
-    const token = localStorage.getItem('jwt'); 
     fetch("http://localhost:3001/api/userGroup/", {
         method: 'GET',
         headers: {
@@ -47,9 +47,19 @@ export function ApplicationDialog({ data, isCLicked, closePopup }: Props) {
 
   useEffect(() => {
     if (!isCLicked || !data._id) return;
-    fetch(`http://localhost:3001/api/apps/${data._id}/user-groups`)
+    fetch(`http://localhost:3001/api/apps/${data._id}/user-groups`,{
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        }
+    })
       .then((res) => res.json())
-      .then((res) => res.groupIds)
+      .then((res) => {
+        console.log("Fetched assigned groups:", res);
+        return res.groupIds ; // Ensure we handle cases where groupIds might not be present
+      })
+      // .then((res) => res.groupIds)
       .then((ids: string[]) => {
         setAssignedGroupIds(new Set(ids.map(String)));
         setInitialAssignedGroupIds(new Set(ids.map(String)));
@@ -58,11 +68,19 @@ export function ApplicationDialog({ data, isCLicked, closePopup }: Props) {
 
   const groupOptions = userGroups
     .filter((g) => !g.is_deleted)
-    .map((g) => ({
+    // .filter((g)=> g._id )
+    .map((g) => {
+      // if (g._id === undefined || g.name === undefined || g.description === undefined) {
+      //   console.warn("Invalid group data:", g);
+      //   return {value: "",text:"",description:""}; // Skip invalid groups
+      // }
+     return  {
       value: String(g._id),
       text: g.name,
       description: g.description,
-    }));
+    } 
+    }
+     );
 
   const optionsData = new MutableArrayDataProvider(groupOptions, {
     keyAttributes: "value",
