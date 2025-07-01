@@ -4,10 +4,15 @@ import Applications from '../models/Applications';
 import UserGroupApplications from '../models/UserGroupApplications';
 // import { findOrCreateUsersByEmail } from '../services/createUsers.services';
 // import { getDetailedUserGroups } from '../services/userGroup.service';
-import { CreateApplicationInput, ApplicationParams } from '../schemas/application.validator';
+import {
+  CreateApplicationInput,
+  UpdateApplicationInput,
+  ApplicationParams,
+} from '../schemas/application.validator';
 import mongoose from 'mongoose';
 import config from 'config';
 import logger from '../config/logger';
+import { getDetailedApplications } from '../services/applications.services';
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {
@@ -38,26 +43,28 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
   }
 };
 
-// export const getAllUserGroups = async (req: IAuthRequest, res: Response) => {
-//   try {
-//     const groups = await UserGroup.find({ is_deleted: false }).select('_id');
-//     const groupIds = groups.map((g) => g._id as mongoose.Types.ObjectId);
+export const getAllApplications = async (req: IAuthRequest, res: Response) => {
+  try {
+    const apps = await Applications.find({ is_deleted: false }).select('_id');
+    const appIds = apps.map((g) => g._id as mongoose.Types.ObjectId);
 
-//     if (groupIds.length === 0) {
-//       res.status(200).json([]);
-//       return;
-//     }
+    if (appIds.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
 
-//     const detailedGroups = await getDetailedUserGroups(groupIds);
+    const detailedApps = await getDetailedApplications(appIds);
 
-//     res.status(200).json(detailedGroups);
-//     return;
-//   } catch (error) {
-//     logger.error('Error fetching all user groups:', error);
-//     res.status(500).json({ message: 'Server error' });
-//     return;
-//   }
-// };
+    res
+      .status(200)
+      .json({ message: 'Applications fetched successfully', applications: detailedApps });
+    return;
+  } catch (error) {
+    logger.error('Error fetching all user groups:', error);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
 
 // export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
 //   try {
@@ -78,58 +85,31 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
 //   }
 // };
 
-// export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
-//   try {
-//     const { groupId } = req.params as UserGroupParams;
-//     const { name, description, addMemberEmails, removeMemberEmails } =
-//       req.body as UpdateUserGroupInput;
+export const updateApplication = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { appId } = req.params as ApplicationParams;
+    console.log('Updating application with ID:', appId);
+    const { name, description } = req.body as UpdateApplicationInput;
 
-//     const group = await UserGroup.findById(groupId);
-//     if (!group || group.is_deleted) {
-//       res.status(404).json({ message: 'User group not found' });
-//       return;
-//     }
+    const app = await Applications.findById(appId);
+    if (!app || app.is_deleted) {
+      res.status(404).json({ message: 'Application not found' });
+      return;
+    }
 
-//     const isSuperAdminGroup = group.name === config.get<string>('admin_group_name');
+    app.description = description || app.description;
+    app.name = name || app.name;
+    await app.save();
 
-//     if (isSuperAdminGroup && name && name !== config.get<string>('admin_group_name')) {
-//       res.status(403).json({
-//         message: `The '${config.get<string>('admin_group_name')}' group cannot be renamed.`,
-//       });
-//       return;
-//     }
-
-//     group.description = description || group.description;
-//     group.name = name || group.name;
-//     await group.save();
-
-//     if (addMemberEmails && addMemberEmails.length > 0) {
-//       const usersToAdd = await findOrCreateUsersByEmail(addMemberEmails);
-
-//       if (usersToAdd.length > 0) {
-//         const memberDocs = usersToAdd.map((user) => ({ user_id: user._id, group_id: group._id }));
-//         await UserGroupMember.insertMany(memberDocs);
-//       }
-//     }
-
-//     if (removeMemberEmails && removeMemberEmails.length > 0) {
-//       const usersToRemove = await User.find({ email: { $in: removeMemberEmails } });
-//       const userIdsToRemove = usersToRemove.map((u) => u._id);
-//       await UserGroupMember.updateMany(
-//         { user_id: { $in: userIdsToRemove }, group_id: group._id },
-//         { is_active: false }
-//       );
-//     }
-
-//     const detailedGroup = await getDetailedUserGroups([group._id as mongoose.Types.ObjectId]);
-//     res.status(200).json(detailedGroup[0]);
-//     return;
-//   } catch (error) {
-//     logger.error('Error updating user group:', error);
-//     res.status(500).json({ message: 'Server error' });
-//     return;
-//   }
-// };
+    const detailedApps = await getDetailedApplications([app._id as mongoose.Types.ObjectId]);
+    res.status(200).json({ message: 'Application updated successfully', data: detailedApps[0] });
+    return;
+  } catch (error) {
+    logger.error('Error updating user group:', error);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
 
 export const deleteApplication = async (req: IAuthRequest, res: Response) => {
   try {
