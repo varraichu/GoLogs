@@ -8,12 +8,12 @@ import { IUserGroupMember } from '../models/UserGroupMembers';
 
 export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
     // Validate: appId format
-    const appExists = await Applications.exists({ _id: appId });
+    const appExists = await Applications.exists({ _id: appId, is_deleted: false });
     if (!appExists) {
         throw { status: 404, message: `Application with ID ${appId} not found` };
     }
 
-    const existingGroupCount = await UserGroups.countDocuments({ _id: { $in: groupIds } });
+    const existingGroupCount = await UserGroups.countDocuments({ _id: { $in: groupIds }, is_deleted: false });
     if (existingGroupCount !== groupIds.length) {
         throw { status: 404, message: 'One or more user groups not found' };
     }
@@ -25,7 +25,6 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
         const bulkOps = members.map(member => ({
             updateOne: {
                 filter: {
-                    user_id: member.user_id,
                     app_id: appId,
                     group_id: groupId,
                 },
@@ -34,6 +33,7 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
                         user_id: member.user_id,
                         app_id: appId,
                         group_id: groupId,
+                        is_active: true,
                     },
                 },
                 upsert: true,
@@ -49,34 +49,37 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
 
 
 export const unassignAppFromGroup = async (appId: string, groupId: string) => {
-    const appExists = await Applications.exists({ _id: appId });
+    const appExists = await Applications.exists({ _id: appId, is_deleted: false });
     if (!appExists) {
         throw { status: 404, message: `Application with ID ${appId} not found` };
     }
-    const groupExists = await UserGroups.exists({ _id: groupId });
+    const groupExists = await UserGroups.exists({ _id: groupId, is_deleted: false });
     if (!groupExists) {
         throw { status: 404, message: `UserGroup with ID ${groupId} not found` };
     }
 
 
-    const deleted = await UserGroupApplications.deleteMany({ app_id: appId, group_id: groupId });
+    const result = await UserGroupApplications.updateMany(
+        { app_id: appId, group_id: groupId, is_active: true },
+        { $set: { is_active: false } }
+    );
 
-    if (deleted.deletedCount === 0) {
+    if (result.modifiedCount === 0) {
         throw { status: 404, message: 'No assignment found for given appId and groupId' };
     }
 };
 
 export const getAppAssignedGroups = async (appId: string) => {
-    const appExists = await Applications.exists({ _id: appId });
+    const appExists = await Applications.exists({ _id: appId, is_deleted: false });
     if (!appExists) {
         throw { status: 404, message: `Application with ID ${appId} not found` };
     }
 
-    return await UserGroupApplications.find({ app_id: appId }).distinct('group_id');
+    return await UserGroupApplications.find({ app_id: appId, is_active: true }).distinct('group_id');
 
 };
 
 
 export const getAllApps = async () => {
-    return Applications.find();
+    return Applications.find({ is_deleted: false });
 };
