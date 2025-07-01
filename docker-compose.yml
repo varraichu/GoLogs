@@ -110,33 +110,33 @@ services:
     networks:
       - logging_net
 
-  # frontend:
-  #   build: ./frontend
-  #   container_name: frontend
-  #   ports:
-  #     - "5173:5173"               # Vite dev server default
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules         # Avoids overwriting container's node_modules
-  #   command: npm run dev -- --host
-  #   depends_on:
-  #     - bridge
-  #     - worker
-  #   networks:
-  #     - logging_net
-
-  # backend:
-  #   build: ./backend
-  #   container_name: backend
-  #   volumes:
-  #     - ./backend:/app
-  #     - /app/node_modules     # Prevents overwrite of container's node_modules
-  #   ports:
-  #     - "4000:4000"
-  #   depends_on:
-  #     - worker
-  #   networks:
-  #     - logging_net
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"               # Vite dev server default
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules         # Avoids overwriting container's node_modules
+    command: npm run dev -- --host
+    depends_on:
+      - bridge
+      - worker
+    networks:
+      - logging_net
+      
+  backend:
+    build: ./backend
+    container_name: backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules     # Prevents overwrite of container's node_modules
+    ports:
+      - "3001:3001"
+    depends_on:
+      - worker
+    networks:
+      - logging_net
 
 volumes:
   pgdata:  # Persistent volume for PostgreSQL data
