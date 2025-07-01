@@ -17,5 +17,8 @@ backend/logs/
 .env.local
 backend/.env
 
+
+backend/credentials/
+
 log-collector/fluent-bit-db/
 log-collector/fluent-bit-storage/

@@ -13,7 +13,7 @@ process.on('uncaughtException', (err) => {
 
 const startServer = async () => {
   try {
-    //await connectDB();
+    await connectDB();
     const PORT = config.get('app.port');
     app.listen(PORT, () => logger.debug(`Server running on port ${PORT}`));
   } catch (error) {
