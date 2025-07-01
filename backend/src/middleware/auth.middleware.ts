@@ -4,6 +4,7 @@ import config from 'config';
 import * as core from 'express-serve-static-core';
 import UserGroup from '../models/UserGroups';
 import UserGroupMember from '../models/UserGroupMembers';
+import logger from '../config/logger';
 
 export interface IAuthRequest<
   P = core.ParamsDictionary,
@@ -35,7 +36,7 @@ export const protect = (req: IAuthRequest, res: Response, next: NextFunction) =>
 
       next();
     } catch (error) {
-      console.error('Token verification failed:', error);
+      logger.error('Token verification failed:', error);
       res.status(401).json({ message: 'Not authorized, token failed' });
       return;
     }
@@ -83,7 +84,7 @@ export const isAdmin = async (req: IAuthRequest, res: Response, next: NextFuncti
     res.status(403).json({ message: 'Forbidden. Admin access required.' });
     return;
   } catch (error) {
-    console.error('Error during admin authorization check:', error);
+    logger.error('Error during admin authorization check:', error);
     res.status(500).json({ message: 'Server error during authorization.' });
     return;
   }

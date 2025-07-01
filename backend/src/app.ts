@@ -22,6 +22,8 @@ app.use('/api/oauth', authRoutes);
 
 app.use('/api/applications', applicationRoutes);
 
+app.use('/api/userGroup', userGroupRoutes);
+
 app.use(errorHandler);
 
 export default app;

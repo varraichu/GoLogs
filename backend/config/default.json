@@ -19,7 +19,7 @@
     "client_secret": "",
     "redirect_uri": ""
   },
-  "FRONTEND_URL": "http://127.0.0.1:5501/index.html",
+  "FRONTEND_URL": "http://localhost:8000/",
   "env": "development",
   "admin_group_name": ""
 }
