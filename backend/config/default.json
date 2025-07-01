@@ -14,5 +14,12 @@
   "debug": {
     "pattern": ""
   },
-  "env": "development"
+  "google": {
+    "client_id": "",
+    "client_secret": "",
+    "redirect_uri": ""
+  },
+  "FRONTEND_URL": "http://localhost:8000/",
+  "env": "development",
+  "admin_group_name": ""
 }
