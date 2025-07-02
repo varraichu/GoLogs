@@ -138,6 +138,7 @@ services:
   #   networks:
   #     - logging_net
 
+
 volumes:
   pgdata:  # Persistent volume for PostgreSQL data
   redis-data:

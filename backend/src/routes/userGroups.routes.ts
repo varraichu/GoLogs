@@ -13,6 +13,7 @@ import {
   getUserGroupById,
   updateUserGroup,
   deleteUserGroup,
+  updateUserGroupAppAccess,
   toggleGroupStatus,
 } from '../controllers/userGroup.controller';
 
@@ -27,5 +28,7 @@ router.get('/:groupId', validate(userGroupParamsSchema), getUserGroupById);
 router.patch('/:groupId', validate(updateUserGroupSchema), updateUserGroup);
 router.patch('/status/:groupId', validate(userGroupStatusSchema), toggleGroupStatus);
 router.delete('/:groupId', validate(userGroupParamsSchema), deleteUserGroup);
+
+router.patch('/:groupId/app-access', updateUserGroupAppAccess);
 
 export default router;

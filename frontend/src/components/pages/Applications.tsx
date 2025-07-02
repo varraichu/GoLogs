@@ -8,6 +8,9 @@ import 'ojs/ojinputtext';
 import 'ojs/ojswitch';
 import { applicationFormSchema } from '../../validation/application.validator';
 
+import { CardView } from '../Applications/CardView'
+import { Application } from '../Applications/CardItem' 
+  
 interface Application {
     _id: string;
     name: string;
@@ -166,6 +169,10 @@ const Applications = (props: { path?: string }) => {
 
 
     return (
+      <div>
+      <h2>Applications</h2>
+      <CardView application={apps} />
+    </div>
         <div class="oj-flex oj-sm-padding-4x">
             <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
                 <div class="" >
