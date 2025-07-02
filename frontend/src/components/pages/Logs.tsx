@@ -23,8 +23,21 @@ interface Pagination {
   hasPrevPage: boolean;
 }
 
+// Helper to decode JWT
+const parseJwt = (token: string | null): any => {
+  if (!token) return null;
+  try {
+    const base64Payload = token.split('.')[1];
+    const jsonPayload = atob(base64Payload);
+    return JSON.parse(jsonPayload);
+  } catch (err) {
+    console.error('Error decoding token', err);
+    return null;
+  }
+};
+
 const Logs = (props: { path?: string }) => {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [adminLogs, setAdminLogs] = useState<LogEntry[]>([]);
   const [dataProvider, setDataProvider] = useState<any>(null);
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
@@ -42,7 +55,15 @@ const Logs = (props: { path?: string }) => {
   const fetchLogs = async (page: number) => {
     try {
       const token = localStorage.getItem('jwt');
-      const res = await fetch(`http://localhost:3001/api/logs?page=${page}&limit=${pagination.limit}`, {
+      const user = parseJwt(token);
+      const isAdmin = user?.isAdmin;
+      const userId = user?._id;
+
+      const endpoint = isAdmin
+        ? `http://localhost:3001/api/logs?page=${page}&limit=${pagination.limit}`
+        : `http://localhost:3001/api/logs/${userId}?page=${page}&limit=${pagination.limit}`;
+
+      const res = await fetch(endpoint, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -51,9 +72,19 @@ const Logs = (props: { path?: string }) => {
       });
 
       const data = await res.json();
-      setLogs(data.logs);
-      setPagination(data.pagination);
-      setDataProvider(new ArrayDataProvider(data.logs, { keyAttributes: '_id' }));
+
+      // Protect against undefined values
+      setAdminLogs(data.logs || []);
+      setPagination(data.pagination || {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      });
+
+      setDataProvider(new ArrayDataProvider(data.logs || [], { keyAttributes: '_id' }));
     } catch (error) {
       console.error("Failed to fetch logs", error);
     }
@@ -94,13 +125,15 @@ const Logs = (props: { path?: string }) => {
         vertical-grid-visible="enabled"
       ></oj-table>
 
-      <div class="oj-flex oj-sm-margin-top-4x oj-sm-justify-content-center oj-sm-align-items-center">
-        <oj-button onojAction={goToPrevPage} disabled={!pagination.hasPrevPage}>Previous</oj-button>
-        <span class="oj-typography-body-md oj-sm-margin-2x">
-          Page {pagination.page} of {pagination.totalPages}
-        </span>
-        <oj-button onojAction={goToNextPage} disabled={!pagination.hasNextPage}>Next</oj-button>
-      </div>
+      {pagination && (
+        <div class="oj-flex oj-sm-margin-top-4x oj-sm-justify-content-center oj-sm-align-items-center">
+          <oj-button onojAction={goToPrevPage} disabled={!pagination.hasPrevPage}>Previous</oj-button>
+          <span class="oj-typography-body-md oj-sm-margin-2x">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <oj-button onojAction={goToNextPage} disabled={!pagination.hasNextPage}>Next</oj-button>
+        </div>
+      )}
     </div>
   );
 };

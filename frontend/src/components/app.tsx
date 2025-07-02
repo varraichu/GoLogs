@@ -11,6 +11,7 @@ import Logs from "./pages/Logs";
 import UserGroups from "./pages/UserGroups";
 import Nav from "./Nav";
 import Context = require("ojs/ojcontext");
+import UserApplications from "./pages/UserApplications";
 
 type Props = {
   appName?: string;
@@ -71,9 +72,10 @@ export const App = registerCustomElement(
         <Router>
           <Dashboard path="/dashboard" />
           <Settings path="/settings" />
-          <Applications path="/applications" />
+          <UserApplications path="/user-applications" />
           <Logs path="/logs" />
           {isAdmin && <UserGroups path="/usergroups" />}
+          {isAdmin && <Applications path="/applications" />}
         </Router>
       </div>
     );

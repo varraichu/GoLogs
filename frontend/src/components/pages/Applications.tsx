@@ -18,6 +18,7 @@ interface Application {
     is_active: boolean;
     groupCount: number;
     groupNames: string[];
+    logCount: number;
 }
 
 interface UserGroup {
@@ -61,7 +62,7 @@ const Applications = (props: { path?: string }) => {
                 }
             });
             const data = await res.json();
-            setApplications(data.applications);
+            setApplications(data.applications || []);
             console.log("Fetched: ", applications);
         } catch (error) {
             console.error("Failed to fetch applications", error);
@@ -305,7 +306,8 @@ const Applications = (props: { path?: string }) => {
             </div>
 
             <div class="oj-flex oj-sm-flex-wrap oj-sm-justify-content-center oj-sm-padding-4x ">
-                {applications.map((application) => (
+                {applications.length > 0 ? (
+                (applications || []).map((application) => (
                     <div
                         class="oj-sm-12 oj-md-4 oj-flex-item oj-panel oj-panel-shadow-md oj-sm-margin-4x"
                         style="border: 1px solid #ccc; border-radius: 12px; padding: 24px; min-width: 280px; max-width: 360px; display: flex; flex-direction: column; justify-content: space-between;"
@@ -314,9 +316,10 @@ const Applications = (props: { path?: string }) => {
                             <div class="oj-typography-heading-sm oj-sm-margin-bottom-2x">{application.name}</div>
                             <div class="oj-typography-body-sm oj-sm-margin-bottom-2x">{application.description}</div>
                             <div class="oj-typography-body-xs oj-sm-margin-bottom">👤 Users: {application.groupCount}</div>
+                            <div class="oj-typography-body-xs oj-sm-margin-bottom"> Logs: {application.logCount}</div>
                         </div>
                         <div class="oj-sm-margin-4x">
-                            {application.groupNames.map((group) => (
+                            {(application.groupNames || []).map((group) => (
                                 <span class="oj-badge oj-badge-subtle oj-sm-margin-2x">{group}</span>
                             ))}
                         </div>
@@ -339,7 +342,12 @@ const Applications = (props: { path?: string }) => {
                             </oj-button>
                         </div>
                     </div>
-                ))}
+                ))) : (
+                    <div class="oj-typography-body-md oj-sm-margin-4x">
+                        No applications found. Please add applications to assign to users.
+                    </div>
+                )
+            }
             </div>
 
             {showDialog && (
