@@ -17,7 +17,7 @@
   "google": {
     "client_id": "",
     "client_secret": "",
-    "redirect_uri": "http://localhost:3001/api/oauth/google"
+    "redirect_uri": ""
   },
   "FRONTEND_URL": "http://localhost:8000/",
   "env": "development",

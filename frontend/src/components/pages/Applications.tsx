@@ -1,16 +1,15 @@
 // File: src/pages/Applications.tsx
 import { h } from 'preact';
-import { useEffect, useState } from "preact/hooks";
-import 'ojs/ojbutton';
+import { useEffect, useRef, useState, useMemo } from "preact/hooks";
 import 'ojs/ojdialog';
-import 'ojs/ojformlayout';
-import 'ojs/ojinputtext';
 import 'ojs/ojswitch';
-import { applicationFormSchema } from '../../validation/application.validator';
+import "oj-c/button";
+import "oj-c/input-text";
+import "oj-c/form-layout";
+import 'oj-c/select-multiple';
+import LengthValidator = require('ojs/ojvalidator-length');
+import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 
-import { CardView } from '../Applications/CardView'
-import { Application } from '../Applications/CardItem' 
-  
 interface Application {
     _id: string;
     name: string;
@@ -21,6 +20,16 @@ interface Application {
     groupNames: string[];
 }
 
+interface UserGroup {
+    _id: string
+    name: string
+    description: string
+    created_at: string
+    is_deleted: boolean
+
+}
+
+
 const Applications = (props: { path?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [showDialog, setShowDialog] = useState(false);
@@ -28,7 +37,12 @@ const Applications = (props: { path?: string }) => {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [errors, setErrors] = useState<{ name?: string; description?: string }>({});
-
+    const nameRef = useRef<any>(null);
+    const descRef = useRef<any>(null);
+    const [userGroups, setUserGroups] = useState<UserGroup[]>([])
+    const [appUserGroups, setAppUserGroups] = useState<string[]>([]);
+    const [assignedGroupIds, setAssignedGroupIds] = useState<any>(new Set([]))
+    const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]))
 
     useEffect(() => {
         fetchApplications();
@@ -54,7 +68,7 @@ const Applications = (props: { path?: string }) => {
         }
     };
 
-    const openDialog = (application?: Application) => {
+    const openDialog = async (application?: Application) => {
         if (application) {
             setEditingApplication(application);
             setName(application.name || "");
@@ -65,17 +79,28 @@ const Applications = (props: { path?: string }) => {
             setName("");
             setDescription("");
         }
+        await fetchAllUserGroups();
+        await fetchAppUserGroups(application?._id || "");
         setShowDialog(true);
     };
 
     const saveApplication = async () => {
-        if (!validateForm()) return;
+        console.log("Saving application:", name, description);
+        const nameResult = await nameRef.current.validate();
+        const descResult = await descRef.current.validate();
 
+        if (nameResult !== 'valid' || descResult !== 'valid') {
+            // Optionally force message visibility
+            nameRef.current.showMessages?.();
+            descRef.current.showMessages?.();
+            return;
+        }
         const token = localStorage.getItem('jwt');
         const body = JSON.stringify({ name, description });
 
         try {
             if (editingApplication) {
+                console.log("Editing application:", editingApplication._id);
                 await fetch(`http://localhost:3001/api/applications/${editingApplication._id}`, {
                     method: "PATCH",
                     headers: {
@@ -93,6 +118,13 @@ const Applications = (props: { path?: string }) => {
                     },
                     body,
                 });
+            }
+
+            try {
+                await assignGroups(editingApplication?._id || "");
+
+            } catch (error) {
+                console.error("Failed to assign groups:", error);
             }
 
             setShowDialog(false);
@@ -145,34 +177,122 @@ const Applications = (props: { path?: string }) => {
         }
     };
 
-    const validateForm = () => {
-        const result = applicationFormSchema.safeParse({ name, description });
+    const fetchAllUserGroups = async () => {
+        const token = localStorage.getItem('jwt');
+        try {
+            fetch('http://localhost:3001/api/userGroup/', {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then((res) => res.json())
+                .then((groups) => {
+                    setUserGroups(groups)
+                    console.log('Fetched user groups:', groups)
+                })
 
-        if (!result.success) {
-            const fieldErrors: { name?: string; description?: string } = {};
-            const formatted = result.error.format();
-
-            if (formatted.name?._errors?.length) {
-                fieldErrors.name = formatted.name._errors[0];
-            }
-            if (formatted.description?._errors?.length) {
-                fieldErrors.description = formatted.description._errors[0];
-            }
-
-            setErrors(fieldErrors);
-            return false;
+        } catch (error) {
+            console.error('Error fetching usergroups:', error);
         }
+    }
 
-        setErrors({});
-        return true;
+    const fetchAppUserGroups = async (appId: string) => {
+        const token = localStorage.getItem('jwt');
+        try {
+            fetch(`http://localhost:3001/api/assignGroup/${appId}/user-groups`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then((res) => res.json())
+                .then((res) => {
+                    const validIds = (res.groupIds || [])
+                        .map(String)
+                        .filter((id: string) => userGroups.some((g) => String(g._id) === id))
+                    setAssignedGroupIds(new Set(validIds))
+                    setInitialAssignedGroupIds(new Set(validIds))
+                    // setUserGroups2 // Update parent component state if needed
+                    if (setAppUserGroups) {
+                        const assignedNames = userGroups
+                            .filter((g) => validIds.includes(String(g._id)))
+                            .map((g) => g.name)
+                        setAppUserGroups(assignedNames)
+                    }
+                })
+
+        } catch (error) {
+            console.error('Error fetching App usergroups:', error);
+        }
+    }
+
+    const optionsData = useMemo(() => {
+        const groupOptions = userGroups
+            .filter((g) => !g.is_deleted)
+            .map((g) => ({
+                value: String(g._id),
+                text: g.name,
+                description: g.description,
+            }))
+        return new MutableArrayDataProvider(groupOptions, {
+            keyAttributes: 'value',
+        })
+    }, [userGroups]);
+
+    const handleAssignedGroupsChange = (e: CustomEvent) => {
+        setAssignedGroupIds(e.detail.value || [])
+    }
+
+    const assignGroups = async (appId: string) => {
+        if (!appId) return
+        const token = localStorage.getItem('jwt')
+        // Convert Sets to arrays if needed
+        const prevIds = Array.from(
+            initialAssignedGroupIds instanceof Set
+                ? initialAssignedGroupIds
+                : new Set(initialAssignedGroupIds)
+        )
+        const newIds = Array.from(
+            assignedGroupIds instanceof Set ? assignedGroupIds : new Set(assignedGroupIds)
+        )
+        try {
+            await Promise.all(
+                prevIds.map((groupId: string) =>
+                    fetch(`http://localhost:3001/api/assignGroup/${appId}/user-groups/${groupId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    })
+                )
+            )
+            console.log(newIds, 'newIds')
+            // Assign new groups (if any)
+            if (newIds.length > 0) {
+                await fetch(`http://localhost:3001/api/assignGroup/${appId}/user-groups`, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ groupIds: newIds }),
+                })
+            }
+        }
+        catch (error) {
+            console.error("Failed to assign groups", error);
+        }
     };
 
-
     return (
-      <div>
-      <h2>Applications</h2>
-      <CardView application={apps} />
-    </div>
+        //   <div>
+        //   <h2>Applications</h2>
+        //   <CardView application={apps} />
+        // </div>
         <div class="oj-flex oj-sm-padding-4x">
             <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
                 <div class="" >
@@ -225,32 +345,38 @@ const Applications = (props: { path?: string }) => {
             {showDialog && (
                 <oj-dialog id="groupDialog" dialogTitle={editingApplication ? "Edit Group" : "Create Group"} initialVisibility="show">
                     <div class="oj-dialog-body">
-                        <oj-form-layout>
-                            <oj-input-text
+                        <oj-c-form-layout>
+                            <oj-c-input-text
                                 id="name-input"
                                 labelHint="Name"
                                 value={name}
+                                ref={nameRef}
                                 onvalueChanged={(e) => setName(e.detail.value)}
-                                messagesCustom={
-                                    errors.name
-                                        ? [{ severity: 'error', summary: errors.name, detail: errors.name }]
-                                        : []
-                                }
+                                validators={[new LengthValidator({ min: 5, max: 20 })]}
                             >
-                            </oj-input-text>
-                            <oj-input-text
+                            </oj-c-input-text>
+                            <oj-c-input-text
                                 labelHint="Description"
                                 value={description}
+                                ref={descRef}
                                 onvalueChanged={(e) => setDescription(e.detail.value)}
-                                messagesCustom={
-                                    errors.description
-                                        ? [{ severity: 'error', summary: errors.description, detail: errors.description }]
-                                        : []
-                                }
+                                validators={[new LengthValidator({ min: 5, max: 50 })]}
                             >
 
-                            </oj-input-text>
-                        </oj-form-layout>
+                            </oj-c-input-text>
+                            <h4 class="oj-typography-heading-sm">Assigned To</h4>
+
+                            {/* Multi-select for assigning groups */}
+                            <oj-c-select-multiple
+                                label-hint="Assign to user groups"
+                                // value={ value} // Example default values
+                                value={assignedGroupIds}
+                                onvalueChanged={handleAssignedGroupsChange}
+                                data={optionsData}
+                                item-text="text"
+                                class="oj-sm-margin-2x-vertical"
+                            ></oj-c-select-multiple>
+                        </oj-c-form-layout>
                     </div>
                     <div class="oj-dialog-footer">
                         <oj-button onojAction={() => saveApplication()}>Save</oj-button>

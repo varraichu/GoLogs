@@ -2,7 +2,7 @@ import express from 'express';
 import { protect, isAdmin } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
 
-import { getAllLogs } from '../controllers/logs.controllers';
+import { getAllLogs } from '../controllers/logs.controller';
 
 const router = express.Router();
 

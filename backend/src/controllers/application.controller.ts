@@ -3,10 +3,7 @@ import Application from '../models/Applications';
 
 export const getAllApplications = async (req: Request, res: Response) => {
   try {
-    const apps = await Application.find(
-      { is_active: true }, 
-      { _id: 1, name: 1 }   
-    );
+    const apps = await Application.find({ is_active: true }, { _id: 1, name: 1 });
 
     res.status(200).json(apps);
   } catch (error) {

@@ -21,7 +21,6 @@ const startServer = async () => {
     process.exit(1);
   }
   // connectDB();
-  
 };
 
 process.on('unhandledRejection', (err) => {

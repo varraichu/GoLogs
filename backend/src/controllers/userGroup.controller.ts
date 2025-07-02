@@ -3,7 +3,7 @@ import { IAuthRequest } from '../middleware/auth.middleware';
 import UserGroup from '../models/UserGroups';
 import UserGroupMember from '../models/UserGroupMembers';
 import User from '../models/Users';
-import { findOrCreateUsersByEmail } from '../services/createUsers.services';
+import { findOrCreateUsersByEmail } from '../services/createUsers.service';
 import { getDetailedUserGroups } from '../services/userGroup.service';
 import {
   CreateUserGroupInput,
@@ -18,7 +18,6 @@ import logger from '../config/logger';
 import { Request } from 'express';
 import { assignApplicationsToGroup } from '../services/userGroup.service';
 import UserGroupApplications from '../models/UserGroupApplications';
-
 
 export const updateUserGroupAppAccess = async (req: Request, res: Response): Promise<void> => {
   const { groupId } = req.params;
@@ -37,8 +36,6 @@ export const updateUserGroupAppAccess = async (req: Request, res: Response): Pro
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
-
 
 export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   try {
