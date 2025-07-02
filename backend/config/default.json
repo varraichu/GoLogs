@@ -6,7 +6,7 @@
     "uri": "mongodb+srv://GoLogsUser:RDaTT5lxj9g7mWXj@gologsdb.pvsqlbx.mongodb.net/gologs"
   },
   "jwt": {
-    "secret": "7d1447a56e11ba40b2344cc432634b1f8e4263ecec45a96eabf94c1532f4c955"
+    "secret": ""
   },
   "app": {
     "port": 3000
