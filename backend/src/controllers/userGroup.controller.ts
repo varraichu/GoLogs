@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import UserGroup from '../models/UserGroups';
 import UserGroupMember from '../models/UserGroupMembers';
+import UserGroupApplication from '../models/UserGroupApplications';
 import User from '../models/Users';
 import { findOrCreateUsersByEmail } from '../services/createUsers.service';
 import { getDetailedUserGroups } from '../services/userGroup.service';
@@ -64,6 +65,10 @@ export const createUserGroup = async (req: IAuthRequest, res: Response) => {
     res.status(201).json(detailedGroup[0]);
     return;
   } catch (error: any) {
+    if (error.code === 11000 && error.keyPattern?.name) {
+      res.status(400).json({ message: 'An active user group with this name already exists.' });
+      return;
+    }
     logger.error('Error creating user group:', error);
     res.status(500).json({ message: 'Server error' });
     return;
@@ -113,8 +118,12 @@ export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
 export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
   try {
     const { groupId } = req.params as UserGroupParams;
-    const { name, description, addMemberEmails, removeMemberEmails } =
-      req.body as UpdateUserGroupInput;
+    const {
+      name,
+      description,
+      addMemberEmails = [],
+      removeMemberEmails = [],
+    } = req.body as UpdateUserGroupInput;
 
     const group = await UserGroup.findById(groupId);
     if (!group || group.is_deleted) {
@@ -122,29 +131,42 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
       return;
     }
 
-    const isSuperAdminGroup = group.name === config.get<string>('admin_group_name');
+    const ADMIN_GROUP_NAME = config.get<string>('admin_group_name');
+    const isSuperAdminGroup = group.name === ADMIN_GROUP_NAME;
 
-    if (isSuperAdminGroup && name && name !== config.get<string>('admin_group_name')) {
-      res.status(403).json({
-        message: `The '${config.get<string>('admin_group_name')}' group cannot be renamed.`,
-      });
+    // Prevent renaming super admin group
+    if (isSuperAdminGroup && name && name !== ADMIN_GROUP_NAME) {
+      res.status(403).json({ message: `The '${ADMIN_GROUP_NAME}' group cannot be renamed.` });
       return;
     }
 
-    group.description = description || group.description;
+    // Update basic fields
     group.name = name || group.name;
+    group.description = description || group.description;
     await group.save();
 
-    if (addMemberEmails && addMemberEmails.length > 0) {
+    // Add members
+    if (addMemberEmails.length > 0) {
       const usersToAdd = await findOrCreateUsersByEmail(addMemberEmails);
-
-      if (usersToAdd.length > 0) {
-        const memberDocs = usersToAdd.map((user) => ({ user_id: user._id, group_id: group._id }));
-        await UserGroupMember.insertMany(memberDocs);
+      for (const user of usersToAdd) {
+        const existing = await UserGroupMember.findOne({ user_id: user._id, group_id: group._id });
+        if (existing) {
+          if (!existing.is_active) {
+            existing.is_active = true;
+            await existing.save();
+          }
+        } else {
+          await UserGroupMember.create({
+            user_id: user._id,
+            group_id: group._id,
+            is_active: true,
+          });
+        }
       }
     }
 
-    if (removeMemberEmails && removeMemberEmails.length > 0) {
+    // Remove members
+    if (removeMemberEmails.length > 0) {
       const usersToRemove = await User.find({ email: { $in: removeMemberEmails } });
       const userIdsToRemove = usersToRemove.map((u) => u._id);
       await UserGroupMember.updateMany(
@@ -153,6 +175,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
       );
     }
 
+    // Return detailed group info
     const detailedGroup = await getDetailedUserGroups([group._id as mongoose.Types.ObjectId]);
     res.status(200).json(detailedGroup[0]);
     return;
@@ -183,7 +206,7 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
     group.is_deleted = true;
     await group.save();
     await UserGroupMember.updateMany({ group_id: groupId }, { is_active: false });
-    await UserGroupApplications.updateMany({ group_id: groupId }, { is_active: false });
+    await UserGroupApplication.updateMany({ group_id: groupId }, { is_active: false });
 
     res.status(204).send();
     return;

@@ -4,16 +4,17 @@ import config from 'config';
 export const createUserGroupSchema = object({
   body: object({
     name: string({ required_error: 'Name is required' })
-      .min(3, 'Name must be at least 3 characters long')
-      .max(10, 'Name must not exceed 10 characters'),
+      .min(5, 'Name must be at least 5 characters long')
+      .max(20, 'Name must be at most 20 characters long'),
     description: string({ required_error: 'Description is required' })
-      .min(5, 'Description must be at least 5 characters long')
-      .max(50, 'Description must not exceed 50 characters'),
+      .min(10, 'Description must be at least 10 characters long')
+      .max(100, 'Description must be at most 100 characters long'),
     memberEmails: array(string().email('Invalid email format in member list'))
-      .optional()
-      .default([]),
+      .min(1, 'At least one member email is required')
+      .max(100, 'You can add up to 100 member emails only'),
   }).refine((data) => data.name !== config.get('admin_group_name'), {
     message: `Name cannot be ${config.get('admin_group_name')}`,
+    path: ['name'],
   }),
 });
 
@@ -31,12 +32,12 @@ export const updateUserGroupSchema = object({
   ...params,
   body: object({
     name: string()
-      .min(3, 'Name must be at least 3 characters long')
-      .max(10, 'Name must not exceed 10 characters')
+      .min(5, 'Name must be at least 5 characters long')
+      .max(20, 'Name must be at most 20 characters long')
       .optional(),
     description: string()
-      .min(5, 'Description must be at least 5 characters long')
-      .max(50, 'Description must not exceed 50 characters')
+      .min(10, 'Description must be at least 10 characters long')
+      .max(100, 'Description must be at most 100 characters long')
       .optional(),
     addMemberEmails: array(
       string().email('Invalid email format in addMemberEmails list')

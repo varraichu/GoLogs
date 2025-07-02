@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import UserGroupMembers from './models/UserGroupMembers';
+
 import app from './app';
 import logger from './config/logger';
 import config from 'config';
@@ -14,6 +16,7 @@ process.on('uncaughtException', (err) => {
 const startServer = async () => {
   try {
     await connectDB();
+    await UserGroupMembers.syncIndexes();
     const PORT = config.get('app.port');
     app.listen(PORT, () => logger.debug(`Server running on port ${PORT}`));
   } catch (error) {

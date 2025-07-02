@@ -12,4 +12,6 @@ const userGroupMemberSchema: Schema<IUserGroupMember> = new Schema({
   is_active: { type: Boolean, default: true },
 });
 
+userGroupMemberSchema.index({ user_id: 1, group_id: 1 }, { unique: true });
+
 export default mongoose.model<IUserGroupMember>('UserGroupMembers', userGroupMemberSchema);

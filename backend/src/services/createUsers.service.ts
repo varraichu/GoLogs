@@ -1,4 +1,6 @@
 import User, { IUser } from '../models/Users';
+import { getDirectoryClient } from '../utils/googleDirectory.util';
+import logger from '../config/logger';
 
 export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[]> => {
   if (!emails || emails.length === 0) {
@@ -14,7 +16,28 @@ export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[
     return existingUsers;
   }
 
-  const newUsersToCreate = newEmails.map((email) => ({
+  // Validate new emails in Google Directory
+  const directory = getDirectoryClient();
+
+  const validDirectoryEmails: string[] = [];
+
+  for (const email of newEmails) {
+    try {
+      await directory.users.get({ userKey: email });
+      validDirectoryEmails.push(email);
+    } catch (err: any) {
+      // If user not found, skip. Handle other error codes if needed below.
+      if (err.code !== 404) {
+        logger.error(`Error checking directory for ${email}:`, err.message);
+      }
+    }
+  }
+
+  if (validDirectoryEmails.length === 0) {
+    return existingUsers;
+  }
+
+  const newUsersToCreate = validDirectoryEmails.map((email) => ({
     email: email,
     username: email.split('@')[0],
   }));
