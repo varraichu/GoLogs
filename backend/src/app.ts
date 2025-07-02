@@ -5,6 +5,7 @@ import logger from './config/logger';
 import authRoutes from './routes/auth.routes';
 import userGroupRoutes from './routes/userGroups.routes';
 import { errorHandler } from './middleware/error.middleware';
+import applicationRoutes from './routes/application.routes';
 import appGroupRoutes from "./routes/appGroupRoutes"
 
 const app = express();
@@ -17,8 +18,12 @@ app.get('/', (req:Request, res:Response) => {
   res.send('Hello World!');
 });
 
+app.use('/api/user-groups', userGroupRoutes);
+
 app.use('/api/apps', appGroupRoutes)
 app.use('/api/oauth', authRoutes);
+
+app.use('/api/applications', applicationRoutes);
 
 app.use('/api/userGroup', userGroupRoutes);
 

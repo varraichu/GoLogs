@@ -1,39 +1,47 @@
 import mongoose from 'mongoose';
 import UserGroup from '../models/UserGroups'; // Assuming paths are correct
+import UserGroupApplications from '../models/UserGroupApplications';
+import UserGroups from '../models/UserGroups';
 
 export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[]) => {
   const detailedGroups = await UserGroup.aggregate([
-    // 1. Filter for the requested, non-deleted groups
     {
       $match: {
         _id: { $in: groupIds },
         is_deleted: false,
       },
     },
-    // 2. Lookup active members from the UserGroupMembers collection
+
     {
       $lookup: {
-        from: 'usergroupmembers', // The actual collection name in MongoDB (usually plural and lowercase)
+        from: 'usergroupmembers', 
         localField: '_id',
         foreignField: 'group_id',
         as: 'members',
         pipeline: [
-          { $match: { is_active: true } }, // Only count active members
+          { $match: { is_active: true } },
         ],
       },
     },
-    // 3. Placeholder for application lookup.
-    // In a real scenario, you would have a similar $lookup stage here:
-    // {
-    //   $lookup: {
-    //     from: 'applicationassignments',
-    //     localField: '_id',
-    //     foreignField: 'group_id',
-    //     as: 'applications',
-    //   }
-    // },
 
-    // 4. Project the final shape of the output
+    {
+      $lookup: {
+        from: 'usergroupapplications',
+        localField: '_id',
+        foreignField: 'group_id',
+        as: 'appMappings',
+      },
+    },
+
+    {
+      $lookup: {
+        from: 'applications',
+        localField: 'appMappings.app_id',
+        foreignField: '_id',
+        as: 'applications',
+      },
+    },
+
     {
       $project: {
         _id: 1,
@@ -41,12 +49,32 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         description: 1,
         created_at: 1,
         userCount: { $size: '$members' },
-        // Placeholder values for applications
-        applicationCount: { $const: 0 }, // Replace with { $size: '$applications' }
-        applicationNames: { $const: [] }, // Replace with '$applications.name'
+        applicationCount: { $size: '$applications' },
+        applicationNames: '$applications.name',
       },
     },
   ]);
 
   return detailedGroups;
+};
+
+
+export const assignApplicationsToGroup = async (
+  groupId: string,
+  appIds: string[]
+) => {
+  const groupExists = await UserGroups.exists({ _id: groupId });
+  if (!groupExists) throw new Error('Group not found');
+
+  await UserGroupApplications.deleteMany({ group_id: groupId });
+
+  const bulkInsert = appIds.map(appId => ({
+    group_id: new mongoose.Types.ObjectId(groupId),
+    app_id: new mongoose.Types.ObjectId(appId),
+    user_id: null, 
+  }));
+
+  if (bulkInsert.length > 0) {
+    await UserGroupApplications.insertMany(bulkInsert);
+  }
 };

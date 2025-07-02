@@ -12,6 +12,7 @@ import {
   getUserGroupById,
   updateUserGroup,
   deleteUserGroup,
+  updateUserGroupAppAccess,
 } from '../controllers/userGroup.controller';
 
 const router = express.Router();
@@ -24,5 +25,7 @@ router.post('/', validate(createUserGroupSchema), createUserGroup);
 router.get('/:groupId', validate(userGroupParamsSchema), getUserGroupById);
 router.patch('/:groupId', validate(updateUserGroupSchema), updateUserGroup);
 router.delete('/:groupId', validate(userGroupParamsSchema), deleteUserGroup);
+
+router.patch('/:groupId/app-access', updateUserGroupAppAccess);
 
 export default router;
