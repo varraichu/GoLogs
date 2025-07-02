@@ -270,7 +270,7 @@ const UserGroups = (props: { path?: string }) => {
                   <div class="oj-flex oj-sm-align-items-center oj-sm-margin-bottom">
                     <span class="oj-typography-body-sm oj-sm-margin-end">{email}</span>
                     <oj-button display="icons" chroming="borderless" onojAction={() => removeEmail(email, 'add')}>
-                      <span class="oj-ux-ico-close oj-sm-icon"></span>
+                      <span class="oj-ux-email-expenses-ico-cancel-s-20-danger">X</span>
                     </oj-button>
                   </div>
                 ))}
