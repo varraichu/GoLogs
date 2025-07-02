@@ -29,9 +29,7 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         localField: '_id',
         foreignField: 'group_id',
         as: 'members',
-        pipeline: [
-          { $match: { is_active: true } },
-        ],
+        pipeline: [{ $match: { is_active: true } }],
       },
     },
     // 3. Perform a multi-stage lookup to get application names
@@ -99,20 +97,16 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
   return detailedGroups;
 };
 
-
-export const assignApplicationsToGroup = async (
-  groupId: string,
-  appIds: string[]
-) => {
+export const assignApplicationsToGroup = async (groupId: string, appIds: string[]) => {
   const groupExists = await UserGroups.exists({ _id: groupId });
   if (!groupExists) throw new Error('Group not found');
 
   await UserGroupApplications.deleteMany({ group_id: groupId });
 
-  const bulkInsert = appIds.map(appId => ({
+  const bulkInsert = appIds.map((appId) => ({
     group_id: new mongoose.Types.ObjectId(groupId),
     app_id: new mongoose.Types.ObjectId(appId),
-    user_id: null, 
+    user_id: null,
   }));
 
   if (bulkInsert.length > 0) {

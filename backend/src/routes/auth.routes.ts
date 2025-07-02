@@ -10,7 +10,7 @@ import { googleOauthHandler, devLoginHandler } from '../controllers/auth.control
 const router = express.Router();
 
 // This route is for development purposes only, allowing login without OAuth
-router.post('/login', devLoginHandler); 
+router.post('/login', devLoginHandler);
 // This route is for development purposes only, allowing login without OAuth
 
 router.get('/google', validate(googleOauthCallbackSchema), googleOauthHandler);

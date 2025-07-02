@@ -24,7 +24,7 @@ const run = async () => {
         description: 'Admin group for managing system access', // ✅ REQUIRED
         is_deleted: false,
         created_by: 'seed-script',
-        });
+      });
 
       console.log(`✅ Created group: ${group.name}`);
     }

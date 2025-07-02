@@ -13,7 +13,7 @@ import {
 import mongoose from 'mongoose';
 import config from 'config';
 import logger from '../config/logger';
-import { getDetailedApplications } from '../services/applications.services';
+import { getDetailedApplications } from '../services/applications.service';
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {

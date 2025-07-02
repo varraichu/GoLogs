@@ -19,7 +19,7 @@ import {
 
 const router = express.Router();
 
-router.use(protect, isAdmin);
+// router.use(protect, isAdmin);
 
 router.get('/', getAllApplications);
 router.post('/', validate(createApplicationSchema), createApplication);

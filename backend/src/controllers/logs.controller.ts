@@ -2,7 +2,7 @@
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import logger from '../config/logger';
-import { fetchPaginatedLogsWithAppInfo } from '../services/logs.services';
+import { fetchPaginatedLogsWithAppInfo } from '../services/logs.service';
 
 export const getAllLogs = async (req: IAuthRequest, res: Response) => {
   try {
