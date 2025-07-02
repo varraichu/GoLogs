@@ -3,6 +3,7 @@ import 'ojs/ojbutton';
 
 const Login = () => {
   const handleLogin = () => {
+    console.log("inside login");
     const clientId = '858469888518-dhgoru9d7tes0kvs64corq7vqodh1ti9.apps.googleusercontent.com';
     const redirectUri = 'http://localhost:3001/api/oauth/google';
 

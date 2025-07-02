@@ -4,6 +4,8 @@ import cors from 'cors';
 import logger from './config/logger';
 import authRoutes from './routes/auth.routes';
 import userGroupRoutes from './routes/userGroups.routes';
+import applicationRoutes from './routes/applications.routes';
+import logRoutes from './routes/logs.routes';
 import { errorHandler } from './middleware/error.middleware';
 import applicationRoutes from './routes/application.routes';
 import appGroupRoutes from "./routes/appGroupRoutes"
@@ -26,6 +28,8 @@ app.use('/api/oauth', authRoutes);
 app.use('/api/applications', applicationRoutes);
 
 app.use('/api/userGroup', userGroupRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/logs', logRoutes);
 
 app.use(errorHandler);
 
