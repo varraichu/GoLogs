@@ -73,7 +73,7 @@ export const App = registerCustomElement(
     return (
       <div>
         <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={true}>
-          <SideBar setIsAuthenticated={setIsAuthenticated} isAdmin={isAdmin} pictureUrl={profileUrl} username={username}  />
+          <SideBar setIsAuthenticated={setIsAuthenticated} isAdmin={isAdmin} pictureUrl={profileUrl} username={username} />
           <div>
           <Router>
             {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
