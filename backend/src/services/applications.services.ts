@@ -38,6 +38,7 @@ export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[])
         name: 1,
         description: 1,
         created_at: 1,
+        is_active: 1,
         groupCount: { $size: '$groupDetails' }, // Count the number of groups
         groupNames: '$groupDetails.name', // Create an array of just the group names
       },

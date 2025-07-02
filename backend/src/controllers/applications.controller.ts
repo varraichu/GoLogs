@@ -8,6 +8,7 @@ import {
   CreateApplicationInput,
   UpdateApplicationInput,
   ApplicationParams,
+  applicationStatusInput,
 } from '../schemas/application.validator';
 import mongoose from 'mongoose';
 import config from 'config';
@@ -18,21 +19,22 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {
     const { name, description } = req.body as CreateApplicationInput;
 
+    const existingApp = await Applications.findOne({
+      name,
+      is_deleted: false,
+    });
+    if (existingApp) {
+      res.status(400).json({ message: 'Application with the same name already exists' });
+      return;
+    }
+
     const newApp = await Applications.create({
       name,
       description,
       is_deleted: false,
+      is_active: true,
       created_at: new Date(),
     });
-
-    // const usersToAdd = await findOrCreateUsersByEmail(memberEmails);
-
-    // if (usersToAdd.length > 0) {
-    //   const memberDocs = usersToAdd.map((user) => ({ user_id: user._id, group_id: newGroup._id }));
-    //   await UserGroupMember.insertMany(memberDocs);
-    // }
-
-    // const detailedGroup = await getDetailedUserGroups([newGroup._id as mongoose.Types.ObjectId]);
 
     res.status(201).json({ message: 'Application created successfully', application: newApp });
     return;
@@ -66,25 +68,6 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   }
 };
 
-// export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
-//   try {
-//     const { groupId } = req.params as UserGroupParams;
-//     const detailedGroup = await getDetailedUserGroups([new mongoose.Types.ObjectId(groupId)]);
-
-//     if (!detailedGroup || detailedGroup.length === 0) {
-//       res.status(404).json({ message: 'User group not found' });
-//       return;
-//     }
-
-//     res.status(200).json(detailedGroup[0]);
-//     return;
-//   } catch (error) {
-//     logger.error('Error fetching user group by ID:', error);
-//     res.status(500).json({ message: 'Server error' });
-//     return;
-//   }
-// };
-
 export const updateApplication = async (req: IAuthRequest, res: Response) => {
   try {
     const { appId } = req.params as ApplicationParams;
@@ -102,7 +85,9 @@ export const updateApplication = async (req: IAuthRequest, res: Response) => {
     await app.save();
 
     const detailedApps = await getDetailedApplications([app._id as mongoose.Types.ObjectId]);
-    res.status(200).json({ message: 'Application updated successfully', data: detailedApps[0] });
+    res
+      .status(200)
+      .json({ message: 'Application updated successfully', applications: detailedApps[0] });
     return;
   } catch (error) {
     logger.error('Error updating user group:', error);
@@ -130,6 +115,31 @@ export const deleteApplication = async (req: IAuthRequest, res: Response) => {
     return;
   } catch (error) {
     logger.error('Error deleting application:', error);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const toggleApplicationStatus = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { appId } = req.params as ApplicationParams;
+    const app = await Applications.findById(appId);
+
+    const { is_active } = req.body as applicationStatusInput;
+
+    if (!app || app.is_deleted) {
+      res.status(404).json({ message: 'Application not found' });
+      return;
+    }
+
+    app.is_active = is_active;
+    await app.save();
+    await UserGroupApplications.updateMany({ app_id: appId }, { is_active: is_active });
+
+    res.status(200).json({ message: 'Application successfully set to ', is_active });
+    return;
+  } catch (error) {
+    logger.error('Error toggling application status:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }

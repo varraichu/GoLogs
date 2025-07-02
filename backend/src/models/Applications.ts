@@ -5,6 +5,7 @@ export interface IApplication extends Document {
   description: string;
   created_at: Date;
   is_deleted: boolean;
+  is_active: boolean;
 }
 
 const applicationSchema: Schema<IApplication> = new Schema({
@@ -12,6 +13,7 @@ const applicationSchema: Schema<IApplication> = new Schema({
   description: { type: String, required: true },
   created_at: { type: Date, default: Date.now },
   is_deleted: { type: Boolean, default: false },
+  is_active: { type: Boolean, default: true },
 });
 
 export default mongoose.model<IApplication>('Applications', applicationSchema);
