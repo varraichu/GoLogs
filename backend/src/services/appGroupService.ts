@@ -3,6 +3,7 @@ import Applications from '../models/Applications';
 import UserGroupApplications from '../models/UserGroupApplications';
 import UserGroupMembers from '../models/UserGroupMembers';
 import UserGroups from '../models/UserGroups';
+import Logs from '../models/Logs';
 import { IUserGroupMember } from '../models/UserGroupMembers';
 
 
@@ -18,32 +19,26 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
         throw { status: 404, message: 'One or more user groups not found' };
     }
 
-    for (const groupId of groupIds) {
-        // Get all active users in this group
-        const members: IUserGroupMember[] = await UserGroupMembers.find({ group_id: groupId, is_active: true });
-        // console.log(`Found ${members} active members in group ${groupId}`);
-        const bulkOps = members.map(member => ({
-            updateOne: {
-                filter: {
+    // For each group, upsert the UserGroupApplications document
+    const bulkOps = groupIds.map(groupId => ({
+        updateOne: {
+            filter: {
+                app_id: appId,
+                group_id: groupId,
+            },
+            update: {
+                $set: { is_active: true },
+                $setOnInsert: {
                     app_id: appId,
                     group_id: groupId,
                 },
-                update: {
-                    $set: { is_active: true },
-                    $setOnInsert: {
-                        app_id: appId,
-                        group_id: groupId,
-                        // is_active: true,
-                    },
-                },
-                upsert: true,
             },
-        }));
-        // console.log(`Preparing to assign app ${appId} to group ${groupId} with ${members.length} members`);
+            upsert: true,
+        },
+    }));
 
-        if (bulkOps.length > 0) {
-            await UserGroupApplications.bulkWrite(bulkOps);
-        }
+    if (bulkOps.length > 0) {
+        await UserGroupApplications.bulkWrite(bulkOps);
     }
 };
 
@@ -82,5 +77,15 @@ export const getAppAssignedGroups = async (appId: string) => {
 
 
 export const getAllApps = async () => {
-    return Applications.find({ is_deleted: false });
+    let apps = await Applications.find({ is_deleted: false }).lean();
+
+    const appsWithLogCount = await Promise.all(
+        apps.map(async (app) => {
+            const logCount = await Logs.countDocuments({ app_id: app._id });
+            return { ...app, logCount };
+        })
+    );
+
+    return appsWithLogCount;
+    // (await apps).map
 };

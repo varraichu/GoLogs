@@ -9,10 +9,11 @@ export type Application = {
   name: string
   description: string
   // status: "Healthy" | "Warning" | "Critical";
-  // logCount: number;
+  logCount: number;
   // clients: number;
   // assignedTo: string[];
-  createdDate: string
+  // createdDate: string
+  created_at: string
   // icon: string;
 }
 
@@ -24,6 +25,7 @@ type Props = {
 export function renderCardItem(itemContext: { data: Application }) {
   const { data } = itemContext
   const [isClicked, setIsClicked] = useState(false)
+  const [userGroups,setUserGroups] = useState<string[]>([]);
 
   // const statusStyles = {
   //   Healthy: { text: "Healthy", color: "green", dot: "🟢" },
@@ -55,14 +57,15 @@ export function renderCardItem(itemContext: { data: Application }) {
             <span class="oj-typography-body-sm">
               📊 Log Count
               <br />
-              {/* <b>{data.logCount}</b> */}
+              <b>{data.logCount}</b>
             </span>
           </div>
           <div class="oj-flex-item">
             <span class="oj-typography-body-sm">
-              👥 Clients
+              Assigned to
               <br />
-              {/* <b>{data.clients}</b> */}
+              {userGroups.map((group) => <b>{group}</b>)}
+              {/* <b>{userGroups}</b> */}
             </span>
           </div>
         </div>
@@ -71,13 +74,14 @@ export function renderCardItem(itemContext: { data: Application }) {
           <b>Assigned To:</b> {data.assignedTo.join(", ")}
         </div> */}
 
-        <div class="oj-typography-caption">Created: {data.createdDate}</div>
+        <div class="oj-typography-caption">Created: {data.created_at}</div>
       </div>
 
       <ApplicationDialog
         data={data}
         isCLicked={isClicked}
         closePopup={() => setIsClicked(false)}
+        setUserGroups2={setUserGroups}
       ></ApplicationDialog>
     </div>
   )

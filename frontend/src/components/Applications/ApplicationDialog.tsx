@@ -7,6 +7,9 @@ import { h } from 'preact'
 import { useState, useEffect, useMemo } from 'preact/hooks'
 import { Application } from './CardItem'
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
+import { set } from 'mongoose'
+// import Dispatch<StateUpdater<string[]>> from 'preact/hooks'
+import { Dispatch, StateUpdater } from 'preact/hooks'
 
 type UserGroup = {
   _id: string
@@ -20,9 +23,10 @@ type Props = {
   data: Application
   isCLicked: boolean
   closePopup: () => void
+  setUserGroups2?: Dispatch<StateUpdater<string[]>>
 }
 
-export function ApplicationDialog({ data, isCLicked, closePopup }: Props) {
+export function ApplicationDialog({ data, isCLicked, closePopup, setUserGroups2 }: Props) {
   const [appName, setAppName] = useState(data.name || '')
   const [description, setDescription] = useState(data.description || '')
   const [userGroups, setUserGroups] = useState<UserGroup[]>([])
@@ -58,11 +62,18 @@ export function ApplicationDialog({ data, isCLicked, closePopup }: Props) {
       .then((res) => res.json())
       .then((res) => {
         const validIds = (res.groupIds || [])
-        .map(String)
-        .filter((id: string) => userGroups.some(g => String(g._id) === id))
-      setAssignedGroupIds(new Set(validIds))
-      setInitialAssignedGroupIds(new Set(validIds))
-    })
+          .map(String)
+          .filter((id: string) => userGroups.some((g) => String(g._id) === id))
+        setAssignedGroupIds(new Set(validIds))
+        setInitialAssignedGroupIds(new Set(validIds))
+        // setUserGroups2 // Update parent component state if needed
+        if (setUserGroups2) {
+          const assignedNames = userGroups
+            .filter((g) => validIds.includes(String(g._id)))
+            .map((g) => g.name)
+          setUserGroups2(assignedNames)
+        }
+      })
   }, [isCLicked, data._id, userGroups])
 
   // Memoize groupOptions and optionsData so they update only when userGroups changes
@@ -110,7 +121,7 @@ export function ApplicationDialog({ data, isCLicked, closePopup }: Props) {
         })
       )
     )
-
+    console.log(newIds, 'newIds')
     // Assign new groups (if any)
     if (newIds.length > 0) {
       await fetch(`http://localhost:3001/api/apps/${appId}/user-groups`, {
