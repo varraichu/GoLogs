@@ -3,23 +3,23 @@
     "level": "debug"
   },
   "mongodb": {
-    "uri": "mongodb://localhost:27017/myapp"
+    "uri": "mongodb+srv://GoLogsUser:RDaTT5lxj9g7mWXj@gologsdb.pvsqlbx.mongodb.net/gologs"
   },
   "jwt": {
-    "secret": ""
+    "secret": "7d1447a56e11ba40b2344cc432634b1f8e4263ecec45a96eabf94c1532f4c955"
   },
   "app": {
     "port": 3000
   },
   "debug": {
-    "pattern": ""
+    "pattern": "app:startup,app:db"
   },
   "google": {
     "client_id": "",
     "client_secret": "",
-    "redirect_uri": ""
+    "redirect_uri": "http://localhost:3001/api/oauth/google"
   },
   "FRONTEND_URL": "http://localhost:8000/",
   "env": "development",
-  "admin_group_name": ""
+  "admin_group_name": "Admin Group"
 }

@@ -48,24 +48,24 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
               from: 'applications',
               localField: 'app_id',
               foreignField: '_id',
-              as: 'applicationDetails'
-            }
+              as: 'applicationDetails',
+            },
           },
           // We only want active applications
           {
             $match: {
-              "applicationDetails.is_active": true
-            }
+              'applicationDetails.is_active': true,
+            },
           },
           // Reshape the document to only include the application name
           {
             $project: {
               _id: 0, // Exclude the id of the link table
-              name: { $arrayElemAt: ["$applicationDetails.name", 0] }
-            }
-          }
-        ]
-      }
+              name: { $arrayElemAt: ['$applicationDetails.name', 0] },
+            },
+          },
+        ],
+      },
     },
     // 4. Project the final shape of the output
     {
@@ -74,6 +74,7 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         name: 1,
         description: 1,
         created_at: 1,
+        is_active: 1,
         userCount: { $size: '$members' },
         // FIX: Use the result of our new lookup
         applicationCount: { $size: '$assignedApplications' },

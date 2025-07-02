@@ -9,16 +9,27 @@ import {
   CreateUserGroupInput,
   UpdateUserGroupInput,
   UserGroupParams,
+  userGroupStatusInput,
 } from '../schemas/userGroup.validator';
 import mongoose from 'mongoose';
 import config from 'config';
 import logger from '../config/logger';
+import UserGroupApplications from '../models/UserGroupApplications';
 
 export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   try {
     const { name, description, memberEmails } = req.body as CreateUserGroupInput;
 
-    const newGroup = await UserGroup.create({ name, description });
+    const existingGroup = await UserGroup.findOne({
+      name,
+      is_deleted: false,
+    });
+    if (existingGroup) {
+      res.status(400).json({ message: 'User group with the same name already exists' });
+      return;
+    }
+
+    const newGroup = await UserGroup.create({ name, description, is_active: true });
 
     const usersToAdd = await findOrCreateUsersByEmail(memberEmails);
 
@@ -151,11 +162,38 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
     group.is_deleted = true;
     await group.save();
     await UserGroupMember.updateMany({ group_id: groupId }, { is_active: false });
+    await UserGroupApplications.updateMany({ group_id: groupId }, { is_active: false });
 
     res.status(204).send();
     return;
   } catch (error) {
     logger.error('Error deleting user group:', error);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { groupId } = req.params as UserGroupParams;
+    const group = await UserGroup.findById(groupId);
+
+    const { is_active } = req.body as userGroupStatusInput;
+
+    if (!group || group.is_deleted) {
+      res.status(404).json({ message: 'User Group not found' });
+      return;
+    }
+
+    group.is_active = is_active;
+    await group.save();
+    await UserGroupApplications.updateMany({ group_id: groupId }, { is_active: is_active });
+    await UserGroupMember.updateMany({ group_id: groupId }, { is_active: is_active });
+
+    res.status(200).json({ message: 'User group successfully set to ', is_active });
+    return;
+  } catch (error) {
+    logger.error('Error toggling application status:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }

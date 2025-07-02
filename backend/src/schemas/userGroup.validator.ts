@@ -1,4 +1,4 @@
-import { object, string, z, array } from 'zod';
+import { object, string, z, boolean, array } from 'zod';
 import config from 'config';
 
 export const createUserGroupSchema = object({
@@ -45,6 +45,16 @@ export const updateUserGroupSchema = object({
   }),
 });
 
+export const userGroupStatusSchema = object({
+  ...params,
+  body: object({
+    is_active: boolean(),
+  }).refine((data) => Object.keys(data).length > 0, {
+    message: 'Body must include status of the usergroup.',
+  }),
+});
+
 export type CreateUserGroupInput = z.infer<typeof createUserGroupSchema>['body'];
 export type UpdateUserGroupInput = z.infer<typeof updateUserGroupSchema>['body'];
+export type userGroupStatusInput = z.infer<typeof userGroupStatusSchema>['body'];
 export type UserGroupParams = z.infer<typeof userGroupParamsSchema>['params'];
