@@ -18,7 +18,7 @@ import {
 
 const router = express.Router();
 
-// router.use(protect, isAdmin);
+router.use(protect, isAdmin);
 
 router.get('/', getAllUserGroups);
 router.post('/', validate(createUserGroupSchema), createUserGroup);

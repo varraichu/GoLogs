@@ -77,8 +77,20 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         is_active: 1,
         userCount: { $size: '$members' },
         // FIX: Use the result of our new lookup
-        applicationCount: { $size: '$assignedApplications' },
-        applicationNames: '$assignedApplications.name',
+        applicationCount: {
+          $cond: {
+            if: { $eq: ['$is_active', true] },
+            then: { $size: '$assignedApplications' },
+            else: 0,
+          },
+        },
+        applicationNames: {
+          $cond: {
+            if: { $eq: ['$is_active', true] },
+            then: '$assignedApplications.name',
+            else: [],
+          },
+        },
       },
     },
   ]);

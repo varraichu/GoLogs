@@ -5,10 +5,11 @@ export const createApplicationSchema = object({
   body: object({
     name: string({ required_error: 'Name is required' })
       .min(3, 'Name must be at least 3 characters long')
+      .max(10, 'Name must not exceed 10 characters')
       .regex(/^[A-Za-z0-9_]+$/, 'Only letters, numbers, and underscores are allowed'),
     description: string()
       .min(5, 'Description must be at least 5 characters long')
-      .max(50, 'Description must not exceed 100 characters'),
+      .max(50, 'Description must not exceed 50 characters'),
   }),
 });
 
@@ -27,11 +28,12 @@ export const updateApplicationSchema = object({
   body: object({
     name: string({ required_error: 'Name is required' })
       .min(3, 'Name must be at least 3 characters long')
+      .max(10, 'Name must not exceed 10 characters')
       .regex(/^[A-Za-z0-9_]+$/, 'Only letters, numbers, and underscores are allowed')
       .optional(),
     description: string()
       .min(5, 'Description must be at least 5 characters long')
-      .max(50, 'Description must not exceed 100 characters')
+      .max(50, 'Description must not exceed 50 characters')
       .optional(),
   }).refine((data) => Object.keys(data).length > 0, {
     message: 'Update body cannot be empty',

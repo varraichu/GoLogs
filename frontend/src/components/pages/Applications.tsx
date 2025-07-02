@@ -6,7 +6,7 @@ import 'ojs/ojdialog';
 import 'ojs/ojformlayout';
 import 'ojs/ojinputtext';
 import 'ojs/ojswitch';
-import { applicationFormSchema } from '../../validation/application';
+import { applicationFormSchema } from '../../validation/application.validator';
 
 interface Application {
     _id: string;
