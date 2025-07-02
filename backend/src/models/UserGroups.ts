@@ -5,6 +5,7 @@ export interface IUserGroup extends Document {
   description: string;
   created_at: Date;
   is_deleted: boolean;
+  is_active: boolean; // Optional field for future use
 }
 
 const userGroupSchema: Schema<IUserGroup> = new Schema({
@@ -12,6 +13,7 @@ const userGroupSchema: Schema<IUserGroup> = new Schema({
   description: { type: String, required: true, trim: true },
   created_at: { type: Date, default: Date.now },
   is_deleted: { type: Boolean, default: false },
+  is_active: { type: Boolean, default: true },
 });
 
 userGroupSchema.index(

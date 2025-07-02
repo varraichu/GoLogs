@@ -1,16 +1,14 @@
-import { object, string, z, array } from 'zod';
+import { object, string, z, boolean, array } from 'zod';
 import config from 'config';
 
 export const createUserGroupSchema = object({
   body: object({
     name: string({ required_error: 'Name is required' })
       .min(5, 'Name must be at least 5 characters long')
-      .max(20, 'Name must be at most 50 characters long'),
-
+      .max(20, 'Name must be at most 20 characters long'),
     description: string({ required_error: 'Description is required' })
       .min(10, 'Description must be at least 10 characters long')
       .max(100, 'Description must be at most 100 characters long'),
-
     memberEmails: array(string().email('Invalid email format in member list'))
       .min(1, 'At least one member email is required')
       .max(100, 'You can add up to 100 member emails only'),
@@ -34,11 +32,11 @@ export const updateUserGroupSchema = object({
   ...params,
   body: object({
     name: string()
-      .min(3, 'Name must be at least 3 characters long')
-      .max(20, 'Name must be at most 50 characters long')
+      .min(5, 'Name must be at least 5 characters long')
+      .max(20, 'Name must be at most 20 characters long')
       .optional(),
     description: string()
-      .min(5, 'Description must be at least 5 characters long')
+      .min(10, 'Description must be at least 10 characters long')
       .max(100, 'Description must be at most 100 characters long')
       .optional(),
     addMemberEmails: array(
@@ -52,6 +50,16 @@ export const updateUserGroupSchema = object({
   }),
 });
 
+export const userGroupStatusSchema = object({
+  ...params,
+  body: object({
+    is_active: boolean(),
+  }).refine((data) => Object.keys(data).length > 0, {
+    message: 'Body must include status of the usergroup.',
+  }),
+});
+
 export type CreateUserGroupInput = z.infer<typeof createUserGroupSchema>['body'];
 export type UpdateUserGroupInput = z.infer<typeof updateUserGroupSchema>['body'];
+export type userGroupStatusInput = z.infer<typeof userGroupStatusSchema>['body'];
 export type UserGroupParams = z.infer<typeof userGroupParamsSchema>['params'];

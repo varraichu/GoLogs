@@ -1,5 +1,84 @@
-
 services:
+  # Combined app and fluent-bit container
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./demo-app/postgres-init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - logging_net
+    ports:
+      - "5432:5432"
+
+  poller:
+    build:
+      context: .
+      dockerfile: log-collector/Dockerfile.combined
+    container_name: poller
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    command: ["node", "polling-script.js"]
+    volumes:
+      - app-logs:/demo-app/src/logs
+    depends_on:
+      - postgres
+    networks:
+      - logging_net
+  
+  app-fluent:
+    build:
+      context: .  # Build from root directory to access both demo-app and log-collector
+      dockerfile: log-collector/Dockerfile.combined
+    container_name: app-fluent
+    volumes:
+      # Persistent buffering for fluent-bit
+      - ./log-collector/fluent-bit-db:/fluent-bit/db
+      - ./log-collector/fluent-bit-storage:/tmp/flb-storage
+      - app-logs:/demo-app/src/logs
+    depends_on:
+      - redis
+      - postgres
+    env_file:
+      - .env
+    environment:
+    - POSTGRES_HOST
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_DB
+    - APP_NAME
+    restart: unless-stopped
+    networks:
+      - logging_net
+    ports:
+      - "2020:2020"
+
+  redis:
+    build: 
+      context: ./redis
+      dockerfile: Dockerfile
+    container_name: redis-server
+    ports:
+      - "6379:6379"  # Expose Redis on default port
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - logging_net
+  
+ 
 
   bridge:
     build:
@@ -7,16 +86,23 @@ services:
     container_name: bridge
     depends_on:
       - redis
+    env_file:
+      - .env
     environment:
-      REDIS_HOST: redis
+      - REDIS_HOST
     networks:
       - logging_net   
+      
   worker:
     build:
       context: ./log-parser
     container_name: worker
+    env_file:
+      - .env
     environment:
-      - REDIS_HOST=redis
+      - REDIS_HOST
+      - APP_NAME
+      - MONGODB_URI
     volumes:
       - ./logs:/app/logs   # To persist the processed_logs.log
     depends_on:
@@ -24,70 +110,39 @@ services:
     networks:
       - logging_net
 
+  # frontend:
+  #   build: ./frontend
+  #   container_name: frontend
+  #   ports:
+  #     - "5173:5173"               # Vite dev server default
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules         # Avoids overwriting container's node_modules
+  #   command: npm run dev -- --host
+  #   depends_on:
+  #     - bridge
+  #     - worker
+  #   networks:
+  #     - logging_net
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis-server
-    # ports:
-    #   - "6379:6379"
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-    networks:
-      - logging_net
+  # backend:
+  #   build: ./backend
+  #   container_name: backend
+  #   volumes:
+  #     - ./backend:/app
+  #     - /app/node_modules     # Prevents overwrite of container's node_modules
+  #   ports:
+  #     - "3000:3001"
+  #   # depends_on:
+  #   #   - worker
+  #   networks:
+  #     - logging_net
 
-  fluent-bit:
-    container_name: fluent-bit
-    tty: true
-    # network_mode: host
-    build:
-      context: ./log-collector
-    volumes:
-      # Mount your logs directory - adjust the path as needed
-      - ./logs:/logs
-      # If your logs are in a different location, use:
-      # - /path/to/your/logs:/logs
-      - ./log-collector/fluent-bit-db:/fluent-bit/db
-      #persistent buffering
-      - ./log-collector/fluent-bit-storage:/tmp/flb-storage
-      - ./log-collector/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
-    depends_on:
-      - redis
-    restart: unless-stopped
-    networks:
-      - logging_net
-      
-
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "5173:5173"               # Vite dev server default
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules         # Avoids overwriting container's node_modules
-    command: npm run dev -- --host
-    depends_on:
-      - bridge
-      - worker
-    networks:
-      - logging_net
-
-  backend:
-    build: ./backend
-    container_name: backend
-    volumes:
-      - ./backend:/app
-      - /app/node_modules     # Prevents overwrite of container's node_modules
-    ports:
-      - "4000:4000"
-    depends_on:
-      - worker
-    networks:
-      - logging_net
 
 volumes:
+  pgdata:  # Persistent volume for PostgreSQL data
   redis-data:
+  app-logs:  # Internal volume for app logs
 
 networks:
   logging_net:

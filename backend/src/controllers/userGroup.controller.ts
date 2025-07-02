@@ -4,22 +4,54 @@ import UserGroup from '../models/UserGroups';
 import UserGroupMember from '../models/UserGroupMembers';
 import UserGroupApplication from '../models/UserGroupApplications';
 import User from '../models/Users';
-import { findOrCreateUsersByEmail } from '../services/createUsers.services';
+import { findOrCreateUsersByEmail } from '../services/createUsers.service';
 import { getDetailedUserGroups } from '../services/userGroup.service';
 import {
   CreateUserGroupInput,
   UpdateUserGroupInput,
   UserGroupParams,
+  userGroupStatusInput,
 } from '../schemas/userGroup.validator';
 import mongoose from 'mongoose';
 import config from 'config';
 import logger from '../config/logger';
 
+import { Request } from 'express';
+import { assignApplicationsToGroup } from '../services/userGroup.service';
+import UserGroupApplications from '../models/UserGroupApplications';
+
+export const updateUserGroupAppAccess = async (req: Request, res: Response): Promise<void> => {
+  const { groupId } = req.params;
+  const { appIds } = req.body;
+
+  if (!Array.isArray(appIds)) {
+    res.status(400).json({ message: 'appIds must be an array' });
+    return;
+  }
+
+  try {
+    await assignApplicationsToGroup(groupId, appIds);
+    res.status(200).json({ message: 'Application access updated 🚀 ' });
+  } catch (error) {
+    console.error('Error updating app access:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   try {
     const { name, description, memberEmails } = req.body as CreateUserGroupInput;
 
-    const newGroup = await UserGroup.create({ name, description });
+    const existingGroup = await UserGroup.findOne({
+      name,
+      is_deleted: false,
+    });
+    if (existingGroup) {
+      res.status(400).json({ message: 'User group with the same name already exists' });
+      return;
+    }
+
+    const newGroup = await UserGroup.create({ name, description, is_active: true });
 
     const usersToAdd = await findOrCreateUsersByEmail(memberEmails);
 
@@ -180,6 +212,32 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
     return;
   } catch (error) {
     logger.error('Error deleting user group:', error);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { groupId } = req.params as UserGroupParams;
+    const group = await UserGroup.findById(groupId);
+
+    const { is_active } = req.body as userGroupStatusInput;
+
+    if (!group || group.is_deleted) {
+      res.status(404).json({ message: 'User Group not found' });
+      return;
+    }
+
+    group.is_active = is_active;
+    await group.save();
+    await UserGroupApplications.updateMany({ group_id: groupId }, { is_active: is_active });
+    await UserGroupMember.updateMany({ group_id: groupId }, { is_active: is_active });
+
+    res.status(200).json({ message: 'User group successfully set to ', is_active });
+    return;
+  } catch (error) {
+    logger.error('Error toggling application status:', error);
     res.status(500).json({ message: 'Server error' });
     return;
   }
