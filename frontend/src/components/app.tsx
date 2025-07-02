@@ -14,6 +14,7 @@ import Context = require('ojs/ojcontext')
 // import {SideBar} from './Navbar/SideBar'
 import { SideBar } from './Navbar/SideBar'
 import { set } from 'mongoose'
+import { Header } from './header'
 
 type Props = {
   appName?: string
@@ -25,9 +26,11 @@ export const App = registerCustomElement(
   ({ appName = 'GoLogs', userLogin = 'john.hancock@oracle.com' }: Props) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [isAdmin, setIsAdmin] = useState(false)
-    const [profileUrl, setProfileUrl] = useState("")
-    const [username, setUsername] = useState("")
+    const [profileUrl, setProfileUrl] = useState('')
+    const [username, setUsername] = useState('')
+    const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(true)
+    const [startOpened, setStartOpened] = useState(true)
     useEffect(() => {
       Context.getPageContext().getBusyContext().applicationBootstrapComplete()
 
@@ -42,6 +45,7 @@ export const App = registerCustomElement(
           setIsAdmin(payload.isAdmin)
           setProfileUrl(payload.picture_url)
           setUsername(payload.username)
+          setEmail(payload.email)
         } catch (err) {
           console.error('Invalid JWT token', err)
         }
@@ -69,23 +73,28 @@ export const App = registerCustomElement(
     if (!isAuthenticated) {
       return <Login />
     }
-
+    const setStartOpen = ()=>setStartOpened(!startOpened);
     return (
       <div>
-        <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={true}>
-          <SideBar setIsAuthenticated={setIsAuthenticated} isAdmin={isAdmin} pictureUrl={profileUrl} username={username} />
+        <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
+        <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={startOpened}>
+          <SideBar
+          // slot="start" 
+            setIsAuthenticated={setIsAuthenticated}
+            isAdmin={isAdmin}
+            pictureUrl={profileUrl}
+            username={username}
+          />
           <div>
-          <Router>
-            {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
-            <Dashboard path="/dashboard" />
-            <Settings path="/settings" />
-            <Applications path="/applications" />
-            <Logs path="/logs" />
-            {isAdmin && <UserGroups path="/usergroups" />}
-          </Router> 
-
+            <Router>
+              {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
+              <Dashboard path="/dashboard" />
+              <Settings path="/settings" />
+              <Applications path="/applications" />
+              <Logs path="/logs" />
+              {isAdmin && <UserGroups path="/usergroups" />}
+            </Router>
           </div>
-
         </oj-c-drawer-layout>
       </div>
     )
