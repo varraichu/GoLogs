@@ -12,8 +12,8 @@ interface LogEntry {
 
 // --- Configuration ---
 const LOG_FILE_PATH: string = path.join(__dirname, 'logs', 'app.log');
-const LOGS_PER_SECOND: number = 1000;
-const TOTAL_DURATION_SECONDS: number = 10;
+const LOGS_PER_SECOND: number = 10;
+const TOTAL_DURATION_SECONDS: number = 1;
 const LOG_TYPES: LogEntry['log_type'][] = ['info', 'warn', 'error', 'debug'];
 
 // --- Database Connection ---

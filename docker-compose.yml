@@ -132,9 +132,9 @@ services:
   #     - ./backend:/app
   #     - /app/node_modules     # Prevents overwrite of container's node_modules
   #   ports:
-  #     - "4000:4000"
-  #   depends_on:
-  #     - worker
+  #     - "3000:3001"
+  #   # depends_on:
+  #   #   - worker
   #   networks:
   #     - logging_net
 
