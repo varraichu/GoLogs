@@ -1,0 +1,9 @@
+# Use the official Redis image, not Redis Stack
+FROM redis:7.2
+
+COPY redis.conf /usr/local/etc/redis/redis.conf
+
+# Ensure permissions are correct
+USER redis
+
+CMD [ "redis-server", "/usr/local/etc/redis/redis.conf" ]

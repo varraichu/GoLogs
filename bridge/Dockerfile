@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 # Create app directory
-WORKDIR /app
+WORKDIR /bridge
 
 # Copy package files
 COPY package*.json ./
@@ -11,16 +11,7 @@ RUN npm install
 
 # Copy app files
 COPY . .
+RUN npx tsc
 
 # Default command overridden in docker-compose
 CMD ["node", "bridge.js"]
-# FROM node:20-alpine
-
-# WORKDIR /app
-
-# COPY package*.json ./
-# RUN npm install
-
-# COPY . .
-
-# CMD sh -c "node worker.js"
