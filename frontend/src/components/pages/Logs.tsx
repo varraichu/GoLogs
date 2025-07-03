@@ -105,12 +105,21 @@ const Logs = (props: { path?: string }) => {
   };
 
   return (
-    <div class="oj-flex oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column">
-      <div class="oj-sm-12 oj-sm-margin-bottom-2x">
+    <div
+      class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column"
+      style="height: 100%; min-height: 0; flex: 1 1 0;"
+    >
+      <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
 
-      <div class={"oj-sm-only-padding-10x-horizontal"}>
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         <oj-c-table
           data={dataProvider}
           columns={{
@@ -123,11 +132,11 @@ const Logs = (props: { path?: string }) => {
           layout="fixed"
           horizontal-grid-visible="enabled"
           vertical-grid-visible="enabled"
-          style="font-size: 0.85rem; width: 90%;"
+          style="font-size: 0.85rem; width: 100%; flex: 1 1 0; min-width: 0; min-height: 0;"
         ></oj-c-table>
       </div>
 
-      {/* Right-Aligned Pagination */}
+      {/* Pagination */}
       {pagination && (
         <div class="oj-flex oj-lg-padding-horizontal-10x oj-sm-justify-content-flex-end oj-sm-flex-direction-row">
           <oj-button onojAction={goToPrevPage} disabled={!pagination.hasPrevPage}>Previous</oj-button>
