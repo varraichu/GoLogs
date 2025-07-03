@@ -15,6 +15,7 @@ import Context = require('ojs/ojcontext')
 import { SideBar } from './Navbar/SideBar'
 import { Header } from './header'
 import UserApplications from "./pages/UserApplications";
+import { ToastProvider} from '../context/ToastContext'
 
 type Props = {
   appName?: string
@@ -75,6 +76,7 @@ export const App = registerCustomElement(
     }
     const setStartOpen = ()=>setStartOpened(!startOpened);
     return (
+      <ToastProvider>
       <div>
         <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
         <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={startOpened}>
@@ -101,6 +103,7 @@ export const App = registerCustomElement(
           </div>
         </oj-c-drawer-layout>
       </div>
+      </ToastProvider>
     )
   }
 )
