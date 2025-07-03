@@ -9,7 +9,7 @@ import "oj-c/form-layout";
 import 'oj-c/select-multiple';
 import LengthValidator = require('ojs/ojvalidator-length');
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
-
+import RegExpValidator = require("ojs/ojvalidator-regexp");
 interface Application {
     _id: string;
     name: string;
@@ -307,47 +307,47 @@ const Applications = (props: { path?: string }) => {
 
             <div class="oj-flex oj-sm-flex-wrap oj-sm-justify-content-center oj-sm-padding-4x ">
                 {applications.length > 0 ? (
-                (applications || []).map((application) => (
-                    <div
-                        class="oj-sm-12 oj-md-4 oj-flex-item oj-panel oj-panel-shadow-md oj-sm-margin-4x"
-                        style="border: 1px solid #ccc; border-radius: 12px; padding: 24px; min-width: 280px; max-width: 360px; display: flex; flex-direction: column; justify-content: space-between;"
-                    >
-                        <div>
-                            <div class="oj-typography-heading-sm oj-sm-margin-bottom-2x">{application.name}</div>
-                            <div class="oj-typography-body-sm oj-sm-margin-bottom-2x">{application.description}</div>
-                            <div class="oj-typography-body-xs oj-sm-margin-bottom">👤 Users: {application.groupCount}</div>
-                            <div class="oj-typography-body-xs oj-sm-margin-bottom"> Logs: {application.logCount}</div>
-                        </div>
-                        <div class="oj-sm-margin-4x">
-                            {(application.groupNames || []).map((group) => (
-                                <span class="oj-badge oj-badge-subtle oj-sm-margin-2x">{group}</span>
-                            ))}
-                        </div>
+                    (applications || []).map((application) => (
+                        <div
+                            class="oj-sm-12 oj-md-4 oj-flex-item oj-panel oj-panel-shadow-md oj-sm-margin-4x"
+                            style="border: 1px solid #ccc; border-radius: 12px; padding: 24px; min-width: 280px; max-width: 360px; display: flex; flex-direction: column; justify-content: space-between;"
+                        >
+                            <div>
+                                <div class="oj-typography-heading-sm oj-sm-margin-bottom-2x">{application.name}</div>
+                                <div class="oj-typography-body-sm oj-sm-margin-bottom-2x">{application.description}</div>
+                                <div class="oj-typography-body-xs oj-sm-margin-bottom">👤 Users: {application.groupCount}</div>
+                                <div class="oj-typography-body-xs oj-sm-margin-bottom"> Logs: {application.logCount}</div>
+                            </div>
+                            <div class="oj-sm-margin-4x">
+                                {(application.groupNames || []).map((group) => (
+                                    <span class="oj-badge oj-badge-subtle oj-sm-margin-2x">{group}</span>
+                                ))}
+                            </div>
 
-                        <div>
-                            <oj-switch
-                                value={application.is_active}
-                                onvalueChanged={(e) =>
-                                    handleToggleApplicationStatus(application._id, e.detail.value as boolean)
-                                }
-                                class="oj-sm-margin-end"
-                            />
+                            <div>
+                                <oj-switch
+                                    value={application.is_active}
+                                    onvalueChanged={(e) =>
+                                        handleToggleApplicationStatus(application._id, e.detail.value as boolean)
+                                    }
+                                    class="oj-sm-margin-end"
+                                />
+                            </div>
+                            <div class="oj-flex oj-sm-justify-content-space-between oj-sm-margin-top-2x">
+                                <oj-button display="icons" onojAction={() => openDialog(application)} class="oj-sm-margin-end">
+                                    Edit
+                                </oj-button>
+                                <oj-button display="icons" chroming="danger" onojAction={() => deleteGroup(application._id)}>
+                                    Delete
+                                </oj-button>
+                            </div>
                         </div>
-                        <div class="oj-flex oj-sm-justify-content-space-between oj-sm-margin-top-2x">
-                            <oj-button display="icons" onojAction={() => openDialog(application)} class="oj-sm-margin-end">
-                                Edit
-                            </oj-button>
-                            <oj-button display="icons" chroming="danger" onojAction={() => deleteGroup(application._id)}>
-                                Delete
-                            </oj-button>
-                        </div>
-                    </div>
-                ))) : (
+                    ))) : (
                     <div class="oj-typography-body-md oj-sm-margin-4x">
                         No applications found. Please add applications to assign to users.
                     </div>
                 )
-            }
+                }
             </div>
 
             {showDialog && (
@@ -360,7 +360,16 @@ const Applications = (props: { path?: string }) => {
                                 value={name}
                                 ref={nameRef}
                                 onvalueChanged={(e) => setName(e.detail.value)}
-                                validators={[new LengthValidator({ min: 5, max: 20 })]}
+                                required
+                                validators={[
+                                    new LengthValidator({ min: 5, max: 20 }),
+                                    new RegExpValidator({
+                                        pattern: '^[a-zA-Z0-9_]+$',
+                                        hint: 'Only letters, numbers, and underscores (_) are allowed.',
+                                        messageSummary: 'Invalid name format.',
+                                        messageDetail: 'Use only letters, numbers, and underscores (_).'
+                                    })
+                                ]}
                             >
                             </oj-c-input-text>
                             <oj-c-input-text
@@ -368,7 +377,15 @@ const Applications = (props: { path?: string }) => {
                                 value={description}
                                 ref={descRef}
                                 onvalueChanged={(e) => setDescription(e.detail.value)}
-                                validators={[new LengthValidator({ min: 5, max: 50 })]}
+                                required
+                                validators={[new LengthValidator({ min: 10, max: 100 }),
+                                new RegExpValidator({
+                                    pattern: '^[a-zA-Z0-9 _-]+$',
+                                    hint: 'Only letters, numbers, spaces, hyphens(-), and underscores (_) are allowed.',
+                                    messageSummary: 'Invalid name format.',
+                                    messageDetail: 'Use only letters, numbers, spaces, hyphens(-), and underscores (_).'
+                                })
+                                ]}
                             >
 
                             </oj-c-input-text>
