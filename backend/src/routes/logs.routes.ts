@@ -17,7 +17,7 @@ router.patch(
   updateLogTTL
 );
 
-router.get('/get/ttl', protect, isAdmin, getLogTTL);
+router.get('/get/ttl', getLogTTL);
 // router.patch(
 //   '/config/ttl',
 //   validate(updateLogTTLSchema), // Using the new schema

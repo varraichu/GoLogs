@@ -54,7 +54,7 @@ export function SideBar({
           <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[0]}</div>
           <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[1]}</div>
           <div class="oj-typography-subbody-sm oj-text-color-secondary">
-            {isAdmin ? 'Admin' : 'Client'}
+            {isAdmin ? 'Admin' : 'User'}
           </div>
         </div>
       </div>
@@ -87,7 +87,7 @@ export function SideBar({
             </a>
           </li>
           <li id="settings">
-            <a href={isAdmin?"/admin-settings":"/user-applications"}>
+            <a href="/settings">
               <span class="oj-navigationlist-item-icon oj-ux-ico-settings"></span>
               Settings
             </a>

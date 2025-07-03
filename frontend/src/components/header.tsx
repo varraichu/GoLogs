@@ -19,11 +19,11 @@ type Props = {
   setStartOpen: () => void
 };
 
-export function Header({ appName, userLogin ,setIsAuthenticated , setStartOpen}: Props) {
+export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen }: Props) {
   const mediaQueryRef = useRef<MediaQueryList>(window.matchMedia(ResponsiveUtils.getFrameworkQuery("sm-only")!));
-  
+
   const [isSmallWidth, setIsSmallWidth] = useState(mediaQueryRef.current.matches);
-  
+
   useEffect(() => {
     mediaQueryRef.current.addEventListener("change", handleMediaQueryChange);
     return (() => mediaQueryRef.current.removeEventListener("change", handleMediaQueryChange));
@@ -48,18 +48,22 @@ export function Header({ appName, userLogin ,setIsAuthenticated , setStartOpen}:
   }
 
   return (
-    <header role="banner" class="oj-web-applayout-header" style={"background-color:rgb(151, 90, 163);"}>
-      <div class="oj-web-applayout-max-width oj-flex-bar oj-sm-align-items-center" style={"background-color:rgb(0, 165, 206);"}>
-        <div class="oj-flex-bar-middle oj-sm-align-items-baseline" style={"background-color: #8ace00;"}>
-           <oj-c-button
-              id="buttonOpener"
-              display="icons"
-              onojAction={setStartOpen}
-              label="Start"
-              chroming="borderless"
-            >
-              <span slot="startIcon" class="oj-ux-ico-menu "></span>
-            </oj-c-button>
+    <header role="banner" class="oj-web-applayout-header" style="padding: 0; margin: 0;">
+      <div class="oj-web-applayout-max-width oj-flex-bar oj-sm-align-items-center" style="padding-left: 0; margin-left: 0;">
+        <div class="oj-flex-bar-middle oj-sm-align-items-baseline oj-sm-justify-content-start" style="padding-left: 0; margin-left: 0;">
+          <oj-c-button
+            id="buttonOpener"
+            display="icons"
+            onojAction={setStartOpen}
+            label="Start"
+            chroming="borderless"
+          >
+            <span slot="startIcon" class="oj-ux-ico-menu "></span>
+          </oj-c-button>
+
+          <h1 class="oj-typography-heading-md oj-text-color-primary">
+            <span class="oj-text-color-danger">Go</span>Logs
+          </h1>
           {/* <span
             role="img"
             class="oj-icon demo-oracle-icon"
@@ -70,26 +74,22 @@ export function Header({ appName, userLogin ,setIsAuthenticated , setStartOpen}:
             title="Application Name">
             {appName}
           </h1> */}
-  
-          <h1 class="oj-typography-heading-md oj-text-color-primary">
-            <span class="oj-text-color-danger">Go</span>Logs
-          </h1>
         </div>
         <div class="oj-flex-bar-end">
-        <oj-toolbar>
-          <oj-menu-button id="userMenu" display={getDisplayType()} chroming="borderless">
-            <span>{userLogin}</span>
-            <span slot="endIcon" class={getEndIconClass()}></span>
-            <oj-menu id="menu1" slot="menu">
-              {/* <oj-option id="pref" value="pref">Preferences</oj-option>
+          <oj-toolbar>
+            <oj-menu-button id="userMenu" display={getDisplayType()} chroming="borderless">
+              <span>{userLogin}</span>
+              <span slot="endIcon" class={getEndIconClass()}></span>
+              <oj-menu id="menu1" slot="menu">
+                {/* <oj-option id="pref" value="pref">Preferences</oj-option>
               <oj-option id="help" value="help">Help</oj-option>
               <oj-option id="about" value="about">About</oj-option> */}
-              <oj-option id="out" value="out" onClick={handleSignOut}>Sign Out</oj-option>
-            </oj-menu>
-          </oj-menu-button>
-        </oj-toolbar>
+                <oj-option id="out" value="out" onClick={handleSignOut}>Sign Out</oj-option>
+              </oj-menu>
+            </oj-menu-button>
+          </oj-toolbar>
         </div>
       </div>
     </header>
-  );  
+  );
 }

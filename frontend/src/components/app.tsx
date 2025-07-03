@@ -5,7 +5,7 @@ import { route, Router } from 'preact-router'
 import 'oj-c/drawer-layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import AdminSettings from './pages/AdminSettings'
+import Settings from './pages/Settings'
 import Applications from './pages/Applications'
 import Logs from './pages/Logs'
 import UserGroups from './pages/UserGroups'
@@ -91,7 +91,7 @@ export const App = registerCustomElement(
             <Router>
               {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
               <Dashboard path="/dashboard" />
-              <AdminSettings path="/admin-settings" />
+              <Settings path="/settings" />
               {isAdmin ? (
             <Applications path="/applications" />
           ) : (

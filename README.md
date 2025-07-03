@@ -1,117 +1,138 @@
+Log Collector Microapplication
+A central service for collecting, processing, and viewing logs from multiple applications. This microservice architecture is designed to handle logs from various sources, process them efficiently, and provide a user-friendly web interface for monitoring and management.
 
-# GoLogs
+Features
+Centralized Logging: Aggregate logs from multiple applications into a single, searchable location.
 
-A log collection microservice system built with Node.js, Redis, Fluent Bit, and a full-stack (frontend + backend) application.
+Multiple Log Sources: Collect logs from files, stdin, and PostgreSQL databases.
 
----
+Scalable Processing: Utilizes Redis and BullMQ for robust and scalable log processing queues.
 
-## 📁 Project Structure
+Persistent Storage: Stores processed logs in a MongoDB database for long-term retention and analysis.
 
-```
+Web-Based UI: A user-friendly frontend built with Oracle JET for viewing logs and managing applications.
 
-.
-├── backend/           # Express or other backend API
-├── frontend/          # Vite + Vue/React frontend
-├── log-collector/     # Bridge service: moves logs from Redis list to BullMQ
-├── log-parser/        # Worker service: processes logs from BullMQ
-├── logs/              # Shared log volume (e.g., processed logs)
-├── redis/             # Redis configs or data (if any)
-├── docker-compose.yml
-└── README.md
+Role-Based Access Control: Differentiates between admin and user roles, with admins having the ability to manage applications, users, and groups.
 
-````
+Containerized Deployment: The entire application stack can be easily spun up using Docker Compose.
 
----
+System Architecture
+The application follows a microservice architecture. Here's a high-level overview of the log flow:
 
-## 🚀 Running the Full System with Docker Compose
+Log Collection (fluent-bit): The log-collector service, running a custom fluent-bit script, gathers logs from configured sources (files, stdin, Postgres).
 
-### 1. Prerequisites
+Queuing (Redis): Logs are pushed to a Redis queue.
 
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/)
+Bridging (Node.js Script): The bridge service runs a script that pulls logs in bulk from Redis and pushes them to a BullMQ instance.
 
-### 2. Start All Services
+Bulk Processing (BullMQ): The log-parser service runs BullMQ jobs to process the logs in bulk.
 
-```bash
-docker compose up --build -d
-````
+Storage (MongoDB): The processed logs are then stored in a MongoDB database.
 
-*(Use `docker-compose` instead of `docker compose` based on your system.)*
+Frontend & Backend: The frontend (Oracle JET) and backend (Node.js/Express) services provide the user interface and API for interacting with the logs and managing the system.
 
-This will start the following services:
+[App 1] --\
+[App 2] ----> [fluent-bit] -> [Redis] -> [Bridge] -> [BullMQ] -> [MongoDB]
+[App 3] --/                                                    ^
+                                                               |
+                                                          [Backend API]
+                                                               |
+                                                          [Frontend UI]
 
-* `redis` – In-memory data store used for log buffering and queues
-* `fluent-bit` – Reads logs from `./logs/` and pushes them into Redis
-* `bridge` – Atomic log mover from Redis list to BullMQ
-* `worker` – Consumes logs from BullMQ and writes to `logs/processed_logs.log`
-* `backend` – Exposes API on port `4000`
-* `frontend` – Vite dev server on port `5173`
+Folder Structure
+Here is a breakdown of the project's directory structure:
 
-> Logs are written and shared via the `./logs/` volume.
+/root
+├── backend/         # Node.js/Express backend providing secure API endpoints
+├── demo-app/        # A sample application to generate logs for testing
+├── bridge/          # Script to move logs from Redis to BullMQ
+├── log-collector/   # Custom fluent-bit configuration and scripts
+├── frontend/        # Oracle JET frontend for dashboards and log viewing
+├── log-parser/      # BullMQ worker to process and store logs in MongoDB
+├── redis/           # Configuration for Redis with AOF persistence
+├── docker-compose.yml # Main Docker Compose file to orchestrate all services
+├── .env             # Root environment variables
+├── README.md        # This file
+├── .gitignore       # Git ignore file
+└── .github/
+    └── workflows/   # CI/CD workflows
 
-### 3. Stopping All Services
+Installation and Setup
+Follow these steps to get the application up and running on your local machine.
 
-```bash
-docker compose down
-```
+Prerequisites:
 
-*(Use `docker-compose` instead of `docker compose` based on your system.)*
+Docker and Docker Compose
 
----
+Git
 
-## 🧪 Development Notes
+Steps:
 
-* Frontend auto-reloads via `npm run dev -- --host` inside the container.
-* Backend mounts the `./backend` folder for live code updates.
-* Processed logs are written to `logs/processed_logs.log`.
-* Redis is exposed locally on port `6379`.
+Clone the Repository:
 
----
+git clone <your-repository-url>
+cd <repository-folder>
 
-## 🔍 Useful Commands
+Configure Root Environment Variables:
+Create a .env file in the root directory of the project. You will need to add your MongoDB connection string here.
 
-### View Logs for a Specific Service
+# .env
+MONGODB_URI=your_mongodb_connection_string
 
-```bash
-docker compose logs -f <service-name>
-```
+Configure Backend Environment Variables:
+Navigate to the backend directory and create another .env file.
 
-### Rebuild a Single Service
+cd backend
+```env
+# backend/.env
+# Add any backend-specific environment variables here
+# For example:
+PORT=3000
+JWT_SECRET=your_jwt_secret
 
-```bash
-docker compose build <service-name>
-docker compose up -d <service-name>
-```
+Set Up Service Account Credentials:
+Inside the backend directory, create a new folder named credentials.
 
-**Available service names:**
+mkdir credentials
 
-```
-bridge
-worker
-redis
-fluent-bit
-frontend
-backend
-```
+Place your Google Service Account key file inside this folder and name it service-account-key.json. This is required for certain backend functions.
 
----
+Configure the Demo Application (Optional):
+If you want to adjust the log generation behavior of the demo application, you can edit the index.ts file in the demo-app directory.
 
-## 🛠️ Future Options
+// demo-app/index.ts
+// Modify these values to change log output
+const LOGS_PER_INTERVAL = 10;
+const INTERVAL_SECONDS = 5;
 
-* MongoDB integration (commented out in compose)
-* Custom Fluent Bit configurations (already stubbed)
-* Persistent Redis volumes already defined (`redis-data`)
-* Consider using a `.env` file for configurable ports and secrets
+Usage
+Once the setup is complete, you can start all the services using Docker Compose.
 
----
+Start the Application:
+From the root directory of the project, run:
 
-## 👥 Contributors
+docker-compose up -d
 
-Ensure collaborators have Docker installed and simply run:
+This command will build the images (if they don't exist) and start all the containers in detached mode.
 
-```bash
-git clone <your-repo-url>
-cd <project-folder>
-docker compose up --build
-```
+Access the Frontend:
+Open your web browser and navigate to:
+http://localhost:8000
 
+You should see the application's login page or dashboard.
+
+Monitoring
+Live Logs: Once the application is running, you will see logs flowing through the system and appearing on the frontend dashboard.
+
+Container Logs: To view the logs for a specific service, you can use the docker logs command. For example, to view the logs of the backend container:
+
+docker logs -f <backend_container_name>
+
+You can find the container names by running docker ps.
+
+Admin Information
+Admin Access: Only users with an email address ending in @gosaas.io are granted administrative privileges.
+
+Admin Functions: Admins can create and manage applications, assign applications to users and user groups, and remove them through the web interface.
+
+This README was generated with assistance from an AI model.

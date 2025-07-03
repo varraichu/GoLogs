@@ -195,6 +195,8 @@ services:
     #   - worker
     networks:
       - logging_net
+    dns:
+      - 8.8.8.8
 
 
 volumes:
