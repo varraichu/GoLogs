@@ -3,7 +3,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const POLL_INTERVAL_MS = 5000; // Poll every 5 seconds
-const LOG_FILE_PATH = path.join(__dirname, 'logs', 'polled-logs.log');
+const LOG_FILE_PATH = '/demo-app/src/shared-logs/polled-logs.log';
+const logDir = path.dirname(LOG_FILE_PATH);
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
 
 const db = new Pool({
   host: process.env.POSTGRES_HOST || 'localhost',
@@ -21,7 +25,8 @@ interface LogRow {
 }
 
 // Persist the last read id in a file
-const LAST_ID_FILE = path.join(__dirname, 'logs', 'last-log-id.txt');
+const LAST_ID_FILE = '/demo-app/src/shared-logs/last-log-id.txt';
+
 let lastReadId = 0;
 
 // Load last read id from file (if exists)

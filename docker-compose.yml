@@ -32,7 +32,7 @@ services:
       - POSTGRES_DB
     command: ["node", "polling-script.js"]
     volumes:
-      - app-logs:/demo-app/src/logs
+      - poller-logs:/demo-app/src/shared-logs
     depends_on:
       - postgres
     networks:
@@ -45,9 +45,10 @@ services:
     container_name: app-fluent
     volumes:
       # Persistent buffering for fluent-bit
-      - ./log-collector/fluent-bit-db:/fluent-bit/db
-      - ./log-collector/fluent-bit-storage:/tmp/flb-storage
-      - app-logs:/demo-app/src/logs
+      - fluent-db-app1:/fluent-bit/db
+      - flb-storage1:/tmp/flb-storage
+      - app1-logs:/demo-app/src/logs
+      - poller-logs:/demo-app/src/shared-logs
     depends_on:
       - redis
       - postgres
@@ -58,12 +59,67 @@ services:
     - POSTGRES_USER
     - POSTGRES_PASSWORD
     - POSTGRES_DB
-    - APP_NAME
+    - APP_NAME=${APP1_NAME}
     restart: unless-stopped
     networks:
       - logging_net
     ports:
       - "2020:2020"
+
+  app-fluent2:
+    build:
+      context: .  # Build from root directory to access both demo-app and log-collector
+      dockerfile: log-collector/Dockerfile.combined
+    container_name: app-fluent2
+    volumes:
+      # Persistent buffering for fluent-bit
+      - fluent-db-app2:/fluent-bit/db
+      - flb-storage2:/tmp/flb-storage
+      - app2-logs:/demo-app/src/logs
+      - poller-logs:/demo-app/src/shared-logs
+    depends_on:
+      - redis
+      - postgres
+    env_file:
+      - .env
+    environment:
+    - POSTGRES_HOST
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_DB
+    - APP_NAME=${APP2_NAME}
+    restart: unless-stopped
+    networks:
+      - logging_net
+    ports:
+      - "2022:2020"
+  app-fluent3:
+    build:
+      context: .  # Build from root directory to access both demo-app and log-collector
+      dockerfile: log-collector/Dockerfile.combined
+    container_name: app-fluent3
+    volumes:
+      # Persistent buffering for fluent-bit
+      - fluent-db-app3:/fluent-bit/db
+      - flb-storage3:/tmp/flb-storage
+      - app3-logs:/demo-app/src/logs
+      - poller-logs:/demo-app/src/shared-logs
+    depends_on:
+      - redis
+      - postgres
+    env_file:
+      - .env
+    environment:
+    - POSTGRES_HOST
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_DB
+    - APP_NAME=${APP3_NAME}
+    restart: unless-stopped
+    networks:
+      - logging_net
+    ports:
+      - "2025:2020"
 
   redis:
     build: 
@@ -110,39 +166,51 @@ services:
     networks:
       - logging_net
 
-  # frontend:
-  #   build: ./frontend
-  #   container_name: frontend
-  #   ports:
-  #     - "5173:5173"               # Vite dev server default
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules         # Avoids overwriting container's node_modules
-  #   command: npm run dev -- --host
-  #   depends_on:
-  #     - bridge
-  #     - worker
-  #   networks:
-  #     - logging_net
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "8000:8000"               # Vite dev server default
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules         # Avoids overwriting container's node_modules
+    # command: npm run dev -- --host
+    depends_on:
+      - backend
+    #   - worker
+    networks:
+      - logging_net
 
-  # backend:
-  #   build: ./backend
-  #   container_name: backend
-  #   volumes:
-  #     - ./backend:/app
-  #     - /app/node_modules     # Prevents overwrite of container's node_modules
-  #   ports:
-  #     - "3000:3001"
-  #   # depends_on:
-  #   #   - worker
-  #   networks:
-  #     - logging_net
+  backend:
+    build: ./backend
+    container_name: backend
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules     # Prevents overwrite of container's node_modules
+    ports:
+      - "3001:3001"
+    # depends_on:
+    #   - worker
+    networks:
+      - logging_net
 
 
 volumes:
   pgdata:  # Persistent volume for PostgreSQL data
   redis-data:
   app-logs:  # Internal volume for app logs
+  fluent-db-app1:
+  fluent-db-app2:
+  fluent-db-app3:
+  app1-logs:        
+  app2-logs:        
+  app3-logs:        
+  flb-storage1:     
+  flb-storage2:     
+  flb-storage3:   
+  poller-logs:
 
 networks:
   logging_net:

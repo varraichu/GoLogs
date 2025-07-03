@@ -11,7 +11,7 @@ const redisConnection = new IORedis({
 
 const redisKey = process.env.REDIS_KEY || 'logs';
 const bullQueueName = process.env.BULL_QUEUE_NAME || 'logQueue';
-const batchSize = 100;
+const batchSize = 500;
 const pollInterval = 5000;
 
 //Initialize the BullMQ queue
