@@ -30,7 +30,6 @@ app.use('/api/directory', directoryRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/logs', logRoutes);
 
-
 app.use(errorHandler);
 
 export default app;

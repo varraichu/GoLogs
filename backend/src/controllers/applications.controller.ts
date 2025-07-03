@@ -2,13 +2,13 @@ import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import Applications from '../models/Applications';
 import UserGroupApplications from '../models/UserGroupApplications';
-// import { findOrCreateUsersByEmail } from '../services/createUsers.services';
-// import { getDetailedUserGroups } from '../services/userGroup.service';
+import UserGroupMembers from '../models/UserGroupMembers';
 import {
   CreateApplicationInput,
   UpdateApplicationInput,
   ApplicationParams,
   applicationStatusInput,
+  UserIdParams,
 } from '../schemas/application.validator';
 import mongoose from 'mongoose';
 import config from 'config';
@@ -65,6 +65,45 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
     logger.error('Error fetching all user groups:', error);
     res.status(500).json({ message: 'Server error' });
     return;
+  }
+};
+
+export const getUserApplications = async (req: IAuthRequest, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params as UserIdParams;
+    console.log('Fetching applications for user ID:', userId);
+    const userGroups = await UserGroupMembers.find({
+      user_id: userId,
+      is_active: true,
+    }).select('group_id');
+
+    const groupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
+
+    if (groupIds.length === 0) {
+      res.status(404).json({ message: 'No user groups found', applications: [] });
+      return;
+    }
+
+    const userGroupApps = await UserGroupApplications.find({
+      group_id: { $in: groupIds },
+      is_active: true,
+    }).select('app_id');
+
+    const appIds = userGroupApps.map((g) => g.app_id as mongoose.Types.ObjectId);
+
+    if (appIds.length === 0) {
+      res.status(404).json({ message: 'No applications found', applications: [] });
+      return;
+    }
+
+    const detailedApps = await getDetailedApplications(appIds);
+
+    res
+      .status(200)
+      .json({ message: 'Applications fetched successfully', applications: detailedApps });
+  } catch (error) {
+    logger.error('Error fetching all user groups:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

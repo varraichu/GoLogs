@@ -224,7 +224,7 @@ export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
 
     const { is_active } = req.body as userGroupStatusInput;
 
-    if (!group || group.is_deleted) {
+    if (!group || group.is_deleted || group.name === config.get('admin_group_name')) {
       res.status(404).json({ message: 'User Group not found' });
       return;
     }

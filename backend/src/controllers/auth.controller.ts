@@ -68,11 +68,12 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
         isAdmin = true;
       }
     }
-
     const jwtPayload = {
       _id: user._id,
       email: user.email,
+      username: user.username,
       isAdmin,
+      picture_url: user.picture_url,
     };
     const token = generateToken(jwtPayload);
 

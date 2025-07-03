@@ -13,12 +13,14 @@ const Nav = ({ isAdmin, setIsAuthenticated }: NavProps) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", path: "/dashboard" },
     { id: "settings", label: "Settings", path: "/settings" },
-    { id: "applications", label: "Applications", path: "/applications" },
+    { id: "userApplications", label: "Applications", path: "/user-applications" },
     { id: "logs", label: "Logs", path: "/logs" },
   ];
-
+  
   if (isAdmin) {
-    navItems.push({ id: "usergroups", label: "User Groups", path: "/usergroups" });
+    navItems.push({ id: "usergroups", label: "User Groups", path: "/usergroups" },
+      { id: "applications", label: "Applications", path: "/applications" }
+    );
   }
 
   const handleLogout = () => {

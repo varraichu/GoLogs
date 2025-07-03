@@ -23,6 +23,10 @@ export const applicationParamsSchema = object({
   ...params,
 });
 
+export const userIdParamsSchema = object({
+  userId: string({ required_error: 'User ID is required' }),
+});
+
 export const updateApplicationSchema = object({
   ...params,
   body: object({
@@ -53,3 +57,4 @@ export type CreateApplicationInput = z.infer<typeof createApplicationSchema>['bo
 export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>['body'];
 export type applicationStatusInput = z.infer<typeof applicationStatusSchema>['body'];
 export type ApplicationParams = z.infer<typeof applicationParamsSchema>['params'];
+export type UserIdParams = z.infer<typeof userIdParamsSchema>;
