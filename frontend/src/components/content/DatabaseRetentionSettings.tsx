@@ -1,18 +1,65 @@
 import { h } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
+import 'ojs/ojbutton';
+import 'ojs/ojselectsingle';
 
 const RETENTION_OPTIONS = [
-  { value: '7', label: '7 days' },
-  { value: '14', label: '14 days' },
-  { value: '30', label: '30 days' }
+  { value: 7, label: '7 days' },
+  { value: 14, label: '14 days' },
+  { value: 30, label: '30 days' }
 ];
 
 const DatabaseRetentionSettings = () => {
-  const [retention, setRetention] = useState<string>('30');
+  const [retention, setRetention] = useState<number>(30);
 
-  const handleSave = () => {
+  useEffect(()=>{
+    async function fetchRetention(){
+      const token = localStorage.getItem('jwt');
+      try {
+        const response = await fetch('http://localhost:3001/api/logs/get/ttl', {
+          method: "GET",
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch retention. Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setRetention(data.ttlInDays || 30);
+      } catch (error) {
+        console.error('Error fetching retention:', error);
+      }
+    }
+    fetchRetention();
+  }, [])
+
+  const handleSave = async () => {
     console.log('Saving retention:', retention);
-    // TODO: persist retention value to backend
+    const token = localStorage.getItem('jwt');
+    const body = JSON.stringify({ newTTLInDays: retention });
+
+    try {
+      const response = await fetch('http://localhost:3001/api/logs/config/ttl', {
+        method: "PATCH",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update retention. Status: ${response.status}`);
+      }
+
+      console.log('Retention updated successfully');
+    } catch (error) {
+      console.error('Error saving retention:', error);
+    }
   };
 
   return (
@@ -21,10 +68,11 @@ const DatabaseRetentionSettings = () => {
         <label htmlFor="logRetentionPeriod" style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
           Log Retention Period
         </label>
+
         <select
           id="logRetentionPeriod"
           value={retention}
-          onChange={(e) => setRetention((e.target as HTMLSelectElement).value)}
+          onChange={(e) => setRetention(Number((e.target as HTMLSelectElement).value))}
           style={{
             width: '100%',
             padding: '10px',
@@ -39,6 +87,7 @@ const DatabaseRetentionSettings = () => {
             </option>
           ))}
         </select>
+
         <small style={{ display: 'block', marginTop: '6px', color: '#555' }}>
           How long to keep logs in the database
         </small>
@@ -48,12 +97,6 @@ const DatabaseRetentionSettings = () => {
         <oj-button
           chroming="callToAction"
           onojAction={handleSave}
-          style={{
-            padding: '6px 16px',
-            fontSize: '14px',
-            borderRadius: '6px',
-            fontWeight: 'bold'
-          }}
         >
           Save Configuration
         </oj-button>

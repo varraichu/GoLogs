@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import DatabaseRetentionSettings from '../content/DatabaseRetentionSettings';
 
-const Settings = (props: { path?: string }) => {
+const AdminSettings = (props: { path?: string }) => {
   return (
     <div class="oj-sm-padding-4x">
       <h1 class="oj-typography-heading-lg">System Configuration</h1>
@@ -14,4 +14,4 @@ const Settings = (props: { path?: string }) => {
   );
 };
 
-export default Settings;
+export default AdminSettings;
