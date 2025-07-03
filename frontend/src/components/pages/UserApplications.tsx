@@ -21,8 +21,6 @@ interface Application {
     logCount: number;
 }
 
-
-
 const UserApplications = (props: { path?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [userId, setUserId] = useState("");

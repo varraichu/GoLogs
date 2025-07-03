@@ -1,5 +1,5 @@
 import { h } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState, useMemo, useRef} from "preact/hooks";
 import 'ojs/ojbutton';
 import 'ojs/ojdialog';
 import 'oj-c/form-layout';
@@ -11,6 +11,8 @@ import 'ojs/ojswitch';
 
 import LengthValidator = require('ojs/ojvalidator-length');
 import RegExpValidator = require("ojs/ojvalidator-regexp");
+import ArrayDataProvider = require('ojs/ojarraydataprovider');
+import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider');
 
 const MAX_VISIBLE_APPS = 5;
 
@@ -70,6 +72,12 @@ const UserGroups = (props: { path?: string }) => {
 
   const [showUsersDialog, setShowUsersDialog] = useState(false);
 
+  const nameRef = useRef<any>(null);
+  const descRef = useRef<any>(null);
+  const [assignedAppIds, setAssignedAppIds] = useState<Set<string>>(new Set());
+  const [initialAssignedAppIds, setInitialAssignedAppIds] = useState<Set<string>>(new Set());
+  const [dataProvider, setDataProvider] = useState<any>(null);
+
   useEffect(() => {
     fetchGroups();
   }, []);
@@ -103,24 +111,100 @@ const UserGroups = (props: { path?: string }) => {
     }
   };
 
-  const openDialog = (group?: UserGroup) => {
+const openDialog = async (group?: UserGroup) => {
+  try {
     setErrors({});
+    
+    // Fetch available apps
+    const token = localStorage.getItem('jwt');
+    const appsResponse = await fetch("http://localhost:3001/api/applications", {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    if (!appsResponse.ok) throw new Error("Failed to fetch applications");
+    const { applications } = await appsResponse.json();
+    setAvailableApps(applications);
+
     if (group) {
       setEditingGroup(group);
       setName(group.name || "");
       setDescription(group.description || "");
+      
+      // Map application names to IDs
+      const matchedIds = applications
+        .filter((app: Application) => group.applicationNames?.some(name => 
+          name.trim().toLowerCase() === app.name.trim().toLowerCase()
+        ))
+        .map((app: Application) => app._id);
+      
+      setAssignedAppIds(new Set(matchedIds));
     } else {
       setEditingGroup(null);
       setName("");
       setDescription("");
+      setAssignedAppIds(new Set());
     }
-    setAddEmailInput("");
-    setAddMemberEmailsList([]);
-    setRemoveEmailInput("");
-    setRemoveMemberEmailsList([]);
-    setDirectoryResults([]);
+    
     setShowDialog(true);
-  };
+  } catch (error) {
+    console.error('Error opening dialog:', error);
+    setErrorMessage(typeof error === "object" && error !== null && "message" in error ? String((error as { message?: string }).message) : "An error occurred");
+    setShowErrorDialog(true);
+  }
+};
+
+const fetchAvailableApps = async () => {
+  const token = localStorage.getItem('jwt');
+  const res = await fetch("http://localhost:3001/api/applications", {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await res.json();
+  setAvailableApps(data.applications || []);
+  return data; // Return the data so callers can access .applications
+};
+
+const fetchAssignedApps = async (groupId: string) => {
+  const token = localStorage.getItem('jwt');
+  
+  try {
+    // 1. First fetch ALL applications
+    const appsResponse = await fetch("http://localhost:3001/api/applications", {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!appsResponse.ok) throw new Error("Failed to fetch applications");
+    const { applications: allApps = [] } = await appsResponse.json();
+
+    // 2. Fetch the specific group to get its applicationNames
+    const groupResponse = await fetch(`http://localhost:3001/api/userGroup/${groupId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!groupResponse.ok) throw new Error("Failed to fetch group details");
+    const group = await groupResponse.json();
+
+    // 3. Match applications by name (client-side filtering)
+    const assignedIds = allApps
+      .filter((app: Application) => 
+        group.applicationNames?.some(
+          (name: string) => name.trim().toLowerCase() === app.name.trim().toLowerCase()
+        )
+      )
+      .map((app: Application) => app._id);
+
+    setAssignedAppIds(new Set(assignedIds));
+    setInitialAssignedAppIds(new Set(assignedIds));
+    
+  } catch (error) {
+    console.error("Error fetching assigned apps:", error);
+    // Fallback to empty set
+    setAssignedAppIds(new Set());
+    setInitialAssignedAppIds(new Set());
+  }
+};
 
   const searchDirectory = async (query: string) => {
     const token = localStorage.getItem('jwt');
@@ -161,57 +245,106 @@ const UserGroups = (props: { path?: string }) => {
       newErrors.name = "A group with this name already exists.";
     }
 
-    if (!editingGroup && addMemberEmailsList.length === 0) {
-      newErrors.memberEmails = "At least one member email must be added.";
-    }
+    // if (!editingGroup && addMemberEmailsList.length === 0) {
+    //   newErrors.memberEmails = "At least one member email must be added.";
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const saveGroup = async () => {
-    if (!validateForm()) return;
+const saveGroup = async () => {
+  if (!validateForm()) return;
 
-    const token = localStorage.getItem('jwt');
+  // Check for removed apps if editing
+  if (editingGroup) {
+    const removed = Array.from(initialAssignedAppIds).filter(
+      id => !assignedAppIds.has(id)
+    );
 
-    let body: string;
-    let url: string;
-    let method: 'POST' | 'PATCH';
-
-    if (editingGroup) {
-      method = "PATCH";
-      url = `http://localhost:3001/api/userGroup/${editingGroup._id}`;
-      body = JSON.stringify({
-        name,
-        description,
-        addMemberEmails: addMemberEmailsList,
-        removeMemberEmails: removeMemberEmailsList
-      });
-    } else {
-      method = "POST";
-      url = "http://localhost:3001/api/userGroup/";
-      body = JSON.stringify({
-        name,
-        description,
-        memberEmails: addMemberEmailsList
-      });
+    if (removed.length > 0) {
+      setRemovedAppIds(
+        availableApps.filter(app => removed.includes(app._id)).map(app => app.name)
+      );
+      setPendingAppSave(true);
+      setShowUnassignConfirmDialog(true);
+      return;
     }
+  }
 
+  // Proceed with save if no apps were removed or not editing
+  await performGroupSave();
+};
+
+const performGroupSave = async () => {
+  const token = localStorage.getItem('jwt');
+  const url = editingGroup 
+    ? `http://localhost:3001/api/userGroup/${editingGroup._id}`
+    : "http://localhost:3001/api/userGroup/";
+  const method = editingGroup ? "PATCH" : "POST";
+
+  try {
+    // Save group info
     const res = await fetch(url, {
       method,
-      headers: { 'Authorization': `Bearer ${token}`, "Content-Type": "application/json" },
-      body,
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, description })
     });
 
-    if (res.ok) {
-      setShowDialog(false);
-      fetchGroups();
-    } else {
-      const data = await res.json();
-      setErrorMessage(data.message || "Failed to save user group.");
-      setShowErrorDialog(true);
+    const data = await res.json();
+    const groupId = editingGroup ? editingGroup._id : data._id;
+    
+    // Assign apps
+    if (groupId) {
+      await assignApps(groupId);
     }
-  };
+
+    setShowDialog(false);
+    fetchGroups();
+  } catch (error) {
+    console.error("Failed to save group", error);
+    setErrorMessage("Failed to save group. Please try again.");
+    setShowErrorDialog(true);
+  }
+};
+
+const assignApps = async (groupId: string) => {
+  const token = localStorage.getItem('jwt');
+  const prevIds = Array.from(initialAssignedAppIds);
+  const newIds = Array.from(assignedAppIds);
+  
+
+  try {
+    // Remove apps that were unassigned
+    await Promise.all(
+      prevIds
+        .filter(id => !newIds.includes(id))
+        .map(appId => 
+          fetch(`http://localhost:3001/api/userGroup/${groupId}/applications/${appId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        )
+    );
+
+    // Add newly assigned apps
+    if (newIds.length > 0) {
+      await fetch(`http://localhost:3001/api/userGroup/${groupId}/applications`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ appIds: newIds.filter(id => !prevIds.includes(id)) })
+      });
+    }
+  } catch (error) {
+    console.error("Failed to assign apps", error);
+  }
+};
 
   const confirmDeleteGroup = (groupId: string) => {
     setConfirmDeleteDialogId(groupId);
@@ -271,7 +404,7 @@ const UserGroups = (props: { path?: string }) => {
         const matchedIds = apps
           .filter((app: Application) =>
             group.applicationNames.some(
-              name => name.trim().toLowerCase() === app.name.trim().toLowerCase()
+              (name: string) => name.trim().toLowerCase() === app.name.trim().toLowerCase()
             )
           )
           .map((app: Application) => app._id);
@@ -406,82 +539,160 @@ const UserGroups = (props: { path?: string }) => {
     setShowAppAccessDialog(true);
   };
 
+  const handleAssignedAppsChange = (e: CustomEvent) => {
+    setStagedAppIds(e.detail.value || []);
+  };
+
+  const appsDataProvider = useMemo(() => {
+    const appOptions = availableApps.map(app => ({
+      value: app._id,
+      text: app.name,
+      disabled: !app.is_active
+    }));
+    return new MutableArrayDataProvider(appOptions, { keyAttributes: 'value' });
+  }, [availableApps]);
+
   return (
     <div class="oj-flex oj-sm-padding-4x">
       <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
-        <div class="" >
+        <div>
           <h1 class="oj-typography-heading-lg">User Groups</h1>
-          <p class="oj-typography-body-md">Manage user groups and their application access</p>
+          <p class="oj-typography-body-md">Manage your user groups</p>
         </div>
         <div>
           <oj-button onojAction={() => openDialog()} chroming="callToAction">+ Create Group</oj-button>
+
         </div>
       </div>
 
-      <div class="oj-flex oj-sm-flex-wrap oj-sm-justify-content-center oj-sm-padding-4x ">
-        {groups.map((group) => (
-          <div class="oj-sm-12 oj-md-4 oj-flex-item oj-panel oj-panel-shadow-md oj-sm-margin-4x"
-            style="border: 1px solid #ccc; border-radius: 12px; padding: 24px; min-width: 280px; max-width: 360px; display: flex; flex-direction: column; justify-content: space-between;">
-
-
-            <div class="oj-flex oj-sm-justify-content-space-between oj-sm-align-items-start oj-sm-margin-bottom-4x">
-              <div>
-                <div class="oj-typography-heading-sm oj-sm-margin-bottom-2x">{group.name}</div>
-                <div class="oj-typography-body-sm oj-sm-margin-bottom">{group.description}</div>
-              </div>
-              <oj-switch
-                value={group.is_active}
-                onvalueChanged={(e) =>
-                  handleToggleGroupStatus(group._id, e.detail.value as boolean)
-                }
-              />
-            </div>
-
-            <div style="margin-top: 16px;">
-
-              <div class="oj-typography-body-sm oj-sm-margin-bottom">
-                <span class="oj-link" style={{ cursor: "pointer" }} onClick={() => handleUsersClick(group)}>
-                  👤 Users: {group.userCount}
+      <div class="oj-flex oj-flex-wrap oj-flex-space-" style={"gap: 24px"}>
+        {(groups || []).map((group) => (
+          <div
+            key={group._id}
+            class="oj-panel oj-panel-shadow-md"
+            style="
+              border: 1px solid #e5e7eb; 
+              border-radius: 12px; 
+              padding: 20px 20px 16px 20px; 
+              max-width: 400px; 
+              min-width: 400px; 
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            "
+          >
+            {/* Header: Name + Toggle */}
+            <div
+              class="oj-flex"
+              style="
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                width: 100%;
+              "
+            >
+              <div style="flex: 1; display: flex; align-items: center;">
+                <h3 class="oj-typography-heading-sm" style="margin: 0; flex: 1; word-break: break-word;">
+                  {group.name}
+                </h3>
+                <span
+                  class="oj-typography-body-xs"
+                  style={`
+                    margin-left: 12px;
+                    padding: 2px 10px;
+                    font-weight: 500;
+                    color: ${group.is_active ? '#065f46' : '#991b1b'};
+                    font-size: 0.85em;
+                  `}
+                >
+                  {group.is_active ? 'Active' : 'Inactive'}
                 </span>
               </div>
-
-              <div style="margin-top: 8px;">
-                <div class="oj-typography-body-sm oj-sm-margin-bottom-2x">
-                  📦 Apps: {group.applicationCount > MAX_VISIBLE_APPS ? `${MAX_VISIBLE_APPS}+` : group.applicationCount}
-                  {group.applicationCount > MAX_VISIBLE_APPS && (
-                    <oj-button onojAction={showMoreApps} chroming="borderless">Show all apps</oj-button>
-                  )}
-                </div>
+              <div style="flex: 0;">
+                <oj-switch
+                  value={group.is_active}
+                  onvalueChanged={(e) =>
+                    handleToggleGroupStatus(group._id, e.detail.value as boolean)
+                  }
+                />
               </div>
+            </div>
 
-              <div style="margin-top: 16px;">
-                <div class="oj-typography-body-sm oj-sm-margin-bottom-2x" style="font-weight: 100;">
-                  APPLICATIONS
-                </div>
+            <p
+              class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x"
+              style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
+            >
+              {group.description}
+            </p>
 
-                {group.applicationNames.length === 0 ? (
-                  <div class="oj-typography-body-sm oj-text-color-secondary">None</div>
-                ) : (
-                  <div style="margin-bottom: 16px;">
-                    {group.applicationNames.slice(0, MAX_VISIBLE_APPS).map((app, idx) => (
-                      <div key={idx} class="oj-badge oj-badge-subtle oj-sm-margin-2x">
-                        {app}
-                      </div>
-                    ))}
-                  </div>
+            <div
+              class="oj-flex"
+              style="justify-content: space-between; align-items: stretch; gap: 32px; margin-bottom: 24px;"
+            >
+              {/* Users column - clickable */}
+              <div 
+                style="display: flex; flex-direction: column; align-items: flex-start;
+                background-color: rgba(243, 243, 243, 0.6); padding: 8px; border-radius: 8px; flex: 1;"
+                onClick={() => handleUsersClick(group)}
+                class="oj-clickable"
+              >
+                <div class="oj-typography-body-sm oj-text-color-secondary">Users</div>
+                <div class="oj-typography-heading-md">{group.userCount.toLocaleString()}</div>
+              </div>
+              {/* Apps column */}
+              <div style="display: flex; flex-direction: column; align-items: flex-start;
+                background-color: rgba(243, 243, 243, 0.6); padding: 8px; border-radius: 8px; flex: 1;">
+                <div class="oj-typography-body-sm oj-text-color-secondary">Applications</div>
+                <div class="oj-typography-heading-md">{group.applicationCount.toLocaleString()}</div>
+              </div>
+            </div>
+
+            <div class="oj-sm-margin-b-4x" style="margin-bottom: 12px;">
+              <p class="oj-typography-body-sm oj-text-color-secondary" style="margin-bottom: 4px;">Assigned Apps</p>
+              <div class="oj-flex oj-sm-flex-wrap" style="margin-top: 0;">
+                {group.applicationNames.slice(0, 2).map((app, index) => (
+                  <span
+                    key={index}
+                    class="oj-typography-body-xs"
+                    style="color:rgb(25, 85, 160); background-color:rgb(220, 235, 255); padding: 4px 8px; margin: 2px; border-radius: 20px;"
+                  >
+                    {app}
+                  </span>
+                ))}
+                {group.applicationNames.length > 2 && (
+                  <span
+                    class="oj-typography-body-xs"
+                    style="color:rgb(0, 0, 0); background-color:rgb(243, 243, 243); padding: 4px 8px; margin: 2px; border-radius: 20px;"
+                  >
+                    +{group.applicationNames.length - 2}
+                  </span>
                 )}
               </div>
+            </div>
 
+              <div class="oj-flex" style="justify-content: flex-end; gap: 12px;">
+                <oj-button chroming="borderless" onojAction={() => openDialog(group)}>
+                  Edit
+                </oj-button>
+                <oj-button chroming="borderless" onojAction={() => handleAppAccess(group)}>
+                  App Access
+                </oj-button>
+                <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(group._id)}>
+                  Delete
+                </oj-button>
+              </div>
+
+              {/* Bottom row: left-aligned created at */}
+              <div class="oj-typography-body-xs oj-text-color-secondary">
+                Created {new Date(group.created_at).toLocaleString()}
+              </div>
             </div>
-            <div style="margin-top: 16px;" class="oj-flex oj-sm-justify-content-space-between">
-              <oj-button display="icons" onojAction={() => openDialog(group)} class="oj-sm-margin-end">Edit</oj-button>
-              <oj-button display="icons" class="oj-sm-margin-end" onojAction={() => handleAppAccess(group)}>App Access</oj-button>
-              <oj-button display="icons" chroming="danger" onojAction={() => confirmDeleteGroup(group._id)}>Delete</oj-button>
-            </div>
-          </div>
+
         ))}
       </div>
 
+      {/* Delete Confirmation Dialog */}
       {confirmDeleteDialogId && (
         <oj-dialog id="confirmDeleteDialog" dialogTitle="Confirm Deletion" initialVisibility="show">
           <div class="oj-dialog-body">
@@ -494,101 +705,43 @@ const UserGroups = (props: { path?: string }) => {
         </oj-dialog>
       )}
 
-      {showDialog && (
-        <oj-dialog id="groupDialog" dialogTitle={editingGroup ? "Edit Group" : "Create Group"} initialVisibility="show">
+      {/* Users Dialog */}
+      {showUsersDialog && selectedGroup && (
+        <oj-dialog 
+          id="usersDialog" 
+          dialogTitle={`Users in ${selectedGroup.name}`} 
+          initialVisibility="show"
+          onojClose={() => setShowUsersDialog(false)}
+        >
           <div class="oj-dialog-body">
-            <oj-c-form-layout>
-              <oj-c-input-text
-                id="name-input"
-                labelHint="Name"
-                value={name}
-                onvalueChanged={(e) => setName(e.detail.value)}
-                required
-                validators={[
-                  new LengthValidator({ min: 5, max: 20 }),
-                  new RegExpValidator({
-                    pattern: '^[a-zA-Z0-9 _-]+$',
-                    hint: 'Only letters, numbers, spaces, hyphens (-), and underscores (_) are allowed.',
-                    messageSummary: 'Invalid name format.',
-                    messageDetail: 'Use only letters, numbers, spaces, hyphens (-), and underscores (_).'
-                  })
-                ]}
-              ></oj-c-input-text>
-              <oj-c-input-text
-                labelHint="Description"
-                value={description}
-                onvalueChanged={(e) => setDescription(e.detail.value)}
-                required
-                validators={[
-                  new LengthValidator({ min: 10, max: 100 }),
-                  new RegExpValidator({
-                    pattern: '^[a-zA-Z0-9 _-]+$',
-                    hint: 'Only letters, numbers, spaces, hyphens (-), and underscores (_) are allowed.',
-                    messageSummary: 'Invalid name format.',
-                    messageDetail: 'Use only letters, numbers, spaces, hyphens (-), and underscores (_).'
-                  })
-                ]}
-              ></oj-c-input-text>
-
-              <oj-c-input-text labelHint="Add Member Email" value={addEmailInput} onFocus={() => setActiveInput('add')} onvalueChanged={(e) => setAddEmailInput(e.detail.value)}></oj-c-input-text>
-              {errors.memberEmails && <div class="oj-text-color-danger oj-sm-margin-bottom">{errors.memberEmails}</div>}
-
-              <div class="oj-sm-margin-top">
-                {addMemberEmailsList.map(email => (
-                  <div class="oj-flex oj-sm-align-items-center oj-sm-margin-bottom">
-                    <span class="oj-typography-body-sm oj-sm-margin-end">{email}</span>
-                    <oj-button display="icons" chroming="borderless" onojAction={() => removeEmail(email, 'add')}>
-                      <span class="oj-ux-email-expenses-ico-cancel-s-20-danger">X</span>
-                    </oj-button>
-                  </div>
+            {selectedGroup.users && selectedGroup.users.length > 0 ? (
+              <ul>
+                {selectedGroup.users.map((user, index) => (
+                  <li key={index} class="oj-sm-margin-2x">
+                    <span class="oj-typography-body-md">{user.username}</span>
+                    <span 
+                      class="oj-typography-body-xs"
+                      style={`
+                        margin-left: 12px;
+                        padding: 2px 10px;
+                        font-weight: 500;
+                      `}
+                    >
+                    </span>
+                  </li>
                 ))}
-              </div>
-
-              {editingGroup && (
-                <>
-                  <oj-c-input-text labelHint="Remove Member Email" value={removeEmailInput} onFocus={() => setActiveInput('remove')} onvalueChanged={(e) => setRemoveEmailInput(e.detail.value)}></oj-c-input-text>
-                  <div class="oj-sm-margin-top">
-                    {removeMemberEmailsList.map(email => (
-                      <div class="oj-flex oj-sm-align-items-center oj-sm-margin-bottom">
-                        <span class="oj-typography-body-sm oj-sm-margin-end">{email}</span>
-                        <oj-button display="icons" chroming="borderless" onojAction={() => removeEmail(email, 'remove')}>
-                          <span class="oj-ux-ico-close oj-sm-icon"></span>
-                        </oj-button>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {directoryResults.length > 0 && (
-                <div class="oj-popup">
-                  {directoryResults.map(email => (
-                    <div class="oj-flex oj-sm-align-items-center oj-sm-padding-2x oj-sm-hoverable oj-clickable" onClick={() => selectDirectoryResult(email)}>
-                      {email}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </oj-c-form-layout>
+              </ul>
+            ) : (
+              <p class="oj-typography-body-md">No users found in this group</p>
+            )}
           </div>
           <div class="oj-dialog-footer">
-            <oj-button onojAction={() => saveGroup()}>Save</oj-button>
-            <oj-button onojAction={() => setShowDialog(false)} chroming="borderless">Cancel</oj-button>
+            <oj-button onojAction={() => setShowUsersDialog(false)}>Close</oj-button>
           </div>
         </oj-dialog>
       )}
 
-      {showErrorDialog && (
-        <oj-dialog id="errorDialog" dialogTitle="Error" initialVisibility="show">
-          <div class="oj-dialog-body">
-            {errorMessage}
-          </div>
-          <div class="oj-dialog-footer">
-            <oj-button onojAction={() => setShowErrorDialog(false)}>OK</oj-button>
-          </div>
-        </oj-dialog>
-      )}
-
+      {/* App Access Dialog */}
       {showAppAccessDialog && selectedGroup && (
         <oj-dialog id="appAccessDialog" dialogTitle={`App Access: ${selectedGroup.name}`} initialVisibility="show">
           <div class="oj-dialog-body oj-sm-padding-4x">
@@ -602,12 +755,11 @@ const UserGroups = (props: { path?: string }) => {
                       disabled={!app.is_active}
                       onChange={(e) => {
                         const checked = e.currentTarget.checked;
-                        setStagedAppIds((prev) =>
-                          checked ? [...prev, app._id] : prev.filter((id) => id !== app._id)
+                        setStagedAppIds(prev =>
+                          checked ? [...prev, app._id] : prev.filter(id => id !== app._id)
                         );
                       }}
                     />
-
                     &nbsp;{app.name}
                   </label>
                   {!app.is_active && (
@@ -620,6 +772,80 @@ const UserGroups = (props: { path?: string }) => {
           <div class="oj-dialog-footer">
             <oj-button onojAction={saveAppAccess}>Save</oj-button>
             <oj-button onojAction={() => setShowAppAccessDialog(false)} chroming="borderless">Cancel</oj-button>
+          </div>
+        </oj-dialog>
+      )}
+
+{showDialog && (
+  <oj-dialog
+    id="groupDialog"
+    dialogTitle={editingGroup ? "Edit Group" : "Create Group"}
+    initialVisibility="show"
+    onojClose={() => setShowDialog(false)}
+  >
+    <div class="oj-dialog-body oj-sm-padding-4x">
+      <oj-c-form-layout>
+        <oj-c-input-text
+          label-hint="Name"
+          value={name}
+          onvalueChanged={(e: CustomEvent) => setName(e.detail.value)}
+          placeholder="Enter group name"
+          required
+          help-hint="Enter 5 to 20 characters. Only letters, numbers, and spaces are allowed."
+        ></oj-c-input-text>
+        <oj-c-input-text
+          label-hint="Description"
+          value={description}
+          onvalueChanged={(e: CustomEvent) => setDescription(e.detail.value)}
+          placeholder="Enter group description"
+          help-hint="Administrative users with full access"
+        ></oj-c-input-text>
+        <div style="margin-top: 16px;">
+          <div class="oj-typography-subheading-sm" style="margin-bottom: 8px;">
+            Assigned Applications
+          </div>
+          <div>
+            {availableApps.map((app) => (
+              <label key={app._id} style={{ display: "block", opacity: app.is_active ? 1 : 0.5 }}>
+                <input
+                  type="checkbox"
+                  checked={assignedAppIds.has(app._id)}
+                  disabled={!app.is_active}
+                  onChange={(e: Event) => {
+                    const checked = (e.target as HTMLInputElement).checked;
+                    setAssignedAppIds(prev =>
+                      checked
+                        ? new Set([...Array.from(prev), app._id])
+                        : new Set(Array.from(prev).filter(id => id !== app._id))
+                    );
+                  }}
+                />
+                &nbsp;{app.name}
+                {!app.is_active && (
+                  <span class="oj-text-color-danger" style="margin-left: 8px;">(Inactive)</span>
+                )}
+              </label>
+            ))}
+          </div>
+        </div>
+      </oj-c-form-layout>
+    </div>
+    <div class="oj-dialog-footer">
+      <oj-button onojAction={() => setShowDialog(false)} chroming="borderless">Cancel</oj-button>
+      <oj-button onojAction={() => saveGroup()}>Save</oj-button>
+    </div>
+  </oj-dialog>
+)}
+
+
+      {/* Error Dialog */}
+      {showErrorDialog && (
+        <oj-dialog id="errorDialog" dialogTitle="Error" initialVisibility="show">
+          <div class="oj-dialog-body">
+            {errorMessage}
+          </div>
+          <div class="oj-dialog-footer">
+            <oj-button onojAction={() => setShowErrorDialog(false)}>OK</oj-button>
           </div>
         </oj-dialog>
       )}
@@ -657,25 +883,10 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
-      {showUsersDialog && selectedGroup && (
-        <oj-dialog id="usersDialog" dialogTitle={`Users in ${selectedGroup.name}`} initialVisibility="show">
-          <div class="oj-dialog-body">
-            <ul>
-              {selectedGroup.users?.map((user, idx) => (
-                <li key={idx}>
-                  {user.username}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div class="oj-dialog-footer">
-            <oj-button onojAction={closeUsersDialog}>Close</oj-button>
-          </div>
-        </oj-dialog>
-      )}
     </div>
   );
 };
 
 export default UserGroups;
+
+
