@@ -322,51 +322,55 @@ const Applications = (props: { path?: string }) => {
                 </div>
             </div>
 
-            <div class="oj-flex oj-flex-wrap oj-flex-space-" style={"gap: 24px"}>
+            <div class="oj-flex oj-flex-wrap" style={{
+                gap: '24px',
+                justifyContent: 'flex-start',
+                alignItems: 'stretch'
+            }}>
                 {(applications || []).map((app) => (
                     <div
                         key={app._id}
                         class="oj-panel oj-panel-shadow-md"
-                        style="
-        border: 1px solid #e5e7eb; 
-        border-radius: 12px; 
-        padding: 20px 20px 16px 20px; 
-        max-width: 400px; 
-        min-width: 400px; 
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    "
+                        style={{
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '12px',
+                            padding: '20px 20px 16px 20px',
+                            maxWidth: '420px',
+                            minWidth: '420px', // Reduced min-width for better responsiveness
+                            flex: '1 1 400px', // flex-grow: 1, flex-shrink: 1, flex-basis: 300px
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between'
+                        }}
                     >
                         {/* Header: Name + Toggle */}
                         <div
                             class="oj-flex"
-                            style="
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            width: 100%;
-        "
+                            style={{
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginBottom: '8px',
+                                width: '100%'
+                            }}
                         >
-                            <div style="flex: 1; display: flex; align-items: center;">
-                                <h3 class="oj-typography-heading-sm" style="margin: 0; flex: 1; word-break: break-word;">
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                                <h3 class="oj-typography-heading-sm" style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}>
                                     {app.name}
                                 </h3>
                                 <span
                                     class="oj-typography-body-xs"
-                                    style={`
-                margin-left: 12px;
-                padding: 2px 10px;
-                font-weight: 500;
-                color: ${app.is_active ? '#065f46' : '#991b1b'};
-                font-size: 0.85em;
-            `}
+                                    style={{
+                                        marginLeft: '12px',
+                                        padding: '2px 10px',
+                                        fontWeight: '500',
+                                        color: app.is_active ? '#065f46' : '#991b1b',
+                                        fontSize: '0.85em'
+                                    }}
                                 >
                                     {app.is_active ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
-                            <div style="flex: 0;">
+                            <div style={{ flex: 0 }}>
                                 <oj-switch
                                     value={app.is_active}
                                     onvalueChanged={(e) =>
@@ -377,38 +381,67 @@ const Applications = (props: { path?: string }) => {
 
                         <p
                             class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x"
-                            style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
+                            style={{
+                                overflow: 'hidden',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical'
+                            }}
                         >
                             {app.description}
                         </p>
 
                         <div
                             class="oj-flex"
-                            style="justify-content: space-between; align-items: stretch; gap: 32px; margin-bottom: 24px;"
+                            style={{
+                                justifyContent: 'space-between',
+                                alignItems: 'stretch',
+                                gap: '32px',
+                                marginBottom: '24px'
+                            }}
                         >
                             {/* Logs column */}
-                            <div style="display: flex; flex-direction: column; align-items: flex-start;
-                            background-color: rgba(243, 243, 243, 0.6); padding: 8px; border-radius: 8px; flex: 1;">
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                backgroundColor: 'rgba(243, 243, 243, 0.6)',
+                                padding: '8px',
+                                borderRadius: '8px',
+                                flex: 1
+                            }}>
                                 <div class="oj-typography-body-sm oj-text-color-secondary">Logs</div>
                                 <div class="oj-typography-heading-md">{app.logCount.toLocaleString()}</div>
                             </div>
                             {/* Groups column */}
-                            <div style="display: flex; flex-direction: column; align-items: flex-start;
-                            background-color: rgba(243, 243, 243,0.6); padding: 8px; border-radius: 8px; flex: 1;">
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                backgroundColor: 'rgba(243, 243, 243, 0.6)',
+                                padding: '8px',
+                                borderRadius: '8px',
+                                flex: 1
+                            }}>
                                 <div class="oj-typography-body-sm oj-text-color-secondary">Groups</div>
                                 <div class="oj-typography-heading-md">{app.groupCount.toLocaleString()}</div>
                             </div>
                         </div>
 
-
-                        <div class="oj-sm-margin-b-4x" style="margin-bottom: 12px;">
-                            <p class="oj-typography-body-sm oj-text-color-secondary" style="margin-bottom: 4px;">Assigned To</p>
-                            <div class="oj-flex oj-sm-flex-wrap" style="margin-top: 0;">
+                        <div class="oj-sm-margin-b-4x" style={{ marginBottom: '12px' }}>
+                            <p class="oj-typography-body-sm oj-text-color-secondary" style={{ marginBottom: '4px' }}>Assigned To</p>
+                            <div class="oj-flex oj-sm-flex-wrap" style={{ marginTop: 0 }}>
                                 {app.groupNames.slice(0, 2).map((group, index) => (
                                     <span
                                         key={index}
                                         class="oj-typography-body-xs"
-                                        style="color:rgb(25, 85, 160); background-color:rgb(220, 235, 255); padding: 4px 8px; margin: 2px; border-radius: 20px;"
+                                        style={{
+                                            color: 'rgb(25, 85, 160)',
+                                            backgroundColor: 'rgb(220, 235, 255)',
+                                            padding: '4px 8px',
+                                            margin: '2px',
+                                            borderRadius: '20px'
+                                        }}
                                     >
                                         {group}
                                     </span>
@@ -416,7 +449,13 @@ const Applications = (props: { path?: string }) => {
                                 {app.groupNames.length > 2 && (
                                     <span
                                         class="oj-typography-body-xs"
-                                        style="color:rgb(0, 0, 0); background-color:rgb(243, 243, 243); padding: 4px 8px; margin: 2px; border-radius: 20px;"
+                                        style={{
+                                            color: 'rgb(0, 0, 0)',
+                                            backgroundColor: 'rgb(243, 243, 243)',
+                                            padding: '4px 8px',
+                                            margin: '2px',
+                                            borderRadius: '20px'
+                                        }}
                                     >
                                         +{app.groupNames.length - 2}
                                     </span>
@@ -424,17 +463,20 @@ const Applications = (props: { path?: string }) => {
                             </div>
                         </div>
 
-
-
                         {/* Footer: Created At and Buttons */}
                         <div
                             class="oj-flex"
-                            style="justify-content: space-between; align-items: center; gap: 12px; margin-top: auto;"
+                            style={{
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginTop: 'auto'
+                            }}
                         >
                             <div class="oj-typography-body-xs oj-text-color-secondary">
                                 Created {new Date(app.created_at).toLocaleString()}
                             </div>
-                            <div class="oj-flex" style="gap: 12px;">
+                            <div class="oj-flex" style={{ gap: '12px' }}>
                                 <oj-button
                                     chroming="borderless"
                                     onojAction={() => openDialog(app)}
@@ -452,7 +494,6 @@ const Applications = (props: { path?: string }) => {
                     </div>
                 ))}
             </div>
-
 
 
             {showDialog && (
