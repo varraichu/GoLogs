@@ -73,7 +73,9 @@ const Applications = (props: { path?: string }) => {
     description: '',
     assignedGroupIds: new Set(),
   })
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+
+  const [editingState, setEditingState] = useState<Boolean>(false);
 
   useEffect(() => {
     fetchApplications()
@@ -108,6 +110,7 @@ const Applications = (props: { path?: string }) => {
 
   const openDialog = async (application?: Application) => {
     if (application) {
+      setEditingState(true);
       setEditingApplication(application)
       setName(application.name || '')
       setDescription(application.description || '')
@@ -117,7 +120,7 @@ const Applications = (props: { path?: string }) => {
         name: application.name || '',
         description: application.description || '',
         assignedGroupIds: new Set(appUserGroups.map((g) => String(g))),
-      })
+      });
     } else {
       setEditingApplication(null)
       setName('')
@@ -128,6 +131,7 @@ const Applications = (props: { path?: string }) => {
         description: '',
         assignedGroupIds: new Set(),
       })
+      setEditingState(false);
     }
     setShowDialog(true)
   }
@@ -218,32 +222,32 @@ const Applications = (props: { path?: string }) => {
 
   const deleteGroup = async () => {
     try {
-        if (!confirmDeleteDialogId) return
-        const token = localStorage.getItem('jwt')
-        let res
-        res = await fetch(`http://localhost:3001/api/applications/${confirmDeleteDialogId}`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        const data = await res.json().catch(() => ({}))
-        if (!res.ok) {
-          addNewToast(
-            'error',
-            'Failed to delete application',
-            data.message || 'An error occurred while deleting the application.'
-          )
-        } else {
-          addNewToast(
-            'confirmation',
-            'Application deleted',
-            data.message || 'Application deleted successfully.'
-          )
-        }
-        fetchApplications()
-        setConfirmDeleteDialogId(null)
-      
+      if (!confirmDeleteDialogId) return
+      const token = localStorage.getItem('jwt')
+      let res
+      res = await fetch(`http://localhost:3001/api/applications/${confirmDeleteDialogId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        addNewToast(
+          'error',
+          'Failed to delete application',
+          data.message || 'An error occurred while deleting the application.'
+        )
+      } else {
+        addNewToast(
+          'confirmation',
+          'Application deleted',
+          data.message || 'Application deleted successfully.'
+        )
+      }
+      fetchApplications()
+      setConfirmDeleteDialogId(null)
+
     } catch (error) {
       addNewToast('error', 'Failed to delete application', String(error))
       console.error('Failed to delete application', error)
@@ -577,7 +581,7 @@ const Applications = (props: { path?: string }) => {
           </div>
         ))}
       </div>
-        {confirmDeleteDialogId && (
+      {confirmDeleteDialogId && (
         <oj-dialog id="confirmDeleteDialog" dialogTitle="Confirm Deletion" initialVisibility="show">
           <div class="oj-dialog-body">Are you sure you want to delete this group?</div>
           <div class="oj-dialog-footer">
@@ -608,11 +612,11 @@ const Applications = (props: { path?: string }) => {
                 validators={[
                   new LengthValidator({ min: 5, max: 20 }),
                   new RegExpValidator({
-                    pattern: '^[a-zA-Z0-9_]+$',
-                    hint: 'Only letters, numbers, and underscores (_) are allowed.',
+                    pattern: '^[a-zA-Z0-9_-]+$',
+                    hint: 'Only letters, numbers, underscores (_), and hyphens (-) are allowed.',
                     messageSummary: 'Invalid name format.',
-                    messageDetail: 'Use only letters, numbers, and underscores (_).',
-                  }),
+                    messageDetail: 'Use only letters, numbers, underscores (_), and hyphens (-).',
+                  })
                 ]}
               ></oj-c-input-text>
               <oj-c-input-text
@@ -632,18 +636,30 @@ const Applications = (props: { path?: string }) => {
                   }),
                 ]}
               ></oj-c-input-text>
-              <h4 class="oj-typography-heading-sm">Assigned To</h4>
 
               {/* Multi-select for assigning groups */}
-              <oj-c-select-multiple
-                label-hint="Assign to user groups"
-                // value={ value} // Example default values
-                value={assignedGroupIds}
-                onvalueChanged={handleAssignedGroupsChange}
-                data={optionsData}
-                item-text="text"
-                class="oj-sm-margin-2x-vertical"
-              ></oj-c-select-multiple>
+              {
+                editingState ? (
+                  <div>
+
+                    <h4 class="oj-typography-heading-sm">Assigned To</h4>
+                    <oj-c-select-multiple
+                      label-hint="Assign to user groups"
+                      // value={ value} // Example default values
+                      value={assignedGroupIds}
+                      onvalueChanged={handleAssignedGroupsChange}
+                      data={optionsData}
+                      item-text="text"
+                      class="oj-sm-margin-2x-vertical"
+                    ></oj-c-select-multiple>
+                  </div>
+                ) : (
+                  <div>
+
+                  </div>
+                )
+              }
+
             </oj-c-form-layout>
           </div>
           <div class="oj-dialog-footer">

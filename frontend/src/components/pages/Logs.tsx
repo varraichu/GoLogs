@@ -52,8 +52,8 @@ const Logs = (props: { path?: string }) => {
     hasPrevPage: false,
   });
 
-const { addNewToast, messageDataProvider, removeToast } = useToast()
-const closeMessage = (event: CustomEvent<{ key: string }>) => {
+  const { addNewToast, messageDataProvider, removeToast } = useToast()
+  const closeMessage = (event: CustomEvent<{ key: string }>) => {
     removeToast(event.detail.key)
     // const closeKey = event.detail.key
     // setMessages(messages.filter((msg) => msg.id !== closeKey))
@@ -82,8 +82,12 @@ const closeMessage = (event: CustomEvent<{ key: string }>) => {
       });
 
       const data = await res.json();
-
-      setAdminLogs(data.logs || []);
+      const formattedLogs = (data.logs || []).map((log: LogEntry) => ({
+        ...log,
+        timestamp: new Date(log.timestamp).toLocaleString(),
+        ingested_at: new Date(log.ingested_at).toLocaleString(), // Optional
+      }));
+      setAdminLogs(formattedLogs || []);
       setPagination(data.pagination || {
         total: 0,
         page: 1,
@@ -93,13 +97,11 @@ const closeMessage = (event: CustomEvent<{ key: string }>) => {
         hasPrevPage: false,
       });
 
-      setDataProvider(new ArrayDataProvider(data.logs || [], { keyAttributes: '_id' }));
+      setDataProvider(new ArrayDataProvider(formattedLogs || [], { keyAttributes: '_id' }));
 
-      if (res.ok) {
-        addNewToast('confirmation', 'Success', data.message || 'Logs fetched successfully.');
-      } else {
+      if (!res.ok) {
         addNewToast('error', 'Error', data.message || 'Failed to fetch logs.');
-      }
+      } 
     } catch (error) {
       addNewToast('error', 'Error', 'Failed to fetch logs.');
       console.error("Failed to fetch logs", error);
@@ -123,17 +125,23 @@ const closeMessage = (event: CustomEvent<{ key: string }>) => {
       class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column"
       style="height: 100%; min-height: 0; flex: 1 1 0;"
     >
-      <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
+      <div class="oj-flex oj-sm-12 oj-sm-padding-2x oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
+        
 
-      <div style={{
-        flex: 1,
-        minHeight: 0,
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <div
+        class="oj-flex oj-sm-margin-x-4x oj-sm-margin-bottom-4x"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: '16px',
+          overflow: 'hidden',
+        }}
+      >
         <oj-c-table
           data={dataProvider}
           columns={{
@@ -143,23 +151,42 @@ const closeMessage = (event: CustomEvent<{ key: string }>) => {
             "Timestamp": { field: 'timestamp', headerText: 'Timestamp' },
           }}
           class="oj-sm-12"
-          layout="fixed"
           horizontal-grid-visible="enabled"
           vertical-grid-visible="enabled"
-          style="font-size: 0.85rem; width: 100%; flex: 1 1 0; min-width: 0; min-height: 0;"
+          style="width: 100%; flex: 1 1 0; min-width: 0; min-height: 0; table-layout: fixed;" // changed from auto to fixed
         ></oj-c-table>
       </div>
 
       {/* Pagination */}
       {pagination && (
-        <div class="oj-flex oj-lg-padding-horizontal-10x oj-sm-justify-content-flex-end oj-sm-flex-direction-row">
-          <oj-button onojAction={goToPrevPage} disabled={!pagination.hasPrevPage}>Previous</oj-button>
-          <span class="oj-typography-body-sm">
+        <div
+          class="oj-flex oj-sm-flex-direction-row oj-sm-align-items-center oj-sm-justify-content-center oj-sm-margin-y-4x"
+          style="gap: 16px;"
+        >
+          <oj-button
+            chroming="callToAction"
+            onojAction={goToPrevPage}
+            disabled={!pagination.hasPrevPage}
+          >
+            <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
+            Previous
+          </oj-button>
+
+          <span class="oj-typography-body-md oj-text-color-primary">
             Page {pagination.page} of {pagination.totalPages}
           </span>
-          <oj-button onojAction={goToNextPage} disabled={!pagination.hasNextPage}>Next</oj-button>
+
+          <oj-button
+            chroming="callToAction"
+            onojAction={goToNextPage}
+            disabled={!pagination.hasNextPage}
+          >
+            Next
+            <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
+          </oj-button>
         </div>
       )}
+
       <oj-c-message-toast
         data={messageDataProvider}
         onojClose={closeMessage}

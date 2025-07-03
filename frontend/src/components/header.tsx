@@ -62,7 +62,9 @@ export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen }:
           </oj-c-button>
 
           <h1 class="oj-typography-heading-md oj-text-color-primary">
-            <span class="oj-text-color-danger">Go</span>Logs
+            <a href="/dashboard" style="color: inherit; text-decoration: none;">
+              <span class="oj-text-color-danger">Go</span>Logs
+            </a>
           </h1>
           {/* <span
             role="img"

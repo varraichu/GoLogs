@@ -2,6 +2,8 @@ import { h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import 'ojs/ojbutton';
 import 'ojs/ojselectsingle';
+import "oj-c/message-toast"
+import { useToast } from '../../context/ToastContext';
 
 const RETENTION_OPTIONS = [
   { value: 7, label: '7 days' },
@@ -12,8 +14,19 @@ const RETENTION_OPTIONS = [
 const DatabaseRetentionSettings = () => {
   const [retention, setRetention] = useState<number>(30);
 
-  useEffect(()=>{
-    async function fetchRetention(){
+  const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<Boolean | null>(null)
+  const { addNewToast, messageDataProvider, removeToast } = useToast()
+  const closeMessage = (event: CustomEvent<{ key: string }>) => {
+    removeToast(event.detail.key)
+    // const closeKey = event.detail.key
+    // setMessages(messages.filter((msg) => msg.id !== closeKey))
+  }
+  const confirmDeleteRetention = () => {
+    setConfirmDeleteDialogId(true);
+  }
+
+  useEffect(() => {
+    async function fetchRetention() {
       const token = localStorage.getItem('jwt');
       try {
         const response = await fetch('http://localhost:3001/api/logs/get/ttl', {
@@ -24,11 +37,22 @@ const DatabaseRetentionSettings = () => {
           },
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch retention. Status: ${response.status}`);
-        }
 
         const data = await response.json();
+        if (!response.ok) {
+          addNewToast(
+            'error',
+            'Failed to fetch retention value',
+            data.message || 'An error occurred while fetching the retention value.'
+          )
+        } 
+        // else {
+        //   addNewToast(
+        //     'confirmation',
+        //     'Retention value fetched',
+        //     data.message || 'Retention value fetched successfully.'
+        //   )
+        // }
         setRetention(data.ttlInDays || 30);
       } catch (error) {
         console.error('Error fetching retention:', error);
@@ -43,6 +67,7 @@ const DatabaseRetentionSettings = () => {
     const body = JSON.stringify({ newTTLInDays: retention });
 
     try {
+      if (!confirmDeleteDialogId) return
       const response = await fetch('http://localhost:3001/api/logs/config/ttl', {
         method: "PATCH",
         headers: {
@@ -52,11 +77,21 @@ const DatabaseRetentionSettings = () => {
         body,
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`Failed to update retention. Status: ${response.status}`);
+        addNewToast(
+          'error',
+          'Failed to update retention value',
+          data.message || 'An error occurred while updating the retention value.'
+        )
+      } else {
+        addNewToast(
+          'confirmation',
+          'Retention value updated',
+          data.message || 'Retention value updated successfully.'
+        )
       }
-
-      console.log('Retention updated successfully');
+      setConfirmDeleteDialogId(null)
     } catch (error) {
       console.error('Error saving retention:', error);
     }
@@ -96,11 +131,30 @@ const DatabaseRetentionSettings = () => {
       <div style={{ marginTop: '20px', textAlign: 'left' }}>
         <oj-button
           chroming="callToAction"
-          onojAction={handleSave}
+          onojAction={() => confirmDeleteRetention()}
         >
-          Save Configuration
+          Set Configuration
         </oj-button>
       </div>
+      {confirmDeleteDialogId && (
+        <oj-dialog id="confirmDeleteDialog" dialogTitle="Confirm configuration" initialVisibility="show">
+          <div class="oj-dialog-body">Are you sure you want to set this retention period?</div>
+          <div class="oj-dialog-footer">
+            <oj-button onojAction={handleSave} chroming="danger">
+              Save
+            </oj-button>
+            <oj-button onojAction={() => setConfirmDeleteDialogId(null)} chroming="borderless">
+              Cancel
+            </oj-button>
+          </div>
+        </oj-dialog>
+      )}
+      <oj-c-message-toast
+        data={messageDataProvider}
+        onojClose={closeMessage}
+        position="top-right"
+        offset={{ horizontal: 10, vertical: 50 }}
+      />
     </div>
   );
 };
