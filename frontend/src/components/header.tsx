@@ -48,9 +48,9 @@ export function Header({ appName, userLogin ,setIsAuthenticated , setStartOpen}:
   }
 
   return (
-    <header role="banner" class="oj-web-applayout-header">
-      <div class="oj-web-applayout-max-width oj-flex-bar oj-sm-align-items-center">
-        <div class="oj-flex-bar-middle oj-sm-align-items-baseline">
+    <header role="banner" class="oj-web-applayout-header" style={"background-color:rgb(151, 90, 163);"}>
+      <div class="oj-web-applayout-max-width oj-flex-bar oj-sm-align-items-center" style={"background-color:rgb(0, 165, 206);"}>
+        <div class="oj-flex-bar-middle oj-sm-align-items-baseline" style={"background-color: #8ace00;"}>
            <oj-c-button
               id="buttonOpener"
               display="icons"

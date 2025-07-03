@@ -87,7 +87,7 @@ export function SideBar({
             </a>
           </li>
           <li id="settings">
-            <a href="/settings">
+            <a href={isAdmin?"/admin-settings":"/user-applications"}>
               <span class="oj-navigationlist-item-icon oj-ux-ico-settings"></span>
               Settings
             </a>

@@ -20,7 +20,7 @@ const redisConnection = new IORedis({
 
 
 const bullQueueName = process.env.BULL_QUEUE_NAME || 'logQueue';
-const concurrency = 50;
+const concurrency = 500;
 
 //key for the redis set to track processed job IDs
 const processedJobSetKey = `${bullQueueName}_processed_jobs`;
@@ -73,7 +73,7 @@ const processJobs = async (job: Job) => {
 
         await redisClient.sadd(processedJobSetKey, job.id);
 
-        console.log(`Processed Job ${job.id} successfully.`);
+        // console.log(`Processed Job ${job.id} successfully.`);
 
     }
     catch (error) {
