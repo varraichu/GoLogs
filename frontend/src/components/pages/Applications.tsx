@@ -57,7 +57,7 @@ const Applications = (props: { path?: string }) => {
   const [appUserGroups, setAppUserGroups] = useState<string[]>([])
   const [assignedGroupIds, setAssignedGroupIds] = useState<any>(new Set([]))
   const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]))
-const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null>(null)
+  const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null>(null)
   const [dataProvider, setDataProvider] = useState<any>(null)
   const { addNewToast, messageDataProvider, removeToast } = useToast()
   const closeMessage = (event: CustomEvent<{ key: string }>) => {
@@ -65,9 +65,16 @@ const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null
     // const closeKey = event.detail.key
     // setMessages(messages.filter((msg) => msg.id !== closeKey))
   }
-const confirmDeleteGroup = (groupId: string) => {
+  const confirmDeleteGroup = (groupId: string) => {
     setConfirmDeleteDialogId(groupId)
   }
+  const [initialEditValues, setInitialEditValues] = useState<{ name: string; description: string; assignedGroupIds: Set<string> }>({
+    name: '',
+    description: '',
+    assignedGroupIds: new Set(),
+  })
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+
   useEffect(() => {
     fetchApplications()
   }, [])
@@ -104,14 +111,40 @@ const confirmDeleteGroup = (groupId: string) => {
       setEditingApplication(application)
       setName(application.name || '')
       setDescription(application.description || '')
+      await fetchAllUserGroups()
+      await fetchAppUserGroups(application._id || '')
+      setInitialEditValues({
+        name: application.name || '',
+        description: application.description || '',
+        assignedGroupIds: new Set(appUserGroups.map((g) => String(g))),
+      })
     } else {
       setEditingApplication(null)
       setName('')
       setDescription('')
+      await fetchAllUserGroups()
+      setInitialEditValues({
+        name: '',
+        description: '',
+        assignedGroupIds: new Set(),
+      })
     }
-    await fetchAllUserGroups()
-    await fetchAppUserGroups(application?._id || '')
     setShowDialog(true)
+  }
+
+  // Helper to check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (!showDialog) return false
+    if (name !== initialEditValues.name) return true
+    if (description !== initialEditValues.description) return true
+    // Compare assignedGroupIds as sets
+    const current = new Set(Array.from(assignedGroupIds))
+    const initial = new Set(Array.from(initialEditValues.assignedGroupIds))
+    if (current.size !== initial.size) return true
+    for (let id of current) {
+      if (!initial.has(id as string)) return true
+    }
+    return false
   }
 
   const saveApplication = async () => {
@@ -617,9 +650,39 @@ const confirmDeleteGroup = (groupId: string) => {
             <oj-button onojAction={() => saveApplication()}>Save</oj-button>
             <oj-button
               onojAction={() => {
+                if (hasUnsavedChanges()) {
+                  setShowDiscardDialog(true)
+                } else {
+                  setShowDialog(false)
+                  setErrors({})
+                }
+              }}
+              chroming="borderless"
+            >
+              Cancel
+            </oj-button>
+          </div>
+        </oj-dialog>
+      )}
+      {/* Discard changes confirmation dialog */}
+      {showDiscardDialog && (
+        <oj-dialog id="discardDialog" dialogTitle="Discard Changes?" initialVisibility="show">
+          <div class="oj-dialog-body">
+            You have unsaved changes. Are you sure you want to discard them?
+          </div>
+          <div class="oj-dialog-footer">
+            <oj-button
+              onojAction={() => {
                 setShowDialog(false)
+                setShowDiscardDialog(false)
                 setErrors({})
               }}
+              chroming="danger"
+            >
+              Discard
+            </oj-button>
+            <oj-button
+              onojAction={() => setShowDiscardDialog(false)}
               chroming="borderless"
             >
               Cancel
