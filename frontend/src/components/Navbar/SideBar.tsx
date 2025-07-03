@@ -70,7 +70,7 @@ export function SideBar({
           </li>
           {isAdmin&&<li id="usergroups">
             <a href="/usergroups">
-              <span class="oj-navigationlist-item-icon oj-ux-ico-people"></span>
+              <span class="oj-navigationlist-item-icon oj-ux-ico-group-avatar"></span>
               User Groups
             </a>
           </li>}

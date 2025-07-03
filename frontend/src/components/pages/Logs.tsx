@@ -4,6 +4,8 @@ import { useEffect, useState } from 'preact/hooks';
 import 'ojs/ojtable';
 import 'ojs/ojbutton';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
+import { useToast } from '../../context/ToastContext'
+import 'oj-c/message-toast'
 
 import 'oj-c/table';
 
@@ -50,6 +52,12 @@ const Logs = (props: { path?: string }) => {
     hasPrevPage: false,
   });
 
+const { addNewToast, messageDataProvider, removeToast } = useToast()
+const closeMessage = (event: CustomEvent<{ key: string }>) => {
+    removeToast(event.detail.key)
+    // const closeKey = event.detail.key
+    // setMessages(messages.filter((msg) => msg.id !== closeKey))
+  }
   useEffect(() => {
     fetchLogs(pagination.page);
   }, []);
@@ -75,7 +83,6 @@ const Logs = (props: { path?: string }) => {
 
       const data = await res.json();
 
-      // Protect against undefined values
       setAdminLogs(data.logs || []);
       setPagination(data.pagination || {
         total: 0,
@@ -87,7 +94,14 @@ const Logs = (props: { path?: string }) => {
       });
 
       setDataProvider(new ArrayDataProvider(data.logs || [], { keyAttributes: '_id' }));
+
+      if (res.ok) {
+        addNewToast('confirmation', 'Success', data.message || 'Logs fetched successfully.');
+      } else {
+        addNewToast('error', 'Error', data.message || 'Failed to fetch logs.');
+      }
     } catch (error) {
+      addNewToast('error', 'Error', 'Failed to fetch logs.');
       console.error("Failed to fetch logs", error);
     }
   };
@@ -146,6 +160,12 @@ const Logs = (props: { path?: string }) => {
           <oj-button onojAction={goToNextPage} disabled={!pagination.hasNextPage}>Next</oj-button>
         </div>
       )}
+      <oj-c-message-toast
+        data={messageDataProvider}
+        onojClose={closeMessage}
+        position="top-right"
+        offset={{ horizontal: 10, vertical: 50 }}
+      />
     </div>
   );
 };
