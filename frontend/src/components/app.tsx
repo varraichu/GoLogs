@@ -13,7 +13,6 @@ import Nav from './Nav'
 import Context = require('ojs/ojcontext')
 // import {SideBar} from './Navbar/SideBar'
 import { SideBar } from './Navbar/SideBar'
-import { set } from 'mongoose'
 import { Header } from './header'
 import UserApplications from "./pages/UserApplications";
 

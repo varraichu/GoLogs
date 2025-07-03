@@ -24,6 +24,7 @@ export function SideBar({
   pictureUrl,
   username,
 }: Props) {
+  // isAdmin=false
   const [activeItem, setActiveItem] = useState<string>('dashboard')
 
   const handleNavigation = (path: string, id: string) => {
@@ -67,14 +68,14 @@ export function SideBar({
               Dashboard
             </a>
           </li>
-          <li id="usergroups">
+          {isAdmin&&<li id="usergroups">
             <a href="/usergroups">
               <span class="oj-navigationlist-item-icon oj-ux-ico-people"></span>
               User Groups
             </a>
-          </li>
+          </li>}
           <li id="applications">
-            <a href="/applications">
+            <a href={isAdmin?"/applications":"/user-applications"}>
               <span class="oj-navigationlist-item-icon oj-ux-ico-apps-grid"></span>
               Applications
             </a>
