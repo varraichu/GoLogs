@@ -7,8 +7,22 @@ import "oj-c/button";
 import "oj-c/input-text";
 import "oj-c/form-layout";
 import 'oj-c/select-multiple';
+import 'oj-c/card-view';
+// import { CCardViewElement } from "oj-c/card-view";
+
+
+import 'ojs/ojselector';
+import 'ojs/ojlistitemlayout';
+import 'ojs/ojavatar';
+import 'ojs/ojlistview';
+import 'ojs/ojbutton';
+import 'ojs/ojtoolbar';
+
+
 import LengthValidator = require('ojs/ojvalidator-length');
-import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
+import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider');
+
+import ArrayDataProvider = require('ojs/ojarraydataprovider');
 
 interface Application {
     _id: string;
@@ -45,6 +59,9 @@ const Applications = (props: { path?: string }) => {
     const [assignedGroupIds, setAssignedGroupIds] = useState<any>(new Set([]))
     const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]))
 
+    const [dataProvider, setDataProvider] = useState<any>(null);
+
+
     useEffect(() => {
         fetchApplications();
     }, []);
@@ -63,11 +80,13 @@ const Applications = (props: { path?: string }) => {
             });
             const data = await res.json();
             setApplications(data.applications || []);
-            console.log("Fetched: ", applications);
+            setDataProvider(new ArrayDataProvider(data.applications || [], { keyAttributes: '_id' }));
+            console.log("Fetched: ", dataProvider);
         } catch (error) {
             console.error("Failed to fetch applications", error);
         }
     };
+
 
     const openDialog = async (application?: Application) => {
         if (application) {
@@ -290,10 +309,6 @@ const Applications = (props: { path?: string }) => {
     };
 
     return (
-        //   <div>
-        //   <h2>Applications</h2>
-        //   <CardView application={apps} />
-        // </div>
         <div class="oj-flex oj-sm-padding-4x">
             <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
                 <div class="" >
@@ -305,50 +320,139 @@ const Applications = (props: { path?: string }) => {
                 </div>
             </div>
 
-            <div class="oj-flex oj-sm-flex-wrap oj-sm-justify-content-center oj-sm-padding-4x ">
-                {applications.length > 0 ? (
-                (applications || []).map((application) => (
+
+            <div class="oj-flex oj-flex-wrap oj-flex-space-" style={"gap: 24px"}>
+                {(applications || []).map((app) => (
                     <div
-                        class="oj-sm-12 oj-md-4 oj-flex-item oj-panel oj-panel-shadow-md oj-sm-margin-4x"
-                        style="border: 1px solid #ccc; border-radius: 12px; padding: 24px; min-width: 280px; max-width: 360px; display: flex; flex-direction: column; justify-content: space-between;"
+                        key={app._id}
+                        class="oj-panel oj-panel-shadow-md"
+                        style="
+        border: 1px solid #e5e7eb; 
+        border-radius: 12px; 
+        padding: 20px 20px 16px 20px; 
+        max-width: 400px; 
+        min-width: 400px; 
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    "
                     >
-                        <div>
-                            <div class="oj-typography-heading-sm oj-sm-margin-bottom-2x">{application.name}</div>
-                            <div class="oj-typography-body-sm oj-sm-margin-bottom-2x">{application.description}</div>
-                            <div class="oj-typography-body-xs oj-sm-margin-bottom">👤 Users: {application.groupCount}</div>
-                            <div class="oj-typography-body-xs oj-sm-margin-bottom"> Logs: {application.logCount}</div>
-                        </div>
-                        <div class="oj-sm-margin-4x">
-                            {(application.groupNames || []).map((group) => (
-                                <span class="oj-badge oj-badge-subtle oj-sm-margin-2x">{group}</span>
-                            ))}
+                        {/* Header: Name + Toggle */}
+                        <div
+                            class="oj-flex"
+                            style="
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            width: 100%;
+        "
+                        >
+                            <div style="flex: 1; display: flex; align-items: center;">
+                                <h3 class="oj-typography-heading-sm" style="margin: 0; flex: 1; word-break: break-word;">
+                                    {app.name}
+                                </h3>
+                                <span
+                                    class="oj-typography-body-xs"
+                                    style={`
+                margin-left: 12px;
+                padding: 2px 10px;
+                font-weight: 500;
+                color: ${app.is_active ? '#065f46' : '#991b1b'};
+                font-size: 0.85em;
+            `}
+                                >
+                                    {app.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                            <div style="flex: 0;">
+                                <oj-switch
+                                    value={app.is_active}
+                                    onvalueChanged={(e) =>
+                                        handleToggleApplicationStatus(app._id, e.detail.value as boolean)}
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <oj-switch
-                                value={application.is_active}
-                                onvalueChanged={(e) =>
-                                    handleToggleApplicationStatus(application._id, e.detail.value as boolean)
-                                }
-                                class="oj-sm-margin-end"
-                            />
+                        <p
+                            class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x"
+                            style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
+                        >
+                            {app.description}
+                        </p>
+
+                        <div
+                            class="oj-flex"
+                            style="justify-content: space-between; align-items: stretch; gap: 32px; margin-bottom: 24px;"
+                        >
+                            {/* Logs column */}
+                            <div style="display: flex; flex-direction: column; align-items: flex-start;
+                            background-color: rgba(243, 243, 243, 0.6); padding: 8px; border-radius: 8px; flex: 1;">
+                                <div class="oj-typography-body-sm oj-text-color-secondary">Logs</div>
+                                <div class="oj-typography-heading-md">{app.logCount.toLocaleString()}</div>
+                            </div>
+                            {/* Groups column */}
+                            <div style="display: flex; flex-direction: column; align-items: flex-start;
+                            background-color: rgba(243, 243, 243,0.6); padding: 8px; border-radius: 8px; flex: 1;">
+                                <div class="oj-typography-body-sm oj-text-color-secondary">Groups</div>
+                                <div class="oj-typography-heading-md">{app.groupCount.toLocaleString()}</div>
+                            </div>
                         </div>
-                        <div class="oj-flex oj-sm-justify-content-space-between oj-sm-margin-top-2x">
-                            <oj-button display="icons" onojAction={() => openDialog(application)} class="oj-sm-margin-end">
-                                Edit
-                            </oj-button>
-                            <oj-button display="icons" chroming="danger" onojAction={() => deleteGroup(application._id)}>
-                                Delete
-                            </oj-button>
+
+
+                        <div class="oj-sm-margin-b-4x" style="margin-bottom: 12px;">
+                            <p class="oj-typography-body-sm oj-text-color-secondary" style="margin-bottom: 4px;">Assigned To</p>
+                            <div class="oj-flex oj-sm-flex-wrap" style="margin-top: 0;">
+                                {app.groupNames.slice(0, 2).map((group, index) => (
+                                    <span
+                                        key={index}
+                                        class="oj-typography-body-xs"
+                                        style="color:rgb(25, 85, 160); background-color:rgb(220, 235, 255); padding: 4px 8px; margin: 2px; border-radius: 20px;"
+                                    >
+                                        {group}
+                                    </span>
+                                ))}
+                                {app.groupNames.length > 2 && (
+                                    <span
+                                        class="oj-typography-body-xs"
+                                        style="color:rgb(0, 0, 0); background-color:rgb(243, 243, 243); padding: 4px 8px; margin: 2px; border-radius: 20px;"
+                                    >
+                                        +{app.groupNames.length - 2}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+
+
+                        {/* Footer: Created At and Buttons */}
+                        <div
+                            class="oj-flex"
+                            style="justify-content: space-between; align-items: center; gap: 12px; margin-top: auto;"
+                        >
+                            <div class="oj-typography-body-xs oj-text-color-secondary">
+                                Created {new Date(app.created_at).toLocaleString()}
+                            </div>
+                            <div class="oj-flex" style="gap: 12px;">
+                                <oj-button
+                                    chroming="borderless"
+                                    onojAction={() => openDialog(app)}
+                                >
+                                    Edit
+                                </oj-button>
+                                <oj-button
+                                    chroming="danger"
+                                    onojAction={() => deleteGroup(app._id)}
+                                >
+                                    Delete
+                                </oj-button>
+                            </div>
                         </div>
                     </div>
-                ))) : (
-                    <div class="oj-typography-body-md oj-sm-margin-4x">
-                        No applications found. Please add applications to assign to users.
-                    </div>
-                )
-            }
+                ))}
             </div>
+
+
 
             {showDialog && (
                 <oj-dialog id="groupDialog" dialogTitle={editingApplication ? "Edit Group" : "Create Group"} initialVisibility="show">
@@ -398,6 +502,11 @@ const Applications = (props: { path?: string }) => {
                     </div>
                 </oj-dialog>
             )}
+
+
+            {/* <CardView application={applications} /> */}
+
+
         </div>
     );
 };
