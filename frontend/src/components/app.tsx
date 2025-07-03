@@ -11,6 +11,7 @@ import Logs from "./pages/Logs";
 import UserGroups from "./pages/UserGroups";
 import Nav from "./Nav";
 import Context = require("ojs/ojcontext");
+import UserApplications from "./pages/UserApplications";
 
 type Props = {
   appName?: string;
@@ -22,7 +23,7 @@ export const App = registerCustomElement(
   ({ appName = "GoLogs", userLogin = "john.hancock@oracle.com" }: Props) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [loading, setLoading] = useState(true); 
+    const [loading, setLoading] = useState(true);
     useEffect(() => {
       Context.getPageContext().getBusyContext().applicationBootstrapComplete();
 
@@ -36,7 +37,7 @@ export const App = registerCustomElement(
           setIsAuthenticated(true);
           setIsAdmin(payload.isAdmin);
 
-          
+
         } catch (err) {
           console.error("Invalid JWT token", err);
         }
@@ -71,7 +72,11 @@ export const App = registerCustomElement(
         <Router>
           <Dashboard path="/dashboard" />
           <Settings path="/settings" />
-          <Applications path="/applications" />
+          {isAdmin ? (
+            <Applications path="/applications" />
+          ) : (
+            <UserApplications path="/user-applications" />
+          )}
           <Logs path="/logs" />
           {isAdmin && <UserGroups path="/usergroups" />}
         </Router>

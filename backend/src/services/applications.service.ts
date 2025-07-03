@@ -31,6 +31,25 @@ export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[])
         as: 'groupDetails', // Store the full group documents here
       },
     },
+
+    {
+      $lookup: {
+        from: 'logs',
+        let: { appId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$app_id', '$$appId'] },
+              // Add additional filters here if needed:
+              // , created_at: { $gte: new Date('2024-01-01') }
+            },
+          },
+          { $count: 'total' },
+        ],
+        as: 'logStats',
+      },
+    },
+
     // 4. Project the final shape of the output
     {
       $project: {
@@ -41,6 +60,9 @@ export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[])
         is_active: 1,
         groupCount: { $size: '$groupDetails' }, // Count the number of groups
         groupNames: '$groupDetails.name', // Create an array of just the group names
+        logCount: {
+          $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0],
+        },
       },
     },
   ]);
