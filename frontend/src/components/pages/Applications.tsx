@@ -20,9 +20,11 @@ import 'ojs/ojtoolbar';
 
 
 import LengthValidator = require('ojs/ojvalidator-length');
-import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider');
 
+import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
+import RegExpValidator = require("ojs/ojvalidator-regexp");
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
+
 
 interface Application {
     _id: string;
@@ -320,7 +322,6 @@ const Applications = (props: { path?: string }) => {
                 </div>
             </div>
 
-
             <div class="oj-flex oj-flex-wrap oj-flex-space-" style={"gap: 24px"}>
                 {(applications || []).map((app) => (
                     <div
@@ -464,7 +465,16 @@ const Applications = (props: { path?: string }) => {
                                 value={name}
                                 ref={nameRef}
                                 onvalueChanged={(e) => setName(e.detail.value)}
-                                validators={[new LengthValidator({ min: 5, max: 20 })]}
+                                required
+                                validators={[
+                                    new LengthValidator({ min: 5, max: 20 }),
+                                    new RegExpValidator({
+                                        pattern: '^[a-zA-Z0-9_]+$',
+                                        hint: 'Only letters, numbers, and underscores (_) are allowed.',
+                                        messageSummary: 'Invalid name format.',
+                                        messageDetail: 'Use only letters, numbers, and underscores (_).'
+                                    })
+                                ]}
                             >
                             </oj-c-input-text>
                             <oj-c-input-text
@@ -472,7 +482,15 @@ const Applications = (props: { path?: string }) => {
                                 value={description}
                                 ref={descRef}
                                 onvalueChanged={(e) => setDescription(e.detail.value)}
-                                validators={[new LengthValidator({ min: 5, max: 50 })]}
+                                required
+                                validators={[new LengthValidator({ min: 10, max: 100 }),
+                                new RegExpValidator({
+                                    pattern: '^[a-zA-Z0-9 _-]+$',
+                                    hint: 'Only letters, numbers, spaces, hyphens(-), and underscores (_) are allowed.',
+                                    messageSummary: 'Invalid name format.',
+                                    messageDetail: 'Use only letters, numbers, spaces, hyphens(-), and underscores (_).'
+                                })
+                                ]}
                             >
 
                             </oj-c-input-text>
