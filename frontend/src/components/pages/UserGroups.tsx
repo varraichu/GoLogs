@@ -95,10 +95,10 @@ const UserGroups = (props: { path?: string }) => {
     }
   }, [addEmailInput, removeEmailInput])
 
+  // Fetch groups
   const fetchGroups = async () => {
     try {
       const token = localStorage.getItem('jwt')
-
       const res = await fetch('http://localhost:3001/api/userGroup/', {
         method: 'GET',
         headers: {
@@ -108,7 +108,17 @@ const UserGroups = (props: { path?: string }) => {
       })
       const data = await res.json()
       setGroups(data)
+      addNewToast(
+         'confirmation',
+         'Success',
+         data.message || 'Fetched user groups successfully.',
+      )
     } catch (error) {
+      addNewToast(
+         'error',
+         'Error',
+         'Failed to fetch user groups',
+      )
       console.error('Failed to fetch user groups', error)
     }
   }
@@ -182,6 +192,7 @@ const UserGroups = (props: { path?: string }) => {
     return Object.keys(newErrors).length === 0
   }
 
+  // Save group
   const saveGroup = async () => {
     if (!validateForm()) return
 
@@ -216,13 +227,23 @@ const UserGroups = (props: { path?: string }) => {
       body,
     })
 
+    const data = await res.json()
     if (res.ok) {
       setShowDialog(false)
       fetchGroups()
+      addNewToast(
+         'confirmation',
+         'Success',
+         data.message || 'User group saved successfully.',
+      )
     } else {
-      const data = await res.json()
       setErrorMessage(data.message || 'Failed to save user group.')
       setShowErrorDialog(true)
+      addNewToast(
+         'error',
+         'Error',
+         data.message || 'Failed to save user group.',
+      )
     }
   }
 
@@ -230,6 +251,7 @@ const UserGroups = (props: { path?: string }) => {
     setConfirmDeleteDialogId(groupId)
   }
 
+  // Delete group
   const handleDeleteGroup = async () => {
     try {
       if (!confirmDeleteDialogId) return
@@ -240,16 +262,31 @@ const UserGroups = (props: { path?: string }) => {
         headers: { Authorization: `Bearer ${token}` },
       })
 
+      const data = await res.json()
       if (res.ok) {
         fetchGroups()
+        addNewToast(
+           'confirmation',
+           'Success',
+           data.message || 'Group deleted successfully.',
+        )
       } else {
-        const data = await res.json()
         setErrorMessage(data.message || 'Failed to delete user group.')
         setShowErrorDialog(true)
+        addNewToast(
+           'error',
+           'Error',
+           data.message || 'Failed to delete user group.',
+        )
       }
 
       setConfirmDeleteDialogId(null)
     } catch (error) {
+      addNewToast(
+         'error',
+         'Error',
+         'Failed to delete group',
+      )
       console.error('Failed to delete group', error)
     }
   }
@@ -324,11 +361,12 @@ const UserGroups = (props: { path?: string }) => {
     await performAppAccessSave()
   }
 
+  // App access save
   const performAppAccessSave = async () => {
     if (!selectedGroup) return
 
     const token = localStorage.getItem('jwt')
-    await fetch(`http://localhost:3001/api/user-groups/${selectedGroup._id}/app-access`, {
+    const res = await fetch(`http://localhost:3001/api/user-groups/${selectedGroup._id}/app-access`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -337,11 +375,25 @@ const UserGroups = (props: { path?: string }) => {
       body: JSON.stringify({ appIds: stagedAppIds }),
     })
 
-    setSelectedAppIds(stagedAppIds)
-    setShowAppAccessDialog(false)
-    setShowUnassignConfirmDialog(false)
-    setPendingAppSave(false)
-    fetchGroups()
+    const data = await res.json()
+    if (res.ok) {
+      setSelectedAppIds(stagedAppIds)
+      setShowAppAccessDialog(false)
+      setShowUnassignConfirmDialog(false)
+      setPendingAppSave(false)
+      fetchGroups()
+      addNewToast(
+         'confirmation',
+         'Success',
+         data.message || 'App access updated successfully.',
+      )
+    } else {
+      addNewToast(
+         'error',
+         'Error',
+         data.message || 'Failed to update app access.',
+      )
+    }
   }
 
   const handleToggleGroupStatus = async (groupId: string, isActive: boolean) => {
@@ -357,16 +409,32 @@ const UserGroups = (props: { path?: string }) => {
         body: JSON.stringify({ is_active: isActive }),
       })
 
+      const data = await res.json()
       if (res.ok) {
         fetchGroups()
+        addNewToast(
+           'confirmation',
+           'Success',
+           data.message || 'Group status updated.',
+        )
       } else {
-        console.error('Failed to toggle group status')
+        addNewToast(
+           'error',
+           'Error',
+           data.message || 'Failed to toggle group status.',
+        )
       }
     } catch (error) {
+      addNewToast(
+         'error',
+         'Error',
+         'Error toggling status.',
+      )
       console.error('Error toggling status:', error)
     }
   }
 
+  // Fetch users in group
   const handleUsersClick = async (group: UserGroup) => {
     setSelectedGroup(group)
 
@@ -374,6 +442,11 @@ const UserGroups = (props: { path?: string }) => {
     if (!token) {
       setErrorMessage('Authentication token is missing.')
       setShowErrorDialog(true)
+      addNewToast(
+         'error',
+         'Error',
+         'Authentication token is missing.',
+      )
       return
     }
 
@@ -386,20 +459,33 @@ const UserGroups = (props: { path?: string }) => {
         },
       })
 
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
-
         setSelectedGroup((prevGroup) => ({
           ...prevGroup!,
           users: data.users,
         }))
         setShowUsersDialog(true)
+        addNewToast(
+           'confirmation',
+           'Success',
+           data.message || 'Fetched users successfully.',
+        )
       } else {
-        const errorData = await res.json()
-        setErrorMessage(errorData.message || 'Failed to fetch users.')
+        setErrorMessage(data.message || 'Failed to fetch users.')
         setShowErrorDialog(true)
+        addNewToast(
+           'error',
+           'Error',
+           data.message || 'Failed to fetch users.',
+        )
       }
     } catch (error) {
+      addNewToast(
+         'error',
+         'Error',
+         'An error occurred while fetching users.',
+      )
       console.error('Error fetching users:', error)
       setErrorMessage('An error occurred while fetching users.')
       setShowErrorDialog(true)

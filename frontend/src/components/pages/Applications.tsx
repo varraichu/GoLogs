@@ -194,7 +194,7 @@ const Applications = (props: { path?: string }) => {
         return
       } else {
         addNewToast(
-          'info',
+          'confirmation',
           editingApplication ? 'Application updated' : 'Application created',
           data.message || 'Operation successful.'
         )
@@ -236,7 +236,7 @@ const Applications = (props: { path?: string }) => {
           )
         } else {
           addNewToast(
-            'info',
+            'confirmation',
             'Application deleted',
             data.message || 'Application deleted successfully.'
           )
