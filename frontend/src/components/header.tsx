@@ -58,13 +58,13 @@ export function Header({ appName, userLogin ,setIsAuthenticated , setStartOpen}:
               label="Start"
               chroming="borderless"
             >
-              <span slot="startIcon" class="oj-ux-ico-menu ">☰</span>
+              <span slot="startIcon" class="oj-ux-ico-menu "></span>
             </oj-c-button>
-          <span
+          {/* <span
             role="img"
             class="oj-icon demo-oracle-icon"
             title="Oracle Logo"
-            alt="Oracle Logo"></span>
+            alt="Oracle Logo"></span> */}
           {/*<h1
             class="oj-sm-only-hide oj-web-applayout-header-title"
             title="Application Name">
