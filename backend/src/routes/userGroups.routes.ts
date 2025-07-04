@@ -36,7 +36,7 @@ router.get('/:groupId/users', async (req, res) => {
   try {
     const { groupId } = req.params;
 
-    const members = await UserGroupMembers.find({ group_id: groupId }).populate(
+    const members = await UserGroupMembers.find({ group_id: groupId, is_active: true }).populate(
       'user_id',
       'email username picture_url'
     ); // Populate user details
