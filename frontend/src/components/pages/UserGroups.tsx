@@ -223,72 +223,25 @@ const UserGroups = (props: { path?: string }) => {
     return Object.keys(newErrors).length === 0
   }
 
-  const saveGroup = async () => {
+const saveGroup = async () => {
   if (!validateForm()) return;
   
   try {
-    const token = localStorage.getItem('jwt');
-    let response;
-
     if (editingGroup) {
-      const updateRes = await fetch(`http://localhost:3001/api/userGroup/${editingGroup._id}`, {
-        method: 'PATCH',
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          addMemberEmails,
-          removeMemberEmails,
-        }),
-      });
-      
-      if (!updateRes.ok) {
-        const errorData = await updateRes.json();
-        throw new Error(errorData.message || 'Failed to update user group');
-      }
-
-      response = await updateRes.json();
-
-      const appsChanged = JSON.stringify(stagedAppIds.sort()) !== JSON.stringify(selectedAppIds.sort());
-      
-      if (appsChanged && stagedAppIds.length >= 0) {
-        await updateGroupAppAccess(editingGroup._id, stagedAppIds);
-      }
-    } else {
-      const createRes = await fetch('http://localhost:3001/api/userGroup/', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          memberEmails: addMemberEmails,
-        }),
-      });
-      
-      if (!createRes.ok) {
-        const errorData = await createRes.json();
-        throw new Error(errorData.message || 'Failed to create user group');
-      }
-
-      response = await createRes.json();
-      if (stagedAppIds.length > 0) {
-        await updateGroupAppAccess(response._id, stagedAppIds);
+      const removedApps = selectedAppIds.filter(id => !stagedAppIds.includes(id));
+      if (removedApps.length > 0) {
+        setRemovedAppIds(
+          availableApps
+            .filter(app => removedApps.includes(app._id))
+            .map(app => app.name)
+        );
+        setPendingAppSave(true);
+        setShowUnassignConfirmDialog(true);
+        return;
       }
     }
 
-    setShowDialog(false);
-    fetchGroups();
-    addNewToast(
-      'confirmation',
-      'Success',
-      editingGroup ? 'User group updated successfully.' : 'User group created successfully.',
-    );
+    await performSave();
   } catch (error: any) {
     setErrorMessage(error.message || 'Failed to save user group.');
     setShowErrorDialog(true);
@@ -298,6 +251,71 @@ const UserGroups = (props: { path?: string }) => {
       error.message || 'Failed to save user group.',
     );
   }
+};
+
+const performSave = async () => {
+  const token = localStorage.getItem('jwt');
+  let response;
+
+  if (editingGroup) {
+    const updateRes = await fetch(`http://localhost:3001/api/userGroup/${editingGroup._id}`, {
+      method: 'PATCH',
+      headers: { 
+        Authorization: `Bearer ${token}`, 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        addMemberEmails,
+        removeMemberEmails,
+      }),
+    });
+    
+    if (!updateRes.ok) {
+      const errorData = await updateRes.json();
+      throw new Error(errorData.message || 'Failed to update user group');
+    }
+
+    response = await updateRes.json();
+
+    const appsChanged = JSON.stringify(stagedAppIds.sort()) !== JSON.stringify(selectedAppIds.sort());
+    if (appsChanged) {
+      await updateGroupAppAccess(editingGroup._id, stagedAppIds);
+    }
+  } else {
+    const createRes = await fetch('http://localhost:3001/api/userGroup/', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        memberEmails: addMemberEmails,
+      }),
+    });
+    
+    if (!createRes.ok) {
+      const errorData = await createRes.json();
+      throw new Error(errorData.message || 'Failed to create user group');
+    }
+
+    response = await createRes.json();
+    
+    if (stagedAppIds.length > 0) {
+      await updateGroupAppAccess(response._id, stagedAppIds);
+    }
+  }
+
+  setShowDialog(false);
+  fetchGroups();
+  addNewToast(
+    'confirmation',
+    'Success',
+    editingGroup ? 'User group updated successfully.' : 'User group created successfully.',
+  );
 };
 
    const handleAppSelectionChange = (appId: string, checked: boolean) => {
@@ -738,6 +756,7 @@ const updateGroupAppAccess = async (groupId: string, appIds: string[]) => {
           </div>
         </oj-dialog>
       )}
+      
       {showErrorDialog && (
         <oj-dialog id="errorDialog" dialogTitle="Error" initialVisibility="show">
           <div class="oj-dialog-body">{errorMessage}</div>
@@ -778,9 +797,10 @@ const updateGroupAppAccess = async (groupId: string, appIds: string[]) => {
           </div>
           <div class="oj-dialog-footer">
             <oj-button
-              onojAction={() => {
-                saveGroup()
-                setShowUnassignConfirmDialog(false)
+              onojAction={async () => {
+                await performSave();
+                setShowUnassignConfirmDialog(false);
+                setPendingAppSave(false);
               }}
               chroming="danger"
             >
@@ -788,9 +808,8 @@ const updateGroupAppAccess = async (groupId: string, appIds: string[]) => {
             </oj-button>
             <oj-button
               onojAction={() => {
-                setShowUnassignConfirmDialog(false)
-                setPendingAppSave(false)
-                setStagedAppIds(selectedAppIds)
+                setShowUnassignConfirmDialog(false);
+                setPendingAppSave(false);
               }}
               chroming="borderless"
             >
