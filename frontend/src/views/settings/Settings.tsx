@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import DatabaseRetentionSettings from '../content/DatabaseRetentionSettings';
+import DatabaseRetentionSettings from './components/DatabaseRetentionSettings';
 
 const Settings = (props: { path?: string }) => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);

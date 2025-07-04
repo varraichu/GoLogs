@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import 'ojs/ojbutton';
 import 'ojs/ojselectsingle';
 import "oj-c/message-toast"
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../../context/ToastContext';
 
 const RETENTION_OPTIONS = [
   { value: 7, label: '7 days' },

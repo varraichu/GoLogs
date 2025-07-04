@@ -3,18 +3,18 @@ import { useEffect, useState } from 'preact/hooks'
 import { registerCustomElement } from 'ojs/ojvcomponent'
 import { route, Router } from 'preact-router'
 import 'oj-c/drawer-layout'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Settings from './pages/Settings'
-import Applications from './pages/Applications'
-import Logs from './pages/Logs'
-import UserGroups from './pages/UserGroups'
+import Login from '../views/login/Login'
+import Dashboard from '../views/dashboard/Dashboard'
+import Settings from '../views/settings/Settings'
+import Applications from '../views/applications/Applications'
+import Logs from '../views/logs/Logs'
+import UserGroups from '../views/user-groups/UserGroups'
 import Nav from './Nav'
 import Context = require('ojs/ojcontext')
 // import {SideBar} from './Navbar/SideBar'
 import { SideBar } from './Navbar/SideBar'
 import { Header } from './header'
-import UserApplications from "./pages/UserApplications";
+import UserApplications from "../views/user-applications/UserApplications";
 import { ToastProvider} from '../context/ToastContext'
 
 type Props = {
