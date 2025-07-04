@@ -66,7 +66,7 @@ export const createUserGroup = async (req: IAuthRequest, res: Response) => {
     return;
   } catch (error: any) {
     if (error.code === 11000 && error.keyPattern?.name) {
-      res.status(400).json({ message: `An active user group with name "${error.keyPattern?.name}" already exists.` });
+      res.status(400).json({ message: 'An active user group with name already exists.' });
       return;
     }
     logger.error('Error creating user group:', error);
@@ -181,7 +181,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
     return;
   } catch (error: any) {
     if (error.code === 11000 && error.keyPattern?.name) {
-      res.status(400).json({ message: `An active user group with name "${error.keyPattern?.name}" already exists.` });
+      res.status(400).json({ message: 'An active user group with name already exists.' });
       return;
     }
     logger.error('Error updating user group:', error);
