@@ -15,8 +15,6 @@ import RegExpValidator = require('ojs/ojvalidator-regexp')
 import "ojs/ojselectcombobox";
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
 
-const MAX_VISIBLE_APPS = 5
-
 interface User {
   _id: string
   username: string
@@ -58,7 +56,6 @@ const UserGroups = (props: { path?: string }) => {
   const [description, setDescription] = useState('')
   const [confirmCancelDialog, setConfirmCancelDialog] = useState(false);
 
-  // New state for comboboxes
   const [addMemberEmails, setAddMemberEmails] = useState<string[]>([]);
   const [removeMemberEmails, setRemoveMemberEmails] = useState<string[]>([]);
   const [addEmailDataProvider, setAddEmailDataProvider] = useState<ArrayDataProvider<Email['value'], Email>>(
@@ -93,7 +90,6 @@ const UserGroups = (props: { path?: string }) => {
     fetchGroups()
   }, [])
 
-  // Fetch groups
   const fetchGroups = async () => {
     try {
       const token = localStorage.getItem('jwt')
@@ -116,26 +112,68 @@ const UserGroups = (props: { path?: string }) => {
     }
   }
 
-  const openDialog = (group?: UserGroup) => {
+  const openDialog = async (group?: UserGroup) => {
     setErrors({})
     if (group) {
       setEditingGroup(group)
       setName(group.name || '')
       setDescription(group.description || '')
+      
+      const token = localStorage.getItem('jwt')
+      const appsRes = await fetch('http://localhost:3001/api/applications', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      
+      if (appsRes.ok) {
+        const appsData = await appsRes.json()
+        if (Array.isArray(appsData.applications)) {
+          const apps = appsData.applications
+          setAvailableApps(apps)
+          
+          const matchedIds = apps
+            .filter((app: Application) =>
+              group.applicationNames.some(
+                name => name.trim().toLowerCase() === app.name.trim().toLowerCase()
+              )
+            )
+            .map((app: Application) => app._id)
+          
+          setSelectedAppIds(matchedIds)
+          setStagedAppIds(matchedIds)
+        }
+      }
     } else {
       setEditingGroup(null)
       setName('')
       setDescription('')
+      setSelectedAppIds([])
+      setStagedAppIds([])
     }
-    // Reset combobox states
-    setAddMemberEmails([]);
-    setRemoveMemberEmails([]);
-    setAddEmailDataProvider(new ArrayDataProvider([], { keyAttributes: 'value' }));
-    setRemoveEmailDataProvider(new ArrayDataProvider([], { keyAttributes: 'value' }));
+
+    if (!group) {
+    const token = localStorage.getItem('jwt');
+    const appsRes = await fetch('http://localhost:3001/api/applications', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    if (appsRes.ok) {
+      const appsData = await appsRes.json();
+      if (Array.isArray(appsData.applications)) {
+        setAvailableApps(appsData.applications);
+      }
+    }
+  }
+  
+    setAddMemberEmails([])
+    setRemoveMemberEmails([])
+    setAddEmailDataProvider(new ArrayDataProvider([], { keyAttributes: 'value' }))
+    setRemoveEmailDataProvider(new ArrayDataProvider([], { keyAttributes: 'value' }))
+    
     setShowDialog(true)
   }
 
-  // Fetches emails from the directory and maps them to the {value, label} format
   const fetchAndMapEmails = async (query: string): Promise<Email[]> => {
     const token = localStorage.getItem('jwt');
     const res = await fetch(
@@ -150,7 +188,6 @@ const UserGroups = (props: { path?: string }) => {
     return emails.map(email => ({ label: email, value: email }));
   };
 
-  // Handlers for the "Add Members" combobox
   const handleAddRawValueChange = async (event: any) => {
     const raw = event.detail.value;
     const currentInput = raw?.[raw.length - 1];
@@ -164,7 +201,6 @@ const UserGroups = (props: { path?: string }) => {
     setAddMemberEmails(event.detail.value as string[]);
   };
 
-  // Handlers for the "Remove Members" combobox
   const handleRemoveRawValueChange = async (event: any) => {
     const raw = event.detail.value;
     const currentInput = raw?.[raw.length - 1];
@@ -187,62 +223,93 @@ const UserGroups = (props: { path?: string }) => {
     return Object.keys(newErrors).length === 0
   }
 
-  // Save group
   const saveGroup = async () => {
-    if (!validateForm()) return
-    const token = localStorage.getItem('jwt')
-    let body: string
-    let url: string
-    let method: 'POST' | 'PATCH'
+  if (!validateForm()) return;
+  
+  try {
+    const token = localStorage.getItem('jwt');
+    let response;
 
     if (editingGroup) {
-      method = 'PATCH'
-      url = `http://localhost:3001/api/userGroup/${editingGroup._id}`
-      body = JSON.stringify({
-        name,
-        description,
-        addMemberEmails: addMemberEmails,
-        removeMemberEmails: removeMemberEmails,
-      })
+      const updateRes = await fetch(`http://localhost:3001/api/userGroup/${editingGroup._id}`, {
+        method: 'PATCH',
+        headers: { 
+          Authorization: `Bearer ${token}`, 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          addMemberEmails,
+          removeMemberEmails,
+        }),
+      });
+      
+      if (!updateRes.ok) {
+        const errorData = await updateRes.json();
+        throw new Error(errorData.message || 'Failed to update user group');
+      }
+
+      response = await updateRes.json();
+
+      const appsChanged = JSON.stringify(stagedAppIds.sort()) !== JSON.stringify(selectedAppIds.sort());
+      
+      if (appsChanged && stagedAppIds.length >= 0) {
+        await updateGroupAppAccess(editingGroup._id, stagedAppIds);
+      }
     } else {
-      method = 'POST'
-      url = 'http://localhost:3001/api/userGroup/'
-      body = JSON.stringify({
-        name,
-        description,
-        memberEmails: addMemberEmails,
-      })
+      const createRes = await fetch('http://localhost:3001/api/userGroup/', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          memberEmails: addMemberEmails,
+        }),
+      });
+      
+      if (!createRes.ok) {
+        const errorData = await createRes.json();
+        throw new Error(errorData.message || 'Failed to create user group');
+      }
+
+      response = await createRes.json();
+      if (stagedAppIds.length > 0) {
+        await updateGroupAppAccess(response._id, stagedAppIds);
+      }
     }
-    const res = await fetch(url, {
-      method,
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body,
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setShowDialog(false)
-      fetchGroups()
-      addNewToast(
-        'confirmation',
-        'Success',
-        data.message || 'User group saved successfully.',
-      )
-    } else {
-      setErrorMessage(data.message || 'Failed to save user group.')
-      setShowErrorDialog(true)
-      addNewToast(
-        'error',
-        'Error',
-        data.message || 'Failed to save user group.',
-      )
-    }
+
+    setShowDialog(false);
+    fetchGroups();
+    addNewToast(
+      'confirmation',
+      'Success',
+      editingGroup ? 'User group updated successfully.' : 'User group created successfully.',
+    );
+  } catch (error: any) {
+    setErrorMessage(error.message || 'Failed to save user group.');
+    setShowErrorDialog(true);
+    addNewToast(
+      'error',
+      'Error',
+      error.message || 'Failed to save user group.',
+    );
+  }
+};
+
+   const handleAppSelectionChange = (appId: string, checked: boolean) => {
+    setStagedAppIds(prev => 
+      checked ? [...prev, appId] : prev.filter(id => id !== appId)
+    )
   }
 
   const confirmDeleteGroup = (groupId: string) => {
     setConfirmDeleteDialogId(groupId)
   }
 
-  // Delete group
   const handleDeleteGroup = async () => {
     try {
       if (!confirmDeleteDialogId) return
@@ -279,97 +346,29 @@ const UserGroups = (props: { path?: string }) => {
     }
   }
 
-  const handleAppAccess = async (group: UserGroup) => {
-    setSelectedGroup(group)
-    const token = localStorage.getItem('jwt')
-    const res = await fetch('http://localhost:3001/api/applications', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    if (!res.ok) {
-      console.error('Failed to fetch apps:', res.statusText)
-      setErrorMessage('Failed to load applications. Please try again later.')
-      setShowErrorDialog(true)
-      return
-    }
-    try {
-      const data = await res.json()
-      console.log('Response Data:', data)
-      if (Array.isArray(data.applications)) {
-        const apps = data.applications
-        setAvailableApps(apps)
-        const matchedIds = apps
-          .filter((app: Application) =>
-            group.applicationNames.some(
-              (name) => name.trim().toLowerCase() === app.name.trim().toLowerCase()
-            )
-          )
-          .map((app: Application) => app._id)
-        console.log('Matched App IDs:', matchedIds)
-        setSelectedAppIds(matchedIds)
-        setStagedAppIds(matchedIds)
-        setShowAppAccessDialog(true)
-      } else {
-        throw new Error('Applications field is not an array')
-      }
-    } catch (error) {
-      console.error('Error parsing apps response:', error)
-      setErrorMessage('Failed to load applications.')
-      setShowErrorDialog(true)
-    }
-  }
-
-  const saveAppAccess = async () => {
-    if (!selectedGroup) return
-    const previouslyAssignedAppIds = selectedAppIds
-    const removed = previouslyAssignedAppIds.filter((id) => !stagedAppIds.includes(id))
-    if (removed.length > 0) {
-      setRemovedAppIds(
-        availableApps.filter((app) => removed.includes(app._id)).map((app) => app.name)
-      )
-      setPendingAppSave(true)
-      setShowUnassignConfirmDialog(true)
-      return
-    }
-    setSelectedAppIds(stagedAppIds)
-    await performAppAccessSave()
-  }
-
-  // App access save
-  const performAppAccessSave = async () => {
-    if (!selectedGroup) return
-    const token = localStorage.getItem('jwt')
-    const res = await fetch(`http://localhost:3001/api/user-groups/${selectedGroup._id}/app-access`, {
+const updateGroupAppAccess = async (groupId: string, appIds: string[]) => {
+  const token = localStorage.getItem('jwt');
+  try {
+    const res = await fetch(`http://localhost:3001/api/userGroup/${groupId}/app-access`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ appIds: stagedAppIds }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setSelectedAppIds(stagedAppIds)
-      setShowAppAccessDialog(false)
-      setShowUnassignConfirmDialog(false)
-      setPendingAppSave(false)
-      fetchGroups()
-      addNewToast(
-        'confirmation',
-        'Success',
-        data.message || 'App access updated successfully.',
-      )
-    } else {
-      addNewToast(
-        'error',
-        'Error',
-        data.message || 'Failed to update app access.',
-      )
+      body: JSON.stringify({ appIds }),
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Failed to update app access');
     }
+    
+    return await res.json();
+  } catch (error) {
+    console.error('Error updating app access:', error);
+    throw error;
   }
-
+};
   const handleToggleGroupStatus = async (groupId: string, isActive: boolean) => {
     const token = localStorage.getItem('jwt')
     try {
@@ -406,7 +405,6 @@ const UserGroups = (props: { path?: string }) => {
     }
   }
 
-  // Fetch users in group
   const handleUsersClick = async (group: UserGroup) => {
     setSelectedGroup(group)
     const token = localStorage.getItem('jwt')
@@ -463,10 +461,6 @@ const UserGroups = (props: { path?: string }) => {
 
   const closeUsersDialog = () => {
     setShowUsersDialog(false)
-  }
-
-  const showMoreApps = () => {
-    setShowAppAccessDialog(true)
   }
 
   return (
@@ -526,6 +520,7 @@ const UserGroups = (props: { path?: string }) => {
             </p>
             {/* Users and Applications */}
             <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'stretch', gap: '32px', marginBottom: '24px' }}>
+             
               {/* Users */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
                 <div class="oj-typography-body-sm oj-text-color-secondary">Users</div>
@@ -535,6 +530,7 @@ const UserGroups = (props: { path?: string }) => {
                   </span>
                 </div>
               </div>
+            
               {/* Applications */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
                 <div class="oj-typography-body-sm oj-text-color-secondary">Applications</div>
@@ -575,22 +571,21 @@ const UserGroups = (props: { path?: string }) => {
                 )}
               </div>
             </div>
+           
             {/* Footer: Buttons */}
             <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
+              <div class="oj-typography-body-xs oj-text-color-secondary">
+                Created {new Date(group.created_at).toLocaleString()}
+              </div>
               <div class="oj-flex" style={{ gap: '12px', marginLeft: 'auto' }}>
                 <oj-button chroming="borderless" onojAction={() => openDialog(group)}>
                   Edit
-                </oj-button>
-                <oj-button chroming="borderless" onojAction={() => handleAppAccess(group)}>
-                  App Access
                 </oj-button>
                 <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(group._id)}>
                   Delete
                 </oj-button>
               </div>
-              <div class="oj-typography-body-xs oj-text-color-secondary">
-                Created {new Date(group.created_at).toLocaleString()}
-              </div>
+              
             </div>
           </div>
         ))}
@@ -613,6 +608,7 @@ const UserGroups = (props: { path?: string }) => {
           id="groupDialog"
           dialogTitle={editingGroup ? 'Edit Group' : 'Create Group'}
           initialVisibility="show"
+          style={{ maxWidth: '800px', width: '100%' }}
         >
           <div class="oj-dialog-body">
             <oj-c-form-layout>
@@ -684,8 +680,54 @@ const UserGroups = (props: { path?: string }) => {
                   ></oj-combobox-many>
                 </>
               )}
-              {/* --- REPLACEMENT END --- */}
 
+              {/* App Access Section */}
+              <oj-label>Application Access</oj-label>
+              <div style={{ 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '8px', 
+                padding: '16px',
+                maxHeight: '300px',
+                overflowY: 'auto'
+              }}>
+                {availableApps.length > 0 ? (
+                  availableApps.map((app) => (
+                    <div key={app._id} style={{ 
+                      marginBottom: '8px',
+                      opacity: app.is_active ? 1 : 0.6,
+                      padding: '8px',
+                      backgroundColor: stagedAppIds.includes(app._id) ? '#f0f7ff' : 'transparent',
+                      borderRadius: '4px'
+                    }}>
+                      <label style={{ display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={stagedAppIds.includes(app._id)}
+                          disabled={!app.is_active}
+                          onChange={(e) => handleAppSelectionChange(app._id, e.currentTarget.checked)}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <span style={{ flex: 1 }}>
+                          {app.name}
+                          {!app.is_active && (
+                            <span style={{ 
+                              marginLeft: '8px', 
+                              color: '#dc2626',
+                              fontSize: '0.85em'
+                            }}>
+                              (Inactive)
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <div class="oj-text-color-secondary" style={{ textAlign: 'center' }}>
+                    Loading applications...
+                  </div>
+                )}
+              </div>
             </oj-c-form-layout>
           </div>
           <div class="oj-dialog-footer">
@@ -720,47 +762,6 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-      {showAppAccessDialog && selectedGroup && (
-        <oj-dialog
-          id="appAccessDialog"
-          dialogTitle={`App Access: ${selectedGroup.name}`}
-          initialVisibility="show"
-        >
-          <div class="oj-dialog-body oj-sm-padding-4x">
-            <oj-c-form-layout>
-              {availableApps.map((app) => (
-                <div key={app._id} style={{ opacity: app.is_active ? 1 : 0.5 }}>
-                  <label class="oj-label">
-                    <input
-                      type="checkbox"
-                      checked={stagedAppIds.includes(app._id)}
-                      disabled={!app.is_active}
-                      onChange={(e) => {
-                        const checked = e.currentTarget.checked
-                        setStagedAppIds((prev) =>
-                          checked ? [...prev, app._id] : prev.filter((id) => id !== app._id)
-                        )
-                      }}
-                    />
-                    &nbsp;{app.name}
-                  </label>
-                  {!app.is_active && (
-                    <div class="oj-text-color-danger">
-                      This app is inactive and cannot be selected.
-                    </div>
-                  )}
-                </div>
-              ))}
-            </oj-c-form-layout>
-          </div>
-          <div class="oj-dialog-footer">
-            <oj-button onojAction={saveAppAccess}>Save</oj-button>
-            <oj-button onojAction={() => setShowAppAccessDialog(false)} chroming="borderless">
-              Cancel
-            </oj-button>
-          </div>
-        </oj-dialog>
-      )}
       {showUnassignConfirmDialog && (
         <oj-dialog
           id="confirmUnassignDialog"
@@ -778,7 +779,8 @@ const UserGroups = (props: { path?: string }) => {
           <div class="oj-dialog-footer">
             <oj-button
               onojAction={() => {
-                performAppAccessSave()
+                saveGroup()
+                setShowUnassignConfirmDialog(false)
               }}
               chroming="danger"
             >
@@ -825,4 +827,4 @@ const UserGroups = (props: { path?: string }) => {
   )
 }
 
-export default UserGroups;
+export default UserGroups
