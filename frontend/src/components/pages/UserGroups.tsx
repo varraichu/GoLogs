@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
 import 'ojs/ojbutton'
 import 'ojs/ojdialog'
 import 'oj-c/form-layout'
@@ -14,6 +14,9 @@ import LengthValidator = require('ojs/ojvalidator-length')
 import RegExpValidator = require('ojs/ojvalidator-regexp')
 import "ojs/ojselectcombobox";
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
+
+import 'oj-c/tab-bar';
+import { TabData } from 'oj-c/tab-bar';
 
 const MAX_VISIBLE_APPS = 5
 
@@ -88,6 +91,20 @@ const UserGroups = (props: { path?: string }) => {
   const closeMessage = (event: CustomEvent<{ key: string }>) => {
     removeToast(event.detail.key)
   }
+
+  const data: TabData<string>[] = [
+    {
+      label: 'Active', itemKey: 'active',
+    },
+    {
+      label: 'Inactive', itemKey: 'inactive',
+    },
+  ];
+  const [selectedItem, setSelectedItem] = useState('active');
+  const handleSelectionChange = (event: CustomEvent) => {
+    const newSelection = event.detail.value;
+    setSelectedItem(newSelection);
+  };
 
   useEffect(() => {
     fetchGroups()
@@ -251,13 +268,14 @@ const UserGroups = (props: { path?: string }) => {
       const res = await fetch(`http://localhost:3001/api/userGroup/${confirmDeleteDialogId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
-      })
+      });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         fetchGroups()
         addNewToast(
           'confirmation',
           'Success',
-          'Group deleted successfully.',
+          data.message || 'Group deleted successfully.',
         )
       } else {
         setErrorMessage('Failed to delete user group.')
@@ -265,7 +283,7 @@ const UserGroups = (props: { path?: string }) => {
         addNewToast(
           'error',
           'Error',
-          'Failed to delete user group.',
+          data.message || 'Failed to delete user group.',
         )
       }
       setConfirmDeleteDialogId(null)
@@ -469,6 +487,12 @@ const UserGroups = (props: { path?: string }) => {
     setShowAppAccessDialog(true)
   }
 
+    const filteredGroups = useMemo(() => {
+      return (groups || []).filter(group =>
+        selectedItem === 'active' ? group.is_active : !group.is_active
+      );
+    }, [groups, selectedItem]);
+
   return (
     <div class="oj-flex oj-sm-padding-4x">
       <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
@@ -480,121 +504,170 @@ const UserGroups = (props: { path?: string }) => {
           <oj-button onojAction={() => openDialog()} chroming="callToAction">+ Create Group</oj-button>
         </div>
       </div>
-      <div class="oj-flex oj-flex-wrap" style={{ gap: '24px', justifyContent: 'flex-start', alignItems: 'stretch' }}>
-        {groups.map((group) => (
-          <div
-            key={group._id}
-            class="oj-panel oj-panel-shadow-md"
-            style={{
-              border: '1px solid #e5e7eb',
-              borderRadius: '12px',
-              padding: '20px 20px 16px 20px',
-              maxWidth: '420px',
-              minWidth: '420px',
-              flex: '1 1 400px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            {/* Header: Name + Toggle */}
-            <div class="oj-flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', width: '100%' }}>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                <h3 class="oj-typography-heading-sm" style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}>
-                  {group.name}
-                </h3>
-                <span
-                  class="oj-typography-body-xs"
-                  style={{
-                    marginLeft: '12px',
-                    padding: '2px 10px',
-                    fontWeight: '500',
-                    color: group.is_active ? '#065f46' : '#991b1b',
-                    fontSize: '0.85em',
-                  }}
-                >
-                  {group.is_active ? 'Active' : 'Inactive'}
-                </span>
+      <div id="tabbarcontainer" style={{ paddingBottom: '8px' }}>
+        <oj-c-tab-bar
+          data={data}
+          selection={selectedItem}
+          onojSelectionAction={handleSelectionChange}
+          edge="top"
+          layout="condense"
+          display="standard"
+          aria-label="Basic TabBar">
+        </oj-c-tab-bar>
+        <div class="oj-flex oj-flex-wrap" style={{ gap: '24px', justifyContent: 'flex-start', alignItems: 'stretch', marginTop: '24px', }}>
+          {filteredGroups.length === 0 ? (
+              <div class="oj-typography-body-sm oj-text-color-secondary" style={{ padding: '12px' }}>
+                No {selectedItem === 'active' ? 'active' : 'inactive'} groups found.
               </div>
-              <div style={{ flex: 0 }}>
-                <oj-switch value={group.is_active} onvalueChanged={(e) => handleToggleGroupStatus(group._id, e.detail.value as boolean)} />
-              </div>
-            </div>
-            {/* Description */}
-            <p class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x" style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-              {group.description}
-            </p>
-            {/* Users and Applications */}
-            <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'stretch', gap: '32px', marginBottom: '24px' }}>
-              {/* Users */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
-                <div class="oj-typography-body-sm oj-text-color-secondary">Users</div>
-                <div class="oj-typography-heading-md">
-                  <span class="oj-link" style={{ cursor: 'pointer' }} onClick={() => handleUsersClick(group)}>
-                    {group.userCount.toLocaleString()}
+            ) :
+            filteredGroups.map((group) => (
+            <div
+              key={group._id}
+              class="oj-panel oj-panel-shadow-md"
+              style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '20px 20px 16px 20px',
+                maxWidth: '420px',
+                minWidth: '420px',
+                flex: '1 1 400px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              {/* Header: Name + Toggle */}
+              <div class="oj-flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', width: '100%' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                  <h3 class="oj-typography-heading-sm" style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}>
+                    {group.name}
+                  </h3>
+                  <span
+                    class="oj-typography-body-xs"
+                    style={{
+                      marginLeft: '12px',
+                      padding: '2px 10px',
+                      fontWeight: '500',
+                      color: group.is_active ? '#065f46' : '#991b1b',
+                      fontSize: '0.85em',
+                    }}
+                  >
+                    {group.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
+                <div style={{ flex: 0 }}>
+                  {group.name === "Admin Group" ? (
+                    <div>
+
+                    </div>
+                  ) : (
+                    <div>
+                      <oj-switch value={group.is_active} onvalueChanged={(e) => handleToggleGroupStatus(group._id, e.detail.value as boolean)} />
+
+                    </div>
+                  )}
+                </div>
               </div>
-              {/* Applications */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
-                <div class="oj-typography-body-sm oj-text-color-secondary">Applications</div>
-                <div class="oj-typography-heading-md">{group.applicationCount.toLocaleString()}</div>
+              {/* Description */}
+              <p class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x" style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {group.description}
+              </p>
+              {/* Users and Applications */}
+              <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'stretch', gap: '32px', marginBottom: '24px' }}>
+                {/* Users */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
+                  <div class="oj-typography-body-sm oj-text-color-secondary">Users</div>
+                  <div class="oj-typography-heading-md">
+                    <span class="oj-link" style={{ cursor: 'pointer' }} onClick={() => handleUsersClick(group)}>
+                      {group.userCount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                {/* Applications */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
+                  <div class="oj-typography-body-sm oj-text-color-secondary">Applications</div>
+                  <div class="oj-typography-heading-md">{group.applicationCount.toLocaleString()}</div>
+                </div>
+              </div>
+              <div class="oj-sm-margin-b-4x" style={{ marginBottom: '12px' }}>
+                <p class="oj-typography-body-sm oj-text-color-secondary" style={{ marginBottom: '4px' }}>Assigned Apps</p>
+                <div class="oj-flex oj-sm-flex-wrap" style={{ marginTop: 0 }}>
+                  {group.applicationNames.slice(0, 2).map((group, index) => (
+                    <span
+                      key={index}
+                      class="oj-typography-body-xs"
+                      style={{
+                        color: 'rgb(25, 85, 160)',
+                        backgroundColor: 'rgb(220, 235, 255)',
+                        padding: '4px 8px',
+                        margin: '2px',
+                        borderRadius: '20px'
+                      }}
+                    >
+                      {group}
+                    </span>
+                  ))}
+                  {group.applicationNames.length > 2 && (
+                    <span
+                      class="oj-typography-body-xs"
+                      style={{
+                        color: 'rgb(0, 0, 0)',
+                        backgroundColor: 'rgb(243, 243, 243)',
+                        padding: '4px 8px',
+                        margin: '2px',
+                        borderRadius: '20px'
+                      }}
+                    >
+                      +{group.applicationNames.length - 2}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Footer: Buttons */}
+              <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
+                <div class="oj-flex" style={{ gap: '12px', marginLeft: 'auto' }}>
+                  <oj-button chroming="borderless" onojAction={() => openDialog(group)}>
+                    Edit
+                  </oj-button>
+                  {group.name === "Admin Group" ? (
+                    <div>
+                      <oj-button chroming="borderless" disabled={true} onojAction={() => handleAppAccess(group)}>
+                        App Access
+                      </oj-button>
+
+                    </div>
+                  ) : (
+                    <div>
+                      <oj-button chroming="borderless" onojAction={() => handleAppAccess(group)}>
+                        App Access
+                      </oj-button>
+
+                    </div>
+                  )}
+                  {group.name === "Admin Group" ? (
+                    <div>
+                      <oj-button chroming="danger" disabled={true} onojAction={() => confirmDeleteGroup(group._id)}>
+                        Delete
+                      </oj-button>
+                    </div>
+                  ) : (
+                    <div>
+                      <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(group._id)}>
+                        Delete
+                      </oj-button>
+
+                    </div>
+                  )}
+                </div>
+                <div class="oj-typography-body-xs oj-text-color-secondary">
+                  Created {new Date(group.created_at).toLocaleString()}
+                </div>
               </div>
             </div>
-            <div class="oj-sm-margin-b-4x" style={{ marginBottom: '12px' }}>
-              <p class="oj-typography-body-sm oj-text-color-secondary" style={{ marginBottom: '4px' }}>Assigned Apps</p>
-              <div class="oj-flex oj-sm-flex-wrap" style={{ marginTop: 0 }}>
-                {group.applicationNames.slice(0, 2).map((group, index) => (
-                  <span
-                    key={index}
-                    class="oj-typography-body-xs"
-                    style={{
-                      color: 'rgb(25, 85, 160)',
-                      backgroundColor: 'rgb(220, 235, 255)',
-                      padding: '4px 8px',
-                      margin: '2px',
-                      borderRadius: '20px'
-                    }}
-                  >
-                    {group}
-                  </span>
-                ))}
-                {group.applicationNames.length > 2 && (
-                  <span
-                    class="oj-typography-body-xs"
-                    style={{
-                      color: 'rgb(0, 0, 0)',
-                      backgroundColor: 'rgb(243, 243, 243)',
-                      padding: '4px 8px',
-                      margin: '2px',
-                      borderRadius: '20px'
-                    }}
-                  >
-                    +{group.applicationNames.length - 2}
-                  </span>
-                )}
-              </div>
-            </div>
-            {/* Footer: Buttons */}
-            <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
-              <div class="oj-flex" style={{ gap: '12px', marginLeft: 'auto' }}>
-                <oj-button chroming="borderless" onojAction={() => openDialog(group)}>
-                  Edit
-                </oj-button>
-                <oj-button chroming="borderless" onojAction={() => handleAppAccess(group)}>
-                  App Access
-                </oj-button>
-                <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(group._id)}>
-                  Delete
-                </oj-button>
-              </div>
-              <div class="oj-typography-body-xs oj-text-color-secondary">
-                Created {new Date(group.created_at).toLocaleString()}
-              </div>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
       {confirmDeleteDialogId && (
         <oj-dialog id="confirmDeleteDialog" dialogTitle="Confirm Deletion" initialVisibility="show">
           <div class="oj-dialog-body">Are you sure you want to delete this group?</div>

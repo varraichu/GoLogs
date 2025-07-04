@@ -208,6 +208,7 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
     }
 
     group.is_deleted = true;
+    group.is_active = false;
     await group.save();
     await UserGroupMember.updateMany({ group_id: groupId }, { is_active: false });
     await UserGroupApplication.updateMany({ group_id: groupId }, { is_active: false });

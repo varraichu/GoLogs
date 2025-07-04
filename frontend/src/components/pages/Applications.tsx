@@ -19,6 +19,9 @@ import 'ojs/ojbutton'
 import 'ojs/ojtoolbar'
 import "oj-c/message-toast"
 
+import 'oj-c/tab-bar';
+import { TabData } from 'oj-c/tab-bar';
+
 import LengthValidator = require('ojs/ojvalidator-length')
 
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
@@ -76,6 +79,21 @@ const Applications = (props: { path?: string }) => {
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
   const [editingState, setEditingState] = useState<Boolean>(false);
+
+  const data: TabData<string>[] = [
+    {
+      label: 'Active', itemKey: 'active',
+    },
+    {
+      label: 'Inactive', itemKey: 'inactive',
+    },
+  ];
+  const [selectedItem, setSelectedItem] = useState('active');
+  const handleSelectionChange = (event: CustomEvent) => {
+    const newSelection = event.detail.value;
+    setSelectedItem(newSelection);
+  };
+
 
   useEffect(() => {
     fetchApplications()
@@ -385,6 +403,12 @@ const Applications = (props: { path?: string }) => {
     }
   }
 
+  const filteredApps = useMemo(() => {
+    return (applications || []).filter(app =>
+      selectedItem === 'active' ? app.is_active : !app.is_active
+    );
+  }, [applications, selectedItem]);
+
   return (
     <div class="oj-flex oj-sm-padding-4x">
       <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
@@ -399,188 +423,210 @@ const Applications = (props: { path?: string }) => {
         </div>
       </div>
 
-      <div
-        class="oj-flex oj-flex-wrap"
-        style={{
-          gap: '24px',
-          justifyContent: 'flex-start',
-          alignItems: 'stretch',
-        }}
-      >
-        {(applications || []).map((app) => (
-          <div
-            key={app._id}
-            class="oj-panel oj-panel-shadow-md"
-            style={{
-              border: '1px solid #e5e7eb',
-              borderRadius: '12px',
-              padding: '20px 20px 16px 20px',
-              maxWidth: '420px',
-              minWidth: '420px', // Reduced min-width for better responsiveness
-              flex: '1 1 400px', // flex-grow: 1, flex-shrink: 1, flex-basis: 300px
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            {/* Header: Name + Toggle */}
-            <div
-              class="oj-flex"
-              style={{
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '8px',
-                width: '100%',
-              }}
-            >
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                <h3
-                  class="oj-typography-heading-sm"
-                  style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}
-                >
-                  {app.name}
-                </h3>
-                <span
-                  class="oj-typography-body-xs"
-                  style={{
-                    marginLeft: '12px',
-                    padding: '2px 10px',
-                    fontWeight: '500',
-                    color: app.is_active ? '#065f46' : '#991b1b',
-                    fontSize: '0.85em',
-                  }}
-                >
-                  {app.is_active ? 'Active' : 'Inactive'}
-                </span>
+      <div id="tabbarcontainer" style={{ paddingBottom: '8px' }}>
+        <oj-c-tab-bar
+          data={data}
+          selection={selectedItem}
+          onojSelectionAction={handleSelectionChange}
+          edge="top"
+          layout="condense"
+          display="standard"
+          aria-label="Basic TabBar">
+        </oj-c-tab-bar>
+        <div
+          class="oj-flex oj-flex-wrap"
+          style={{
+            gap: '24px',
+            justifyContent: 'flex-start',
+            alignItems: 'stretch',
+            marginTop: '24px',
+          }}
+        >
+          { filteredApps.length === 0 ? (
+              <div class="oj-typography-body-sm oj-text-color-secondary" style={{ padding: '12px' }}>
+                No {selectedItem === 'active' ? 'active' : 'inactive'} applications found.
               </div>
-              <div style={{ flex: 0 }}>
-                <oj-switch
-                  value={app.is_active}
-                  onvalueChanged={(e) =>
-                    handleToggleApplicationStatus(app._id, e.detail.value as boolean)
-                  }
-                />
-              </div>
-            </div>
-
-            <p
-              class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x"
-              style={{
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-              }}
-            >
-              {app.description}
-            </p>
-
-            <div
-              class="oj-flex"
-              style={{
-                justifyContent: 'space-between',
-                alignItems: 'stretch',
-                gap: '32px',
-                marginBottom: '24px',
-              }}
-            >
-              {/* Logs column */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  backgroundColor: 'rgba(243, 243, 243, 0.6)',
-                  padding: '8px',
-                  borderRadius: '8px',
-                  flex: 1,
-                }}
-              >
-                <div class="oj-typography-body-sm oj-text-color-secondary">Logs</div>
-                <div class="oj-typography-heading-md">{app.logCount.toLocaleString()}</div>
-              </div>
-              {/* Groups column */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  backgroundColor: 'rgba(243, 243, 243, 0.6)',
-                  padding: '8px',
-                  borderRadius: '8px',
-                  flex: 1,
-                }}
-              >
-                <div class="oj-typography-body-sm oj-text-color-secondary">Groups</div>
-                <div class="oj-typography-heading-md">{app.groupCount.toLocaleString()}</div>
-              </div>
-            </div>
-
-            <div class="oj-sm-margin-b-4x" style={{ marginBottom: '12px' }}>
-              <p
-                class="oj-typography-body-sm oj-text-color-secondary"
-                style={{ marginBottom: '4px' }}
-              >
-                Assigned To
-              </p>
-              <div class="oj-flex oj-sm-flex-wrap" style={{ marginTop: 0 }}>
-                {app.groupNames.slice(0, 2).map((group, index) => (
-                  <span
-                    key={index}
-                    class="oj-typography-body-xs"
+            ) :
+              (filteredApps || [])
+                // .filter(app => selectedItem === 'active' ? app.is_active : !app.is_active)
+                .map((app) => (
+                  <div
+                    key={app._id}
+                    class="oj-panel oj-panel-shadow-md"
                     style={{
-                      color: 'rgb(25, 85, 160)',
-                      backgroundColor: 'rgb(220, 235, 255)',
-                      padding: '4px 8px',
-                      margin: '2px',
-                      borderRadius: '20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '20px 20px 16px 20px',
+                      maxWidth: '420px',
+                      minWidth: '420px', // Reduced min-width for better responsiveness
+                      flex: '1 1 400px', // flex-grow: 1, flex-shrink: 1, flex-basis: 300px
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    {group}
-                  </span>
-                ))}
-                {app.groupNames.length > 2 && (
-                  <span
-                    class="oj-typography-body-xs"
-                    style={{
-                      color: 'rgb(0, 0, 0)',
-                      backgroundColor: 'rgb(243, 243, 243)',
-                      padding: '4px 8px',
-                      margin: '2px',
-                      borderRadius: '20px',
-                    }}
-                  >
-                    +{app.groupNames.length - 2}
-                  </span>
-                )}
-              </div>
-            </div>
+                    {/* Header: Name + Toggle */}
+                    <div
+                      class="oj-flex"
+                      style={{
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px',
+                        width: '100%',
+                      }}
+                    >
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                        <h3
+                          class="oj-typography-heading-sm"
+                          style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}
+                        >
+                          {app.name}
+                        </h3>
+                        <span
+                          class="oj-typography-body-xs"
+                          style={{
+                            marginLeft: '12px',
+                            padding: '2px 10px',
+                            fontWeight: '500',
+                            color: app.is_active ? '#065f46' : '#991b1b',
+                            fontSize: '0.85em',
+                          }}
+                        >
+                          {app.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div style={{ flex: 0 }}>
+                        <oj-switch
+                          value={app.is_active}
+                          onvalueChanged={(e) =>
+                            handleToggleApplicationStatus(app._id, e.detail.value as boolean)
+                          }
+                        />
+                      </div>
+                    </div>
 
-            {/* Footer: Created At and Buttons */}
-            <div
-              class="oj-flex"
-              style={{
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '12px',
-                marginTop: 'auto',
-              }}
-            >
-              <div class="oj-typography-body-xs oj-text-color-secondary">
-                Created {new Date(app.created_at).toLocaleString()}
-              </div>
-              <div class="oj-flex" style={{ gap: '12px' }}>
-                <oj-button chroming="borderless" onojAction={() => openDialog(app)}>
-                  Edit
-                </oj-button>
-                <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(app._id)}>
-                  Delete
-                </oj-button>
-              </div>
-            </div>
-          </div>
-        ))}
+                    <p
+                      class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x"
+                      style={{
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {app.description}
+                    </p>
+
+                    <div
+                      class="oj-flex"
+                      style={{
+                        justifyContent: 'space-between',
+                        alignItems: 'stretch',
+                        gap: '32px',
+                        marginBottom: '24px',
+                      }}
+                    >
+                      {/* Logs column */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          backgroundColor: 'rgba(243, 243, 243, 0.6)',
+                          padding: '8px',
+                          borderRadius: '8px',
+                          flex: 1,
+                        }}
+                      >
+                        <div class="oj-typography-body-sm oj-text-color-secondary">Logs</div>
+                        <div class="oj-typography-heading-md">{app.logCount.toLocaleString()}</div>
+                      </div>
+                      {/* Groups column */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          backgroundColor: 'rgba(243, 243, 243, 0.6)',
+                          padding: '8px',
+                          borderRadius: '8px',
+                          flex: 1,
+                        }}
+                      >
+                        <div class="oj-typography-body-sm oj-text-color-secondary">Groups</div>
+                        <div class="oj-typography-heading-md">{app.groupCount.toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    <div class="oj-sm-margin-b-4x" style={{ marginBottom: '12px' }}>
+                      <p
+                        class="oj-typography-body-sm oj-text-color-secondary"
+                        style={{ marginBottom: '4px' }}
+                      >
+                        Assigned To
+                      </p>
+                      <div class="oj-flex oj-sm-flex-wrap" style={{ marginTop: 0 }}>
+                        {app.groupNames.slice(0, 2).map((group, index) => (
+                          <span
+                            key={index}
+                            class="oj-typography-body-xs"
+                            style={{
+                              color: 'rgb(25, 85, 160)',
+                              backgroundColor: 'rgb(220, 235, 255)',
+                              padding: '4px 8px',
+                              margin: '2px',
+                              borderRadius: '20px',
+                            }}
+                          >
+                            {group}
+                          </span>
+                        ))}
+                        {app.groupNames.length > 2 && (
+                          <span
+                            class="oj-typography-body-xs"
+                            style={{
+                              color: 'rgb(0, 0, 0)',
+                              backgroundColor: 'rgb(243, 243, 243)',
+                              padding: '4px 8px',
+                              margin: '2px',
+                              borderRadius: '20px',
+                            }}
+                          >
+                            +{app.groupNames.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer: Created At and Buttons */}
+                    <div
+                      class="oj-flex"
+                      style={{
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginTop: 'auto',
+                      }}
+                    >
+                      <div class="oj-typography-body-xs oj-text-color-secondary">
+                        Created {new Date(app.created_at).toLocaleString()}
+                      </div>
+                      <div class="oj-flex" style={{ gap: '12px' }}>
+                        <oj-button chroming="borderless" onojAction={() => openDialog(app)}>
+                          Edit
+                        </oj-button>
+                        <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(app._id)}>
+                          Delete
+                        </oj-button>
+                      </div>
+                    </div>
+                  </div>
+                )
+                )
+          }
+        </div>
       </div>
+
       {confirmDeleteDialogId && (
         <oj-dialog id="confirmDeleteDialog" dialogTitle="Confirm Deletion" initialVisibility="show">
           <div class="oj-dialog-body">Are you sure you want to delete this group?</div>
