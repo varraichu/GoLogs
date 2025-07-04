@@ -641,7 +641,7 @@ const UserGroups = (props: { path?: string }) => {
                 validators={[
                   new LengthValidator({ min: 10, max: 100 }),
                   new RegExpValidator({
-                    pattern: '^[a-zA-Z0-9 _-]+$',
+                    pattern: '^[a-zA-Z0-9 _.,:;()\\\[\\\]\'"-]+$',
                     hint: 'Only letters, numbers, spaces, hyphens (-), and underscores (_) are allowed.',
                     messageSummary: 'Invalid name format.',
                     messageDetail:
@@ -650,7 +650,6 @@ const UserGroups = (props: { path?: string }) => {
                 ]}
               ></oj-c-input-text>
 
-              {/* --- REPLACEMENT START --- */}
               <oj-label for="add-members-combobox">Add Member Emails</oj-label>
               <oj-combobox-many
                 id="add-members-combobox"
