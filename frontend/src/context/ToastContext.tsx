@@ -31,7 +31,7 @@ export const ToastProvider = ({ children }: { children: ComponentChildren }) => 
       severity,
       summary,
       detail,
-      autoTimeout: 5000,
+      autoTimeout: 1000,
       sound: '',
     }
     setMessages((prev) => [...prev, newMsg])
