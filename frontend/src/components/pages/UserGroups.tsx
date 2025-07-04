@@ -10,9 +10,10 @@ import { userGroupFormSchema } from '../../validation/usergroups.validator'
 import 'ojs/ojswitch'
 import { useToast } from '../../context/ToastContext'
 import 'oj-c/message-toast'
-
 import LengthValidator = require('ojs/ojvalidator-length')
 import RegExpValidator = require('ojs/ojvalidator-regexp')
+import "ojs/ojselectcombobox";
+import ArrayDataProvider = require('ojs/ojarraydataprovider');
 
 const MAX_VISIBLE_APPS = 5
 
@@ -40,6 +41,12 @@ interface UserGroup {
   users: User[]
 }
 
+// Type for the combobox data items
+type Email = {
+  value: string;
+  label: string;
+};
+
 const UserGroups = (props: { path?: string }) => {
   const [groups, setGroups] = useState<UserGroup[]>([])
   const [showDialog, setShowDialog] = useState(false)
@@ -47,16 +54,19 @@ const UserGroups = (props: { path?: string }) => {
   const [showErrorDialog, setShowErrorDialog] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null>(null)
-
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [confirmCancelDialog, setConfirmCancelDialog] = useState(false);
 
-  const [addEmailInput, setAddEmailInput] = useState('')
-  const [addMemberEmailsList, setAddMemberEmailsList] = useState<string[]>([])
-  const [removeEmailInput, setRemoveEmailInput] = useState('')
-  const [removeMemberEmailsList, setRemoveMemberEmailsList] = useState<string[]>([])
-  const [directoryResults, setDirectoryResults] = useState<string[]>([])
-  const [activeInput, setActiveInput] = useState<'add' | 'remove' | null>(null)
+  // New state for comboboxes
+  const [addMemberEmails, setAddMemberEmails] = useState<string[]>([]);
+  const [removeMemberEmails, setRemoveMemberEmails] = useState<string[]>([]);
+  const [addEmailDataProvider, setAddEmailDataProvider] = useState<ArrayDataProvider<Email['value'], Email>>(
+    new ArrayDataProvider<Email['value'], Email>([], { keyAttributes: 'value' })
+  );
+  const [removeEmailDataProvider, setRemoveEmailDataProvider] = useState<ArrayDataProvider<Email['value'], Email>>(
+    new ArrayDataProvider<Email['value'], Email>([], { keyAttributes: 'value' })
+  );
 
   const [errors, setErrors] = useState<{
     name?: string
@@ -64,7 +74,6 @@ const UserGroups = (props: { path?: string }) => {
     memberEmails?: string
   }>({})
   const nameRegex = /^[a-zA-Z0-9 ]+$/
-
   const [showAppAccessDialog, setShowAppAccessDialog] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | null>(null)
   const [availableApps, setAvailableApps] = useState<Application[]>([])
@@ -73,27 +82,16 @@ const UserGroups = (props: { path?: string }) => {
   const [pendingAppSave, setPendingAppSave] = useState(false)
   const [removedAppIds, setRemovedAppIds] = useState<string[]>([])
   const [stagedAppIds, setStagedAppIds] = useState<string[]>([])
-
   const [showUsersDialog, setShowUsersDialog] = useState(false)
   const { addNewToast, messageDataProvider, removeToast } = useToast()
+
   const closeMessage = (event: CustomEvent<{ key: string }>) => {
     removeToast(event.detail.key)
-    // const closeKey = event.detail.key
-    // setMessages(messages.filter((msg) => msg.id !== closeKey))
   }
 
   useEffect(() => {
     fetchGroups()
   }, [])
-
-  useEffect(() => {
-    const query = activeInput === 'add' ? addEmailInput : removeEmailInput
-    if (query.trim().length > 2) {
-      searchDirectory(query)
-    } else {
-      setDirectoryResults([])
-    }
-  }, [addEmailInput, removeEmailInput])
 
   // Fetch groups
   const fetchGroups = async () => {
@@ -108,16 +106,11 @@ const UserGroups = (props: { path?: string }) => {
       })
       const data = await res.json()
       setGroups(data)
-      addNewToast(
-         'confirmation',
-         'Success',
-         data.message || 'Fetched user groups successfully.',
-      )
     } catch (error) {
       addNewToast(
-         'error',
-         'Error',
-         'Failed to fetch user groups',
+        'error',
+        'Error',
+        'Failed to fetch user groups',
       )
       console.error('Failed to fetch user groups', error)
     }
@@ -134,60 +127,62 @@ const UserGroups = (props: { path?: string }) => {
       setName('')
       setDescription('')
     }
-    setAddEmailInput('')
-    setAddMemberEmailsList([])
-    setRemoveEmailInput('')
-    setRemoveMemberEmailsList([])
-    setDirectoryResults([])
+    // Reset combobox states
+    setAddMemberEmails([]);
+    setRemoveMemberEmails([]);
+    setAddEmailDataProvider(new ArrayDataProvider([], { keyAttributes: 'value' }));
+    setRemoveEmailDataProvider(new ArrayDataProvider([], { keyAttributes: 'value' }));
     setShowDialog(true)
   }
 
-  const searchDirectory = async (query: string) => {
-    const token = localStorage.getItem('jwt')
+  // Fetches emails from the directory and maps them to the {value, label} format
+  const fetchAndMapEmails = async (query: string): Promise<Email[]> => {
+    const token = localStorage.getItem('jwt');
     const res = await fetch(
       `http://localhost:3001/api/directory/search?q=${encodeURIComponent(query)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
-    )
-    const data = await res.json()
-    setDirectoryResults(data.emails || [])
-  }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const emails: string[] = data.emails || [];
+    return emails.map(email => ({ label: email, value: email }));
+  };
 
-  const selectDirectoryResult = (email: string) => {
-    if (activeInput === 'add') {
-      if (!addMemberEmailsList.includes(email)) {
-        setAddMemberEmailsList([...addMemberEmailsList, email])
-      }
-      setAddEmailInput('')
-    } else if (activeInput === 'remove') {
-      if (!removeMemberEmailsList.includes(email)) {
-        setRemoveMemberEmailsList([...removeMemberEmailsList, email])
-      }
-      setRemoveEmailInput('')
+  // Handlers for the "Add Members" combobox
+  const handleAddRawValueChange = async (event: any) => {
+    const raw = event.detail.value;
+    const currentInput = raw?.[raw.length - 1];
+    if (typeof currentInput === 'string' && currentInput.length >= 3) {
+      const results = await fetchAndMapEmails(currentInput);
+      const dp = new ArrayDataProvider<Email['value'], Email>(results, { keyAttributes: 'value' });
+      setAddEmailDataProvider(dp);
     }
-    setDirectoryResults([])
-  }
+  };
+  const handleAddValueChange = (event: any) => {
+    setAddMemberEmails(event.detail.value as string[]);
+  };
 
-  const removeEmail = (email: string, type: 'add' | 'remove') => {
-    if (type === 'add') {
-      setAddMemberEmailsList(addMemberEmailsList.filter((e) => e !== email))
-    } else {
-      setRemoveMemberEmailsList(removeMemberEmailsList.filter((e) => e !== email))
+  // Handlers for the "Remove Members" combobox
+  const handleRemoveRawValueChange = async (event: any) => {
+    const raw = event.detail.value;
+    const currentInput = raw?.[raw.length - 1];
+    if (typeof currentInput === 'string' && currentInput.length >= 3) {
+      const results = await fetchAndMapEmails(currentInput);
+      const dp = new ArrayDataProvider<Email['value'], Email>(results, { keyAttributes: 'value' });
+      setRemoveEmailDataProvider(dp);
     }
-  }
+  };
+  const handleRemoveValueChange = (event: any) => {
+    setRemoveMemberEmails(event.detail.value as string[]);
+  };
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {}
-
-    if (!editingGroup && groups.some((g) => g.name.toLowerCase() === name.trim().toLowerCase())) {
-      newErrors.name = 'A group with this name already exists.'
-    }
-
-    if (!editingGroup && addMemberEmailsList.length === 0) {
+    if (!editingGroup && addMemberEmails.length === 0) {
       newErrors.memberEmails = 'At least one member email must be added.'
     }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -195,9 +190,7 @@ const UserGroups = (props: { path?: string }) => {
   // Save group
   const saveGroup = async () => {
     if (!validateForm()) return
-
     const token = localStorage.getItem('jwt')
-
     let body: string
     let url: string
     let method: 'POST' | 'PATCH'
@@ -208,8 +201,8 @@ const UserGroups = (props: { path?: string }) => {
       body = JSON.stringify({
         name,
         description,
-        addMemberEmails: addMemberEmailsList,
-        removeMemberEmails: removeMemberEmailsList,
+        addMemberEmails: addMemberEmails,
+        removeMemberEmails: removeMemberEmails,
       })
     } else {
       method = 'POST'
@@ -217,32 +210,30 @@ const UserGroups = (props: { path?: string }) => {
       body = JSON.stringify({
         name,
         description,
-        memberEmails: addMemberEmailsList,
+        memberEmails: addMemberEmails,
       })
     }
-
     const res = await fetch(url, {
       method,
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body,
     })
-
     const data = await res.json()
     if (res.ok) {
       setShowDialog(false)
       fetchGroups()
       addNewToast(
-         'confirmation',
-         'Success',
-         data.message || 'User group saved successfully.',
+        'confirmation',
+        'Success',
+        data.message || 'User group saved successfully.',
       )
     } else {
       setErrorMessage(data.message || 'Failed to save user group.')
       setShowErrorDialog(true)
       addNewToast(
-         'error',
-         'Error',
-         data.message || 'Failed to save user group.',
+        'error',
+        'Error',
+        data.message || 'Failed to save user group.',
       )
     }
   }
@@ -255,37 +246,34 @@ const UserGroups = (props: { path?: string }) => {
   const handleDeleteGroup = async () => {
     try {
       if (!confirmDeleteDialogId) return
-
+      console.log('Deleting');
       const token = localStorage.getItem('jwt')
       const res = await fetch(`http://localhost:3001/api/userGroup/${confirmDeleteDialogId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
-
-      const data = await res.json()
       if (res.ok) {
         fetchGroups()
         addNewToast(
-           'confirmation',
-           'Success',
-           data.message || 'Group deleted successfully.',
+          'confirmation',
+          'Success',
+          'Group deleted successfully.',
         )
       } else {
-        setErrorMessage(data.message || 'Failed to delete user group.')
+        setErrorMessage('Failed to delete user group.')
         setShowErrorDialog(true)
         addNewToast(
-           'error',
-           'Error',
-           data.message || 'Failed to delete user group.',
+          'error',
+          'Error',
+          'Failed to delete user group.',
         )
       }
-
       setConfirmDeleteDialogId(null)
     } catch (error) {
       addNewToast(
-         'error',
-         'Error',
-         'Failed to delete group',
+        'error',
+        'Error',
+        'Failed to delete group',
       )
       console.error('Failed to delete group', error)
     }
@@ -293,7 +281,6 @@ const UserGroups = (props: { path?: string }) => {
 
   const handleAppAccess = async (group: UserGroup) => {
     setSelectedGroup(group)
-
     const token = localStorage.getItem('jwt')
     const res = await fetch('http://localhost:3001/api/applications', {
       method: 'GET',
@@ -301,23 +288,18 @@ const UserGroups = (props: { path?: string }) => {
         Authorization: `Bearer ${token}`,
       },
     })
-
     if (!res.ok) {
       console.error('Failed to fetch apps:', res.statusText)
       setErrorMessage('Failed to load applications. Please try again later.')
       setShowErrorDialog(true)
       return
     }
-
     try {
       const data = await res.json()
       console.log('Response Data:', data)
-
       if (Array.isArray(data.applications)) {
         const apps = data.applications
-
         setAvailableApps(apps)
-
         const matchedIds = apps
           .filter((app: Application) =>
             group.applicationNames.some(
@@ -325,9 +307,7 @@ const UserGroups = (props: { path?: string }) => {
             )
           )
           .map((app: Application) => app._id)
-
         console.log('Matched App IDs:', matchedIds)
-
         setSelectedAppIds(matchedIds)
         setStagedAppIds(matchedIds)
         setShowAppAccessDialog(true)
@@ -343,11 +323,8 @@ const UserGroups = (props: { path?: string }) => {
 
   const saveAppAccess = async () => {
     if (!selectedGroup) return
-
     const previouslyAssignedAppIds = selectedAppIds
-
     const removed = previouslyAssignedAppIds.filter((id) => !stagedAppIds.includes(id))
-
     if (removed.length > 0) {
       setRemovedAppIds(
         availableApps.filter((app) => removed.includes(app._id)).map((app) => app.name)
@@ -356,7 +333,6 @@ const UserGroups = (props: { path?: string }) => {
       setShowUnassignConfirmDialog(true)
       return
     }
-
     setSelectedAppIds(stagedAppIds)
     await performAppAccessSave()
   }
@@ -364,7 +340,6 @@ const UserGroups = (props: { path?: string }) => {
   // App access save
   const performAppAccessSave = async () => {
     if (!selectedGroup) return
-
     const token = localStorage.getItem('jwt')
     const res = await fetch(`http://localhost:3001/api/user-groups/${selectedGroup._id}/app-access`, {
       method: 'PATCH',
@@ -374,7 +349,6 @@ const UserGroups = (props: { path?: string }) => {
       },
       body: JSON.stringify({ appIds: stagedAppIds }),
     })
-
     const data = await res.json()
     if (res.ok) {
       setSelectedAppIds(stagedAppIds)
@@ -383,22 +357,21 @@ const UserGroups = (props: { path?: string }) => {
       setPendingAppSave(false)
       fetchGroups()
       addNewToast(
-         'confirmation',
-         'Success',
-         data.message || 'App access updated successfully.',
+        'confirmation',
+        'Success',
+        data.message || 'App access updated successfully.',
       )
     } else {
       addNewToast(
-         'error',
-         'Error',
-         data.message || 'Failed to update app access.',
+        'error',
+        'Error',
+        data.message || 'Failed to update app access.',
       )
     }
   }
 
   const handleToggleGroupStatus = async (groupId: string, isActive: boolean) => {
     const token = localStorage.getItem('jwt')
-
     try {
       const res = await fetch(`http://localhost:3001/api/userGroup/status/${groupId}`, {
         method: 'PATCH',
@@ -408,27 +381,26 @@ const UserGroups = (props: { path?: string }) => {
         },
         body: JSON.stringify({ is_active: isActive }),
       })
-
       const data = await res.json()
       if (res.ok) {
         fetchGroups()
         addNewToast(
-           'confirmation',
-           'Success',
-           data.message || 'Group status updated.',
+          'confirmation',
+          'Success',
+          data.message || 'Group status updated.',
         )
       } else {
         addNewToast(
-           'error',
-           'Error',
-           data.message || 'Failed to toggle group status.',
+          'error',
+          'Error',
+          data.message || 'Failed to toggle group status.',
         )
       }
     } catch (error) {
       addNewToast(
-         'error',
-         'Error',
-         'Error toggling status.',
+        'error',
+        'Error',
+        'Error toggling status.',
       )
       console.error('Error toggling status:', error)
     }
@@ -437,19 +409,17 @@ const UserGroups = (props: { path?: string }) => {
   // Fetch users in group
   const handleUsersClick = async (group: UserGroup) => {
     setSelectedGroup(group)
-
     const token = localStorage.getItem('jwt')
     if (!token) {
       setErrorMessage('Authentication token is missing.')
       setShowErrorDialog(true)
       addNewToast(
-         'error',
-         'Error',
-         'Authentication token is missing.',
+        'error',
+        'Error',
+        'Authentication token is missing.',
       )
       return
     }
-
     try {
       const res = await fetch(`http://localhost:3001/api/userGroup/${group._id}/users`, {
         method: 'GET',
@@ -458,7 +428,6 @@ const UserGroups = (props: { path?: string }) => {
           'Content-Type': 'application/json',
         },
       })
-
       const data = await res.json()
       if (res.ok) {
         setSelectedGroup((prevGroup) => ({
@@ -467,24 +436,24 @@ const UserGroups = (props: { path?: string }) => {
         }))
         setShowUsersDialog(true)
         addNewToast(
-           'confirmation',
-           'Success',
-           data.message || 'Fetched users successfully.',
+          'confirmation',
+          'Success',
+          data.message || 'Fetched users successfully.',
         )
       } else {
         setErrorMessage(data.message || 'Failed to fetch users.')
         setShowErrorDialog(true)
         addNewToast(
-           'error',
-           'Error',
-           data.message || 'Failed to fetch users.',
+          'error',
+          'Error',
+          data.message || 'Failed to fetch users.',
         )
       }
     } catch (error) {
       addNewToast(
-         'error',
-         'Error',
-         'An error occurred while fetching users.',
+        'error',
+        'Error',
+        'An error occurred while fetching users.',
       )
       console.error('Error fetching users:', error)
       setErrorMessage('An error occurred while fetching users.')
@@ -500,201 +469,132 @@ const UserGroups = (props: { path?: string }) => {
     setShowAppAccessDialog(true)
   }
 
-     return (
-  <div class="oj-flex oj-sm-padding-4x">
-    <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
-      <div>
-        <h1 class="oj-typography-heading-lg">User Groups</h1>
-        <p class="oj-typography-body-md">Manage your user groups and their applications</p>
+  return (
+    <div class="oj-flex oj-sm-padding-4x">
+      <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
+        <div>
+          <h1 class="oj-typography-heading-lg">User Groups</h1>
+          <p class="oj-typography-body-md">Manage your user groups and their applications</p>
+        </div>
+        <div>
+          <oj-button onojAction={() => openDialog()} chroming="callToAction">+ Create Group</oj-button>
+        </div>
       </div>
-      <div>
-        <oj-button onojAction={() => openDialog()} chroming="callToAction">+ Create Group</oj-button>
-      </div>
-    </div>
-
-    <div class="oj-flex oj-flex-wrap" style={{ gap: '24px', justifyContent: 'flex-start', alignItems: 'stretch' }}>
-      {groups.map((group) => (
-        <div
-          key={group._id}
-          class="oj-panel oj-panel-shadow-md"
-          style={{
-            border: '1px solid #e5e7eb',
-            borderRadius: '12px',
-            padding: '20px 20px 16px 20px',
-            maxWidth: '420px',
-            minWidth: '420px',
-            flex: '1 1 400px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          {/* Header: Name + Toggle */}
-          <div class="oj-flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', width: '100%' }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-              <h3 class="oj-typography-heading-sm" style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}>
-                {group.name}
-              </h3>
-              <span
-                class="oj-typography-body-xs"
-                style={{
-                  marginLeft: '12px',
-                  padding: '2px 10px',
-                  fontWeight: '500',
-                  color: group.is_active ? '#065f46' : '#991b1b',
-                  fontSize: '0.85em',
-                }}
-              >
-                {group.is_active ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-            <div style={{ flex: 0 }}>
-              <oj-switch value={group.is_active} onvalueChanged={(e) => handleToggleGroupStatus(group._id, e.detail.value as boolean)} />
-            </div>
-          </div>
-
-          {/* Description */}
-          <p class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x" style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-            {group.description}
-          </p>
-
-          {/* Users and Applications */}
-          <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'stretch', gap: '32px', marginBottom: '24px' }}>
-            {/* Users */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
-              <div class="oj-typography-body-sm oj-text-color-secondary">Users</div>
-              <div class="oj-typography-heading-md">
-                <span class="oj-link" style={{ cursor: 'pointer' }} onClick={() => handleUsersClick(group)}>
-                  {group.userCount.toLocaleString()}
+      <div class="oj-flex oj-flex-wrap" style={{ gap: '24px', justifyContent: 'flex-start', alignItems: 'stretch' }}>
+        {groups.map((group) => (
+          <div
+            key={group._id}
+            class="oj-panel oj-panel-shadow-md"
+            style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              padding: '20px 20px 16px 20px',
+              maxWidth: '420px',
+              minWidth: '420px',
+              flex: '1 1 400px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            {/* Header: Name + Toggle */}
+            <div class="oj-flex" style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', width: '100%' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                <h3 class="oj-typography-heading-sm" style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}>
+                  {group.name}
+                </h3>
+                <span
+                  class="oj-typography-body-xs"
+                  style={{
+                    marginLeft: '12px',
+                    padding: '2px 10px',
+                    fontWeight: '500',
+                    color: group.is_active ? '#065f46' : '#991b1b',
+                    fontSize: '0.85em',
+                  }}
+                >
+                  {group.is_active ? 'Active' : 'Inactive'}
                 </span>
               </div>
+              <div style={{ flex: 0 }}>
+                <oj-switch value={group.is_active} onvalueChanged={(e) => handleToggleGroupStatus(group._id, e.detail.value as boolean)} />
+              </div>
             </div>
-
-            {/* Applications */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
-              <div class="oj-typography-body-sm oj-text-color-secondary">Applications</div>
-              <div class="oj-typography-heading-md">{group.applicationCount.toLocaleString()}</div>
+            {/* Description */}
+            <p class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x" style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              {group.description}
+            </p>
+            {/* Users and Applications */}
+            <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'stretch', gap: '32px', marginBottom: '24px' }}>
+              {/* Users */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
+                <div class="oj-typography-body-sm oj-text-color-secondary">Users</div>
+                <div class="oj-typography-heading-md">
+                  <span class="oj-link" style={{ cursor: 'pointer' }} onClick={() => handleUsersClick(group)}>
+                    {group.userCount.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              {/* Applications */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'rgba(243, 243, 243, 0.6)', padding: '8px', borderRadius: '8px', flex: 1 }}>
+                <div class="oj-typography-body-sm oj-text-color-secondary">Applications</div>
+                <div class="oj-typography-heading-md">{group.applicationCount.toLocaleString()}</div>
+              </div>
             </div>
-          </div>
-
-          <div class="oj-sm-margin-b-4x" style={{ marginBottom: '12px' }}>
+            <div class="oj-sm-margin-b-4x" style={{ marginBottom: '12px' }}>
               <p class="oj-typography-body-sm oj-text-color-secondary" style={{ marginBottom: '4px' }}>Assigned Apps</p>
               <div class="oj-flex oj-sm-flex-wrap" style={{ marginTop: 0 }}>
-                  {group.applicationNames.slice(0, 2).map((group, index) => (
-                      <span
-                          key={index}
-                          class="oj-typography-body-xs"
-                          style={{
-                              color: 'rgb(25, 85, 160)',
-                              backgroundColor: 'rgb(220, 235, 255)',
-                              padding: '4px 8px',
-                              margin: '2px',
-                              borderRadius: '20px'
-                          }}
-                      >
-                          {group}
-                      </span>
-                  ))}
-                  {group.applicationNames.length > 2 && (
-                      <span
-                          class="oj-typography-body-xs"
-                          style={{
-                              color: 'rgb(0, 0, 0)',
-                              backgroundColor: 'rgb(243, 243, 243)',
-                              padding: '4px 8px',
-                              margin: '2px',
-                              borderRadius: '20px'
-                          }}
-                      >
-                          +{group.applicationNames.length - 2}
-                      </span>
-                  )}
-              </div>
-          </div>
-
-          {/* Footer: Buttons */}
-          <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
-          {/* Move the buttons container to the right side of the card */}
-          <div class="oj-flex" style={{ gap: '12px', marginLeft: 'auto' }}>
-            <oj-button chroming="borderless" onojAction={() => openDialog(group)}>
-              Edit
-            </oj-button>
-            <oj-button chroming="borderless" onojAction={() => handleAppAccess(group)}>
-              App Access
-            </oj-button>
-            <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(group._id)}>
-              Delete
-            </oj-button>
-          </div>
-          
-          {/* Display the "Created At" text */}
-          <div class="oj-typography-body-xs oj-text-color-secondary">
-            Created {new Date(group.created_at).toLocaleString()}
-          </div>
-        </div>
-
-        </div>
-      ))}
-    </div> 
-
-      {showDialog && (
-        <oj-dialog id="groupDialog" dialogTitle={editingGroup ? "Edit Group" : "Create Group"} initialVisibility="show">
-          <div class="oj-dialog-body">
-            <oj-c-form-layout>
-              <oj-c-input-text
-                id="name-input"
-                labelHint="Name"
-                value={name}
-                onvalueChanged={(e) => setName(e.detail.value)}
-                required
-                validators={[
-                  new LengthValidator({ min: 5, max: 20 }),
-                  new RegExpValidator({
-                    pattern: '^[a-zA-Z0-9 _-]+$',
-                    hint: 'Only letters, numbers, spaces, hyphens(-), and underscores (_) are allowed.',
-                    messageSummary: 'Invalid name format.',
-                    messageDetail: 'Use only letters, numbers, spaces, hyphens(-), and underscores (_).'
-                  })
-                ]}
-              ></oj-c-input-text>
-              <oj-c-input-text
-                labelHint="Description"
-                value={description}
-                onvalueChanged={(e) => setDescription(e.detail.value)}
-                required
-                validators={[
-                  new LengthValidator({ min: 10, max: 100 }),
-                  new RegExpValidator({
-                    pattern: '^[a-zA-Z0-9 _-]+$',
-                    hint: 'Only letters, numbers, spaces, hyphens(-), and underscores (_) are allowed.',
-                    messageSummary: 'Invalid name format.',
-                    messageDetail: 'Use only letters, numbers, spaces, hyphens(-), and underscores (_).'
-                  })
-                ]}
-              ></oj-c-input-text>
-              <oj-c-input-text labelHint="Add Member Email" value={addEmailInput} onFocus={() => setActiveInput('add')} onvalueChanged={(e) => setAddEmailInput(e.detail.value)}></oj-c-input-text>
-               {errors.memberEmails && <div class="oj-text-color-danger oj-sm-margin-bottom">{errors.memberEmails}</div>}
-
-               <div class="oj-sm-margin-top">
-                 {addMemberEmailsList.map(email => (
-                  <div class="oj-flex oj-sm-align-items-center oj-sm-margin-bottom">
-                    <span class="oj-typography-body-sm oj-sm-margin-end">{email}</span>
-                    <oj-button display="icons" chroming="borderless" onojAction={() => removeEmail(email, 'add')}>
-                      <span class="oj-ux-email-expenses-ico-cancel-s-20-danger">X</span>
-                    </oj-button>
-                  </div>
+                {group.applicationNames.slice(0, 2).map((group, index) => (
+                  <span
+                    key={index}
+                    class="oj-typography-body-xs"
+                    style={{
+                      color: 'rgb(25, 85, 160)',
+                      backgroundColor: 'rgb(220, 235, 255)',
+                      padding: '4px 8px',
+                      margin: '2px',
+                      borderRadius: '20px'
+                    }}
+                  >
+                    {group}
+                  </span>
                 ))}
+                {group.applicationNames.length > 2 && (
+                  <span
+                    class="oj-typography-body-xs"
+                    style={{
+                      color: 'rgb(0, 0, 0)',
+                      backgroundColor: 'rgb(243, 243, 243)',
+                      padding: '4px 8px',
+                      margin: '2px',
+                      borderRadius: '20px'
+                    }}
+                  >
+                    +{group.applicationNames.length - 2}
+                  </span>
+                )}
               </div>
-            </oj-c-form-layout>
-            
+            </div>
+            {/* Footer: Buttons */}
+            <div class="oj-flex" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
+              <div class="oj-flex" style={{ gap: '12px', marginLeft: 'auto' }}>
+                <oj-button chroming="borderless" onojAction={() => openDialog(group)}>
+                  Edit
+                </oj-button>
+                <oj-button chroming="borderless" onojAction={() => handleAppAccess(group)}>
+                  App Access
+                </oj-button>
+                <oj-button chroming="danger" onojAction={() => confirmDeleteGroup(group._id)}>
+                  Delete
+                </oj-button>
+              </div>
+              <div class="oj-typography-body-xs oj-text-color-secondary">
+                Created {new Date(group.created_at).toLocaleString()}
+              </div>
+            </div>
           </div>
-          <div class="oj-dialog-footer">
-            <oj-button onojAction={() => saveGroup()}>Save</oj-button>
-            <oj-button onojAction={() => setShowDialog(false)} chroming="borderless">Cancel</oj-button>
-          </div>
-        </oj-dialog>
-      )}
-
+        ))}
+      </div>
       {confirmDeleteDialogId && (
         <oj-dialog id="confirmDeleteDialog" dialogTitle="Confirm Deletion" initialVisibility="show">
           <div class="oj-dialog-body">Are you sure you want to delete this group?</div>
@@ -708,7 +608,6 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
       {showDialog && (
         <oj-dialog
           id="groupDialog"
@@ -751,79 +650,53 @@ const UserGroups = (props: { path?: string }) => {
                 ]}
               ></oj-c-input-text>
 
-              <oj-c-input-text
-                labelHint="Add Member Email"
-                value={addEmailInput}
-                onFocus={() => setActiveInput('add')}
-                onvalueChanged={(e) => setAddEmailInput(e.detail.value)}
-              ></oj-c-input-text>
+              {/* --- REPLACEMENT START --- */}
+              <oj-label for="add-members-combobox">Add Member Emails</oj-label>
+              <oj-combobox-many
+                id="add-members-combobox"
+                options={addEmailDataProvider}
+                value={addMemberEmails}
+                onvalueChanged={handleAddValueChange}
+                onrawValueChanged={handleAddRawValueChange}
+                placeholder="Search and select emails to add"
+                class="oj-form-control-full-width"
+                help={{
+                  instruction: "Type at least 3 characters to search for users to add."
+                }}
+              ></oj-combobox-many>
               {errors.memberEmails && (
                 <div class="oj-text-color-danger oj-sm-margin-bottom">{errors.memberEmails}</div>
               )}
 
-              <div class="oj-sm-margin-top">
-                {addMemberEmailsList.map((email) => (
-                  <div class="oj-flex oj-sm-align-items-center oj-sm-margin-bottom">
-                    <span class="oj-typography-body-sm oj-sm-margin-end">{email}</span>
-                    <oj-button
-                      display="icons"
-                      chroming="borderless"
-                      onojAction={() => removeEmail(email, 'add')}
-                    >
-                      <span class="oj-ux-email-expenses-ico-cancel-s-20-danger">X</span>
-                    </oj-button>
-                  </div>
-                ))}
-              </div>
-
               {editingGroup && (
                 <>
-                  <oj-c-input-text
-                    labelHint="Remove Member Email"
-                    value={removeEmailInput}
-                    onFocus={() => setActiveInput('remove')}
-                    onvalueChanged={(e) => setRemoveEmailInput(e.detail.value)}
-                  ></oj-c-input-text>
-                  <div class="oj-sm-margin-top">
-                    {removeMemberEmailsList.map((email) => (
-                      <div class="oj-flex oj-sm-align-items-center oj-sm-margin-bottom">
-                        <span class="oj-typography-body-sm oj-sm-margin-end">{email}</span>
-                        <oj-button
-                          display="icons"
-                          chroming="borderless"
-                          onojAction={() => removeEmail(email, 'remove')}
-                        >
-                          <span class="oj-ux-ico-close oj-sm-icon"></span>
-                        </oj-button>
-                      </div>
-                    ))}
-                  </div>
+                  <oj-label for="remove-members-combobox">Remove Member Emails</oj-label>
+                  <oj-combobox-many
+                    id="remove-members-combobox"
+                    options={removeEmailDataProvider}
+                    value={removeMemberEmails}
+                    onvalueChanged={handleRemoveValueChange}
+                    onrawValueChanged={handleRemoveRawValueChange}
+                    placeholder="Search and select emails to remove"
+                    class="oj-form-control-full-width"
+                    help={{
+                      instruction: "Type at least 3 characters to search for users to remove."
+                    }}
+                  ></oj-combobox-many>
                 </>
               )}
+              {/* --- REPLACEMENT END --- */}
 
-              {directoryResults.length > 0 && (
-                <div class="oj-popup">
-                  {directoryResults.map((email) => (
-                    <div
-                      class="oj-flex oj-sm-align-items-center oj-sm-padding-2x oj-sm-hoverable oj-clickable"
-                      onClick={() => selectDirectoryResult(email)}
-                    >
-                      {email}
-                    </div>
-                  ))}
-                </div>
-              )}
             </oj-c-form-layout>
           </div>
           <div class="oj-dialog-footer">
             <oj-button onojAction={() => saveGroup()}>Save</oj-button>
-            <oj-button onojAction={() => setShowDialog(false)} chroming="borderless">
+            <oj-button onojAction={() => setConfirmCancelDialog(true)} chroming="borderless">
               Cancel
             </oj-button>
           </div>
         </oj-dialog>
       )}
-
       {showErrorDialog && (
         <oj-dialog id="errorDialog" dialogTitle="Error" initialVisibility="show">
           <div class="oj-dialog-body">{errorMessage}</div>
@@ -832,7 +705,22 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
+      {confirmCancelDialog && (
+        <oj-dialog id="confirmDeleteDialog" dialogTitle="Cancel changes" initialVisibility="show">
+          <div class="oj-dialog-body">Are you sure you want to cancel changes?</div>
+          <div class="oj-dialog-footer">
+            <oj-button onojAction={() => {
+              setConfirmCancelDialog(false);
+              setShowDialog(false);
+            }} chroming="danger">
+              Confirm
+            </oj-button>
+            <oj-button onojAction={() => setConfirmCancelDialog(false)} chroming="borderless">
+              Cancel
+            </oj-button>
+          </div>
+        </oj-dialog>
+      )}
       {showAppAccessDialog && selectedGroup && (
         <oj-dialog
           id="appAccessDialog"
@@ -874,7 +762,6 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
       {showUnassignConfirmDialog && (
         <oj-dialog
           id="confirmUnassignDialog"
@@ -911,7 +798,6 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
       {showUsersDialog && selectedGroup && (
         <oj-dialog
           id="usersDialog"
@@ -941,4 +827,3 @@ const UserGroups = (props: { path?: string }) => {
 }
 
 export default UserGroups;
-

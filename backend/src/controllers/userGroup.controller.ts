@@ -66,7 +66,7 @@ export const createUserGroup = async (req: IAuthRequest, res: Response) => {
     return;
   } catch (error: any) {
     if (error.code === 11000 && error.keyPattern?.name) {
-      res.status(400).json({ message: 'An active user group with this name already exists.' });
+      res.status(400).json({ message: `An active user group with name "${error.keyPattern?.name}" already exists.` });
       return;
     }
     logger.error('Error creating user group:', error);
@@ -179,7 +179,11 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
     const detailedGroup = await getDetailedUserGroups([group._id as mongoose.Types.ObjectId]);
     res.status(200).json(detailedGroup[0]);
     return;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 11000 && error.keyPattern?.name) {
+      res.status(400).json({ message: `An active user group with name "${error.keyPattern?.name}" already exists.` });
+      return;
+    }
     logger.error('Error updating user group:', error);
     res.status(500).json({ message: 'Server error' });
     return;
