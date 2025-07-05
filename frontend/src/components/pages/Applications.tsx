@@ -639,7 +639,7 @@ const Applications = (props: { path?: string }) => {
 
               {/* Multi-select for assigning groups */}
               {
-                editingState ? (
+                // editingState ? (
                   <div>
 
                     <h4 class="oj-typography-heading-sm">Assigned To</h4>
@@ -653,11 +653,11 @@ const Applications = (props: { path?: string }) => {
                       class="oj-sm-margin-2x-vertical"
                     ></oj-c-select-multiple>
                   </div>
-                ) : (
-                  <div>
+                // ) : (
+                //   <div>
 
-                  </div>
-                )
+                //   </div>
+                // )
               }
 
             </oj-c-form-layout>

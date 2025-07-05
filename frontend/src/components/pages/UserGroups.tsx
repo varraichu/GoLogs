@@ -700,52 +700,24 @@ const updateGroupAppAccess = async (groupId: string, appIds: string[]) => {
               )}
 
               {/* App Access Section */}
-              <oj-label>Application Access</oj-label>
-              <div style={{ 
-                border: '1px solid #e5e7eb', 
-                borderRadius: '8px', 
-                padding: '16px',
-                maxHeight: '300px',
-                overflowY: 'auto'
-              }}>
-                {availableApps.length > 0 ? (
-                  availableApps.map((app) => (
-                    <div key={app._id} style={{ 
-                      marginBottom: '8px',
-                      opacity: app.is_active ? 1 : 0.6,
-                      padding: '8px',
-                      backgroundColor: stagedAppIds.includes(app._id) ? '#f0f7ff' : 'transparent',
-                      borderRadius: '4px'
-                    }}>
-                      <label style={{ display: 'flex', alignItems: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={stagedAppIds.includes(app._id)}
-                          disabled={!app.is_active}
-                          onChange={(e) => handleAppSelectionChange(app._id, e.currentTarget.checked)}
-                          style={{ marginRight: '8px' }}
-                        />
-                        <span style={{ flex: 1 }}>
-                          {app.name}
-                          {!app.is_active && (
-                            <span style={{ 
-                              marginLeft: '8px', 
-                              color: '#dc2626',
-                              fontSize: '0.85em'
-                            }}>
-                              (Inactive)
-                            </span>
-                          )}
-                        </span>
-                      </label>
-                    </div>
-                  ))
-                ) : (
-                  <div class="oj-text-color-secondary" style={{ textAlign: 'center' }}>
-                    Loading applications...
-                  </div>
-                )}
-              </div>
+              <oj-label for="app-access-dropdown">Application Access</oj-label>
+              <oj-select-many
+                id="app-access-dropdown"
+                value={stagedAppIds}
+                onvalueChanged={(e) => setStagedAppIds(e.detail.value as string[])}
+                class="oj-form-control-full-width"
+              >
+                {availableApps.map((app) => (
+                  <oj-option
+                    key={app._id}
+                    value={app._id}
+                    disabled={!app.is_active}
+                  >
+                    {app.name}{!app.is_active && ' (Inactive)'}
+                  </oj-option>
+                ))}
+              </oj-select-many>
+
             </oj-c-form-layout>
           </div>
           <div class="oj-dialog-footer">
@@ -819,23 +791,27 @@ const updateGroupAppAccess = async (groupId: string, appIds: string[]) => {
         </oj-dialog>
       )}
       {showUsersDialog && selectedGroup && (
-        <oj-dialog
-          id="usersDialog"
-          dialogTitle={`Users in ${selectedGroup.name}`}
-          initialVisibility="show"
-        >
-          <div class="oj-dialog-body">
-            <ul>
-              {selectedGroup.users?.map((user, idx) => (
-                <li key={idx}>{user.username}</li>
-              ))}
-            </ul>
-          </div>
-          <div class="oj-dialog-footer">
-            <oj-button onojAction={closeUsersDialog}>Close</oj-button>
-          </div>
-        </oj-dialog>
+  <oj-dialog
+    id="usersDialog"
+    dialogTitle={`Users in ${selectedGroup.name}`}
+    initialVisibility="show"
+  >
+    <div class="oj-dialog-body">
+      {selectedGroup.users?.length ? (
+        <ul>
+          {selectedGroup.users.map((user, idx) => (
+            <li key={idx}>{user?.username || 'Unknown user'}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>No users this group yet.</p>
       )}
+    </div>
+    <div class="oj-dialog-footer">
+      <oj-button onojAction={closeUsersDialog}>Close</oj-button>
+    </div>
+  </oj-dialog>
+)}
       <oj-c-message-toast
         data={messageDataProvider}
         onojClose={closeMessage}
