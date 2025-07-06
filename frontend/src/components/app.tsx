@@ -9,7 +9,6 @@ import Settings from '../views/settings/Settings'
 import Applications from '../views/applications/Applications'
 import Logs from '../views/logs/Logs'
 import UserGroups from '../views/user-groups/UserGroups'
-import Nav from './Nav'
 import Context = require('ojs/ojcontext')
 // import {SideBar} from './Navbar/SideBar'
 import { SideBar } from './Navbar/SideBar'

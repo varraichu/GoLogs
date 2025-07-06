@@ -17,6 +17,7 @@ backend/logs/
 .env.local
 backend/.env
 
+.vscode/
 
 backend/credentials/
 

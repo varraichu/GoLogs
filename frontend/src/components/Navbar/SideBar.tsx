@@ -62,37 +62,118 @@ export function SideBar({
       {/* <!-- Navigation list --> */}
       <oj-navigation-list aria-label="Main Navigation" selection-mode="single">
         <ul>
+          <oj-list-item-layout
+            id="dashboard"
+            class={activeItem === 'dashboard' ? 'sidebar-active' : ''}
+            onClick={() => handleNavigation('/dashboard', 'dashboard')}
+          >
+            <span slot="leading" class="oj-ux-ico-layout-mosaic"></span>
+            <span>Dashboard</span>
+          </oj-list-item-layout>
+
+          {isAdmin && (
+            <oj-list-item-layout
+              id="usergroups"
+              class={activeItem === 'usergroups' ? 'sidebar-active' : ''}
+              onClick={() => handleNavigation('/usergroups', 'usergroups')}
+            >
+              <span slot="leading" class="oj-ux-ico-group-avatar"></span>
+              <span>User Groups</span>
+            </oj-list-item-layout>
+          )}
+
+          <oj-list-item-layout
+            id="applications"
+            class={activeItem === 'applications' ? 'sidebar-active' : ''}
+            onClick={() =>
+              handleNavigation(isAdmin ? '/applications' : '/user-applications', 'applications')
+            }
+          >
+            <span slot="leading" class="oj-ux-ico-apps-grid"></span>
+            <span>Applications</span>
+          </oj-list-item-layout>
+
+          <oj-list-item-layout
+            id="logs"
+            class={activeItem === 'logs' ? 'sidebar-active' : ''}
+            onClick={() => handleNavigation('/logs', 'logs')}
+          >
+            <span slot="leading" class="oj-ux-ico-log"></span>
+            <span>Logs</span>
+          </oj-list-item-layout>
+
+          <oj-list-item-layout
+            id="settings"
+            class={activeItem === 'settings' ? 'sidebar-active' : ''}
+            onClick={() => handleNavigation('/settings', 'settings')}
+          >
+            <span slot="leading" class="oj-ux-ico-settings"></span>
+            <span>Settings</span>
+          </oj-list-item-layout>
+        </ul>
+
+        {/* <ul>
           <li id="dashboard">
-            <a href="/dashboard">
+            <a
+              href="/dashboard"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('/dashboard', 'dashboard')
+              }}
+            >
               <span class="oj-navigationlist-item-icon oj-ux-ico-layout-mosaic"></span>
               Dashboard
             </a>
           </li>
-          {isAdmin&&<li id="usergroups">
-            <a href="/usergroups">
+          {isAdmin && <li id="usergroups">
+            <a
+              href="/usergroups"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('/usergroups', 'usergroups')
+              }}
+            >
               <span class="oj-navigationlist-item-icon oj-ux-ico-group-avatar"></span>
               User Groups
             </a>
           </li>}
           <li id="applications">
-            <a href={isAdmin?"/applications":"/user-applications"}>
+            <a
+              href={isAdmin ? "/applications" : "/user-applications"}
+              onClick={(e) => {
+                e.preventDefault()
+                route(isAdmin ? "/applications" : "/user-applications")
+              }}
+            >
               <span class="oj-navigationlist-item-icon oj-ux-ico-apps-grid"></span>
               Applications
             </a>
           </li>
           <li id="logs">
-            <a href="/logs">
+            <a
+              href="/logs"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('/logs', 'logs')
+              }}
+            >
               <span class="oj-navigationlist-item-icon oj-ux-ico-log"></span>
               Logs
             </a>
           </li>
           <li id="settings">
-            <a href="/settings">
+            <a
+              href="/settings"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('/settings', 'settings')
+              }}
+            >
               <span class="oj-navigationlist-item-icon oj-ux-ico-settings"></span>
               Settings
             </a>
           </li>
-        </ul>
+        </ul> */}
       </oj-navigation-list>
     </div>
   )

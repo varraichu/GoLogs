@@ -1,4 +1,4 @@
-// File: src/services/applications.service.ts
+// File: src/services/applications.services.ts
 
 export interface Application {
   _id: string
