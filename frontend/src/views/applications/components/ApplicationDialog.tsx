@@ -124,7 +124,8 @@ export const ApplicationDialog = ({
             ]}
           ></oj-c-input-text>
 
-          {editingState && (
+          {
+          editingState && (
             <div>
               <h4 class="oj-typography-heading-sm">Assigned To</h4>
               <oj-c-select-multiple
@@ -136,7 +137,8 @@ export const ApplicationDialog = ({
                 class="oj-sm-margin-2x-vertical"
               ></oj-c-select-multiple>
             </div>
-          )}
+          )
+          }
         </oj-c-form-layout>
       </div>
       <div class="oj-dialog-footer">
