@@ -7,9 +7,9 @@ export const getOrCreateSettings = async (
 ): Promise<ISettings> => {
   const defaultSettings = {
     user_id,
-    error_rate_threshold: 30,
-    warning_rate_threshold: 15,
-    silent_duration: 10,
+    error_rate_threshold: 10,
+    warning_rate_threshold: 25,
+    silent_duration: 12,
   };
 
   const settings = await Settings.findOneAndUpdate(
