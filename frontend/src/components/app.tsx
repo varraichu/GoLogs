@@ -7,7 +7,7 @@ import Login from '../views/login/Login'
 import Dashboard from '../views/dashboard/Dashboard'
 import Settings from '../views/settings/Settings'
 import Applications from '../views/applications/Applications'
-import Logs from '../views/logs/Logs'
+import Logs from '../views/app-logs/Logs'
 import UserGroups from '../views/user-groups/UserGroups'
 import Context = require('ojs/ojcontext')
 // import {SideBar} from './Navbar/SideBar'
