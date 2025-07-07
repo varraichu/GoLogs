@@ -17,11 +17,13 @@ interface SortCriteria {
 
 export const getAllLogs = async (req: IAuthRequest, res: Response) => {
   try {
-    // Use the validated and transformed query from Zod middleware
-    // const { page, limit, sort } = (req as any).validated.query as LogsQueryInput;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const sort = req.query.sort as string | undefined;
+    const log_type = req.query.log_type as string | string[] | undefined;
+    const app_name = req.query.app_name as string | string[] | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
@@ -33,10 +35,18 @@ export const getAllLogs = async (req: IAuthRequest, res: Response) => {
         })
       : [{ field: 'timestamp', direction: 'desc' }];
 
+    const filters = {
+      log_type,
+      app_name,
+      startDate,
+      endDate,
+    };
+
     const { logs, total, pagination } = await fetchPaginatedLogsWithAppInfo({
       page,
       limit,
       sortCriteria,
+      filters,
     });
 
     res.status(200).json({
@@ -60,6 +70,11 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
     const limit = parseInt(req.query.limit as string) || 20;
     const sort = req.query.sort as string | undefined;
 
+    const log_type = req.query.log_type as string | string[] | undefined;
+    const app_name = req.query.app_name as string | string[] | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
           const [field, direction] = item.split(':');
@@ -70,11 +85,19 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
         })
       : [{ field: 'timestamp', direction: 'desc' }];
 
+    const filters = {
+      log_type,
+      app_name,
+      startDate,
+      endDate,
+    };
+
     const { logs, total, pagination } = await fetchUserLogsWithAppInfo({
       userId,
       page,
       limit,
       sortCriteria,
+      filters,
     });
 
     res.status(200).json({

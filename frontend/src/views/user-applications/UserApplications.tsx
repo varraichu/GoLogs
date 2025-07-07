@@ -10,23 +10,16 @@ import 'oj-c/select-multiple';
 import LengthValidator = require('ojs/ojvalidator-length');
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 
-interface Application {
-    _id: string;
-    name: string;
-    description: string;
-    created_at: string;
-    is_active: boolean;
-    groupCount: number;
-    groupNames: string[];
-    logCount: number;
-}
+import { useToast } from '../../context/ToastContext'
+import Toast from '../../components/Toast';
 
+
+import applicationsService, { Application, UserGroup } from '../../services/applications.services';
 
 
 const UserApplications = (props: { path?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
-    const [userId, setUserId] = useState("");
-
+    const { addNewToast } = useToast()
 
     useEffect(() => {
         fetchApplications();
@@ -34,35 +27,11 @@ const UserApplications = (props: { path?: string }) => {
 
     const fetchApplications = async () => {
         try {
-
-            const token = localStorage.getItem('jwt');
-            if (token) {
-                try {
-                    const base64Payload = token.split('.')[1]; // Get the payload part
-                    const payload = JSON.parse(atob(base64Payload)); // Decode from base64
-
-                    const userId = payload._id;
-                    console.log('User Id from token:', userId);
-                    const res = await fetch(`http://localhost:3001/api/applications/${userId}`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        }
-                    });
-                    const data = await res.json();
-                    setApplications(data.applications || []);
-                    console.log("Fetched: ", applications);
-                } catch (err) {
-                    console.error('Failed to fetch applications:', err);
-                }
-
-            } else {
-                console.warn('JWT token not found in localStorage');
-            }
-
+            const data = await applicationsService.fetchUserApplications();
+            setApplications(data.applications || []);
         } catch (error) {
-            console.error("Failed to fetch applications", error);
+            console.error('Failed to fetch applications', error);
+            addNewToast('error', 'Failed to fetch applications', String(error));
         }
     };
 
@@ -156,6 +125,7 @@ const UserApplications = (props: { path?: string }) => {
                 }
             </div>
 
+            <Toast />
         </div>
     );
 };

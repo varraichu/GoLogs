@@ -29,6 +29,13 @@ export interface SortCriteria {
   direction: 'ascending' | 'descending';
 }
 
+export interface LogFilters {
+  apps: string[];            // Optional: multiple app IDs (you can use the first one)
+  logTypes: string[];        // e.g. ["debug", "error"]
+  fromDate: string | undefined;   // ISO date string
+  toDate: string | undefined;     // ISO date string
+}
+
 class LogsService {
   private baseUrl = 'http://localhost:3001/api';
 
@@ -62,27 +69,67 @@ class LogsService {
     const sortParams = sortCriteria
       .map(criteria => `${criteria.attribute}:${criteria.direction === 'descending' ? 'desc' : 'asc'}`)
       .join(',');
-    
+
     return `&sort=${encodeURIComponent(sortParams)}`;
   }
 
   async fetchLogs(
-    page: number, 
-    limit: number = 10, 
-    sortCriteria?: SortCriteria[]
+    page: number,
+    limit: number = 10,
+    sortCriteria?: SortCriteria[],
+    filters?: LogFilters
   ): Promise<LogsResponse> {
     const token = localStorage.getItem('jwt');
     const user = this.parseJwt(token);
     const isAdmin = user?.isAdmin;
     const userId = user?._id;
 
-    const sortQuery = this.buildSortQueryString(sortCriteria);
-    
-    const endpoint = isAdmin
-      ? `${this.baseUrl}/logs?page=${page}&limit=${limit}${sortQuery}`
-      : `${this.baseUrl}/logs/${userId}?page=${page}&limit=${limit}${sortQuery}`;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
 
-    const res = await fetch(endpoint, {
+    // Set base endpoint
+    let baseEndpoint = `${this.baseUrl}/logs`;
+
+    // If non-admin, use user-specific route
+    if (!isAdmin) {
+      baseEndpoint += `/${userId}`;
+    }
+
+    const params = new URLSearchParams();
+
+    // Pagination
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+
+    // Sorting
+    if (sortCriteria && sortCriteria.length > 0) {
+      const sortStr = sortCriteria
+        .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)
+        .join(',');
+      params.append('sort', sortStr);
+    }
+
+    // Filters — allow multiple
+    if (filters?.logTypes?.length) {
+      filters.logTypes.forEach(type => params.append('log_type', type));
+    }
+
+    if (filters?.apps?.length) {
+      filters.apps.forEach(app => params.append('app_name', app));
+    }
+
+    if (filters?.fromDate) {
+      params.append('startDate', filters.fromDate);
+    }
+
+    if (filters?.toDate) {
+      params.append('endDate', filters.toDate);
+    }
+
+    const finalUrl = `${baseEndpoint}?${params.toString()}`;
+
+    const res = await fetch(finalUrl, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });

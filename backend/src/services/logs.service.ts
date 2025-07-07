@@ -13,7 +13,14 @@ interface PaginationOptions {
   page: number;
   limit: number;
   sortCriteria?: SortCriteria[];
+  filters?: {
+    log_type?: string | string[];
+    app_name?: string | string[];
+    startDate?: string;
+    endDate?: string;
+  };
 }
+
 const buildSortObject = (sortCriteria: SortCriteria[]): Record<string, 1 | -1> => {
   const sortObj: Record<string, 1 | -1> = {};
 
@@ -51,12 +58,32 @@ export const fetchPaginatedLogsWithAppInfo = async ({
   page,
   limit,
   sortCriteria = [{ field: 'timestamp', direction: 'desc' }],
+  filters = {},
 }: PaginationOptions) => {
   const skip = (page - 1) * limit;
   const sortObj = buildSortObject(sortCriteria);
 
+  // Build match stage
+  const match: any = {};
+
+  if (filters.log_type) {
+    match.log_type = Array.isArray(filters.log_type) ? { $in: filters.log_type } : filters.log_type;
+  }
+  if (filters.startDate || filters.endDate) {
+    match.timestamp = {};
+    if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
+    if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
+  }
+
+  const appMatch: any = { 'application.is_active': true };
+  if (filters.app_name) {
+    appMatch['application.name'] = Array.isArray(filters.app_name)
+      ? { $in: filters.app_name }
+      : filters.app_name;
+  }
   const [logs, total] = await Promise.all([
     Log.aggregate([
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -66,8 +93,8 @@ export const fetchPaginatedLogsWithAppInfo = async ({
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
-      { $sort: sortObj }, // Dynamic sorting based on criteria
+      { $match: appMatch },
+      { $sort: sortObj },
       { $skip: skip },
       { $limit: limit },
       {
@@ -83,6 +110,7 @@ export const fetchPaginatedLogsWithAppInfo = async ({
       },
     ]),
     Log.aggregate([
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -92,7 +120,7 @@ export const fetchPaginatedLogsWithAppInfo = async ({
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
+      { $match: appMatch },
       { $count: 'total' },
     ]).then((result) => result[0]?.total || 0),
   ]);
@@ -115,6 +143,12 @@ interface UserLogsPaginationOptions {
   page: number;
   limit: number;
   sortCriteria?: SortCriteria[];
+  filters?: {
+    log_type?: string | string[];
+    app_name?: string | string[];
+    startDate?: string;
+    endDate?: string;
+  };
 }
 
 export const fetchUserLogsWithAppInfo = async ({
@@ -122,6 +156,7 @@ export const fetchUserLogsWithAppInfo = async ({
   page,
   limit,
   sortCriteria = [{ field: 'timestamp', direction: 'desc' }],
+  filters = {},
 }: UserLogsPaginationOptions) => {
   const skip = (page - 1) * limit;
   const sortObj = buildSortObject(sortCriteria);
@@ -169,14 +204,31 @@ export const fetchUserLogsWithAppInfo = async ({
     };
   }
 
-  // Now fetch logs for these applications
+  // Build match stage for logs
+  const match: any = {
+    app_id: { $in: appIds },
+  };
+
+  if (filters.log_type) {
+    match.log_type = Array.isArray(filters.log_type) ? { $in: filters.log_type } : filters.log_type;
+  }
+  if (filters.startDate || filters.endDate) {
+    match.timestamp = {};
+    if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
+    if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
+  }
+
+  const appMatch: any = { 'application.is_active': true };
+  if (filters.app_name) {
+    appMatch['application.name'] = Array.isArray(filters.app_name)
+      ? { $in: filters.app_name }
+      : filters.app_name;
+  }
+
+  // Now fetch logs for these applications with filters
   const [logs, total] = await Promise.all([
     Log.aggregate([
-      {
-        $match: {
-          app_id: { $in: appIds },
-        },
-      },
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -186,8 +238,8 @@ export const fetchUserLogsWithAppInfo = async ({
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
-      { $sort: sortObj }, // Use dynamic sorting
+      { $match: appMatch },
+      { $sort: sortObj },
       { $skip: skip },
       { $limit: limit },
       {
@@ -203,11 +255,7 @@ export const fetchUserLogsWithAppInfo = async ({
       },
     ]),
     Log.aggregate([
-      {
-        $match: {
-          app_id: { $in: appIds },
-        },
-      },
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -217,7 +265,7 @@ export const fetchUserLogsWithAppInfo = async ({
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
+      { $match: appMatch },
       { $count: 'total' },
     ]).then((result) => result[0]?.total || 0),
   ]);

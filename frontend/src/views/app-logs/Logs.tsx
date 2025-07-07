@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import 'ojs/ojtable';
 import 'ojs/ojbutton';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
+
 import { useToast } from '../../context/ToastContext'
-import 'oj-c/message-toast'
+import Toast from '../../components/Toast';
 
 import 'oj-c/table';
 import { logsService, LogEntry, Pagination, SortCriteria } from '../../services/logs.services';
@@ -24,8 +25,18 @@ const Logs = (props: { path?: string }) => {
     { attribute: 'timestamp', direction: 'descending' }
   ]);
 
-  const [frontendSortCriteria, setFrontendSortCriteria] = useState<{ key: string, direction: 'ascending' | 'descending' } | null>(null);
-
+  // const [frontendSortCriteria, setFrontendSortCriteria] = useState<{ key: string, direction: 'ascending' | 'descending' } | null>(null);
+  const [filters, setFilters] = useState<{
+    apps: string[];
+    logTypes: string[];
+    fromDate: string | undefined;
+    toDate: string | undefined;
+  }>({
+    apps: [],
+    logTypes: [],
+    fromDate: undefined,
+    toDate: undefined,
+  });
 
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
@@ -36,22 +47,20 @@ const Logs = (props: { path?: string }) => {
     hasPrevPage: false,
   });
 
-  const { addNewToast, messageDataProvider, removeToast } = useToast()
-  const closeMessage = (event: CustomEvent<{ key: string }>) => {
-    removeToast(event.detail.key)
-  }
+  const { addNewToast } = useToast()
 
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
     fetchLogs(pagination.page);
-  }, [pagination.page, sortCriteria]);
+  }, [pagination.page, sortCriteria, filters]);
 
   const fetchLogs = async (page: number) => {
     setIsLoading(true);
     try {
       // Pass sort criteria to backend
       console.log("sort criteria: ", sortCriteria);
-      const data = await logsService.fetchLogs(page, pagination.limit, sortCriteria);
+      console.log("filtera: ", filters);
+      const data = await logsService.fetchLogs(page, pagination.limit, sortCriteria, filters);
 
       const formattedLogs = (data.logs || []).map((log: LogEntry) => ({
         ...log,
@@ -101,7 +110,7 @@ const Logs = (props: { path?: string }) => {
     if (!header || !direction) return;
 
     // Update frontend indicator
-    setFrontendSortCriteria({ key: header, direction });
+    // setFrontendSortCriteria({ key: header, direction });
 
     // Backend sort
     const newSort = { attribute: header, direction };
@@ -120,6 +129,10 @@ const Logs = (props: { path?: string }) => {
     }, 150);
   };
 
+  const handleFilterChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 })); // reset to first page
+  };
 
   return (
     <div
@@ -131,13 +144,8 @@ const Logs = (props: { path?: string }) => {
       </div>
       <div>
 
-        <LogFilters
-          appsOptions={["a", "b"]}
-          logTypeOptions={["error", "log"]}
-          onFilterChange={() => { console.log("click") }}
-        >
-
-        </LogFilters>
+        <LogFilters onFilterChange={handleFilterChange} />
+        
       </div>
 
       <div
@@ -200,12 +208,8 @@ const Logs = (props: { path?: string }) => {
         </div>
       )}
 
-      <oj-c-message-toast
-        data={messageDataProvider}
-        onojClose={closeMessage}
-        position="top-right"
-        offset={{ horizontal: 10, vertical: 50 }}
-      />
+      <Toast />
+
     </div>
   );
 };
