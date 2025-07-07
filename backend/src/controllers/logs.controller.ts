@@ -7,15 +7,37 @@ import UserGroupMembers from '../models/UserGroupMembers';
 import mongoose from 'mongoose';
 import UserGroupApplications from '../models/UserGroupApplications';
 import { UserIdParams } from '../schemas/application.validator';
-import { UpdateLogTTLInput } from '../schemas/logs.validator';
+import { UpdateLogTTLInput, LogsQueryInput, logsQuerySchema } from '../schemas/logs.validator';
 import Logs from '../models/Logs';
+
+interface SortCriteria {
+  field: string;
+  direction: 'asc' | 'desc';
+}
 
 export const getAllLogs = async (req: IAuthRequest, res: Response) => {
   try {
+    // Use the validated and transformed query from Zod middleware
+    // const { page, limit, sort } = (req as any).validated.query as LogsQueryInput;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const sort = req.query.sort as string | undefined;
 
-    const { logs, total, pagination } = await fetchPaginatedLogsWithAppInfo({ page, limit });
+    const sortCriteria: SortCriteria[] = sort
+      ? sort.split(',').map((item) => {
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
+      : [{ field: 'timestamp', direction: 'desc' }];
+
+    const { logs, total, pagination } = await fetchPaginatedLogsWithAppInfo({
+      page,
+      limit,
+      sortCriteria,
+    });
 
     res.status(200).json({
       message: 'Logs fetched successfully',
@@ -36,10 +58,24 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
     const { userId } = req.params as UserIdParams;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const sort = req.query.sort as string | undefined;
 
-    console.log('Fetching logs for user ID:', userId);
+    const sortCriteria: SortCriteria[] = sort
+      ? sort.split(',').map((item) => {
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
+      : [{ field: 'timestamp', direction: 'desc' }];
 
-    const { logs, total, pagination } = await fetchUserLogsWithAppInfo({ userId, page, limit });
+    const { logs, total, pagination } = await fetchUserLogsWithAppInfo({
+      userId,
+      page,
+      limit,
+      sortCriteria,
+    });
 
     res.status(200).json({
       message: 'User logs fetched successfully',

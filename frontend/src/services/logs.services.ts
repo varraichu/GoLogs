@@ -1,4 +1,4 @@
-// File: src/services/logs.service.ts
+// File: src/services/logs.services.ts
 
 export interface LogEntry {
   _id: string;
@@ -24,6 +24,11 @@ export interface LogsResponse {
   message?: string;
 }
 
+export interface SortCriteria {
+  attribute: string;
+  direction: 'ascending' | 'descending';
+}
+
 class LogsService {
   private baseUrl = 'http://localhost:3001/api';
 
@@ -47,15 +52,35 @@ class LogsService {
     }
   }
 
-  async fetchLogs(page: number, limit: number = 10): Promise<LogsResponse> {
+  private buildSortQueryString(sortCriteria?: SortCriteria[]): string {
+    if (!sortCriteria || sortCriteria.length === 0) {
+      return '';
+    }
+
+    // Convert sort criteria to query parameters
+    // Format: &sort=timestamp:desc,log_type:desc,app_name:desc
+    const sortParams = sortCriteria
+      .map(criteria => `${criteria.attribute}:${criteria.direction === 'descending' ? 'desc' : 'asc'}`)
+      .join(',');
+    
+    return `&sort=${encodeURIComponent(sortParams)}`;
+  }
+
+  async fetchLogs(
+    page: number, 
+    limit: number = 10, 
+    sortCriteria?: SortCriteria[]
+  ): Promise<LogsResponse> {
     const token = localStorage.getItem('jwt');
     const user = this.parseJwt(token);
     const isAdmin = user?.isAdmin;
     const userId = user?._id;
 
+    const sortQuery = this.buildSortQueryString(sortCriteria);
+    
     const endpoint = isAdmin
-      ? `${this.baseUrl}/logs?page=${page}&limit=${limit}`
-      : `${this.baseUrl}/logs/${userId}?page=${page}&limit=${limit}`;
+      ? `${this.baseUrl}/logs?page=${page}&limit=${limit}${sortQuery}`
+      : `${this.baseUrl}/logs/${userId}?page=${page}&limit=${limit}${sortQuery}`;
 
     const res = await fetch(endpoint, {
       method: 'GET',

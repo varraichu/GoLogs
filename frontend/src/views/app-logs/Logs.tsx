@@ -1,6 +1,6 @@
 // File: src/pages/Logs.tsx
 import { h } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import 'ojs/ojtable';
 import 'ojs/ojbutton';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
@@ -8,12 +8,25 @@ import { useToast } from '../../context/ToastContext'
 import 'oj-c/message-toast'
 
 import 'oj-c/table';
-import { logsService, LogEntry, Pagination } from '../../services/logs.services';
+import { logsService, LogEntry, Pagination, SortCriteria } from '../../services/logs.services';
+import LogFilters from './components/LogFilters';
+
 
 
 const Logs = (props: { path?: string }) => {
   const [adminLogs, setAdminLogs] = useState<LogEntry[]>([]);
   const [dataProvider, setDataProvider] = useState<any>(null);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Set default sort criteria for backend
+  const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
+    { attribute: 'timestamp', direction: 'descending' }
+  ]);
+
+  const [frontendSortCriteria, setFrontendSortCriteria] = useState<{ key: string, direction: 'ascending' | 'descending' } | null>(null);
+
+
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
     page: 1,
@@ -26,16 +39,19 @@ const Logs = (props: { path?: string }) => {
   const { addNewToast, messageDataProvider, removeToast } = useToast()
   const closeMessage = (event: CustomEvent<{ key: string }>) => {
     removeToast(event.detail.key)
-    // const closeKey = event.detail.key
-    // setMessages(messages.filter((msg) => msg.id !== closeKey))
   }
+
+  // Fetch logs when page or sort criteria changes
   useEffect(() => {
     fetchLogs(pagination.page);
-  }, []);
+  }, [pagination.page, sortCriteria]);
 
   const fetchLogs = async (page: number) => {
+    setIsLoading(true);
     try {
-      const data = await logsService.fetchLogs(page, pagination.limit);
+      // Pass sort criteria to backend
+      console.log("sort criteria: ", sortCriteria);
+      const data = await logsService.fetchLogs(page, pagination.limit, sortCriteria);
 
       const formattedLogs = (data.logs || []).map((log: LogEntry) => ({
         ...log,
@@ -53,25 +69,57 @@ const Logs = (props: { path?: string }) => {
         hasPrevPage: false,
       });
 
-      setDataProvider(new ArrayDataProvider(formattedLogs || [], { keyAttributes: '_id' }));
+      // Create a simple data provider without frontend sorting
+      // since sorting is handled by the backend
+      const baseProvider = new ArrayDataProvider(formattedLogs || [], { keyAttributes: '_id' });
+      setDataProvider(baseProvider);
 
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to fetch logs.');
       console.error("Failed to fetch logs", error);
     }
+    finally {
+      setIsLoading(false);
+    }
   };
 
   const goToNextPage = () => {
-    if (pagination.hasNextPage) {
-      fetchLogs(pagination.page + 1);
+    if (pagination.hasNextPage && !isLoading) {
+      setPagination(prev => ({ ...prev, page: prev.page + 1 }));
     }
   };
 
   const goToPrevPage = () => {
-    if (pagination.hasPrevPage) {
-      fetchLogs(pagination.page - 1);
+    if (pagination.hasPrevPage && !isLoading) {
+      setPagination(prev => ({ ...prev, page: prev.page - 1 }));
     }
   };
+
+  const handleSort = (event: CustomEvent) => {
+    const { header, direction } = event.detail;
+
+    if (!header || !direction) return;
+
+    // Update frontend indicator
+    setFrontendSortCriteria({ key: header, direction });
+
+    // Backend sort
+    const newSort = { attribute: header, direction };
+    setSortCriteria((prev) => {
+      const others = prev.filter(c => c.attribute !== header);
+      return [newSort, ...others];
+    });
+
+    // Reset page with debounce
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }, 150);
+  };
+
 
   return (
     <div
@@ -81,10 +129,19 @@ const Logs = (props: { path?: string }) => {
       <div class="oj-flex oj-sm-12 oj-sm-padding-2x oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
+      <div>
 
+        <LogFilters
+          appsOptions={["a", "b"]}
+          logTypeOptions={["error", "log"]}
+          onFilterChange={() => { console.log("click") }}
+        >
+
+        </LogFilters>
+      </div>
 
       <div
-        class="oj-flex oj-sm-margin-x-4x oj-sm-margin-bottom-4x"
+        class="oj-flex oj-sm-margin-4x"
         style={{
           flex: 1,
           minHeight: 0,
@@ -97,18 +154,20 @@ const Logs = (props: { path?: string }) => {
       >
         <oj-table
           data={dataProvider}
+          onojSort={handleSort}
           columns={[
-            { headerText: 'App Name', field: 'app_name', "resizable": "enabled" },
-            { headerText: 'Log Type', field: 'log_type', "resizable": "enabled" },
-            { headerText: 'Message', field: 'message', "resizable": "enabled" },
-            { headerText: 'Timestamp', field: 'timestamp', "resizable": "enabled" }
+            { headerText: 'App Name', field: 'app_name', resizable: "enabled", sortable: 'enabled', },
+            { headerText: 'Log Type', field: 'log_type', resizable: "enabled", sortable: 'enabled', },
+            { headerText: 'Message', field: 'message', resizable: "enabled", sortable: 'enabled', },
+            { headerText: 'Timestamp', field: 'timestamp', resizable: "enabled", sortable: 'enabled', }
           ]}
-          // columnWidths={{"App Name": 5}}
+          display='grid'
           class=" oj-sm-12"
+          layout='fixed'
           horizontal-grid-visible="enabled"
           vertical-grid-visible="enabled"
-          // style="width: 100%; flex: 1 1 0; min-width: 0; min-height: 0; table-layout: fixed;" // changed from auto to fixed
-        ></oj-table>
+        >
+        </oj-table>
       </div>
 
       {/* Pagination */}
@@ -120,7 +179,7 @@ const Logs = (props: { path?: string }) => {
           <oj-button
             chroming="callToAction"
             onojAction={goToPrevPage}
-            disabled={!pagination.hasPrevPage}
+            disabled={!pagination.hasPrevPage || isLoading}
           >
             <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
             Previous
@@ -133,7 +192,7 @@ const Logs = (props: { path?: string }) => {
           <oj-button
             chroming="callToAction"
             onojAction={goToNextPage}
-            disabled={!pagination.hasNextPage}
+            disabled={!pagination.hasNextPage || isLoading}
           >
             Next
             <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
