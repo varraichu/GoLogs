@@ -49,9 +49,10 @@ const Settings = (props: { path?: string }) => {
   return (
     <div class="oj-sm-padding-4x">
       <h1 class="oj-typography-heading-lg">System Configuration</h1>
-      <p class="oj-typography-body-md">Configure database retention and system thresholds</p>
+      <p class="oj-typography-body-md oj-text-color-secondary">Configure database retention and system thresholds</p>
 
-      {isAdmin ? (
+      <DatabaseRetentionSettings isAdmin = {isAdmin}/>
+      {/* {isAdmin ? (
         <DatabaseRetentionSettings />
       ) : (
         <oj-c-input-text
@@ -67,7 +68,7 @@ const Settings = (props: { path?: string }) => {
             border: '1px solid #ccc'
           }}
         ></oj-c-input-text>
-      )}
+      )} */}
     </div>
   );
 };

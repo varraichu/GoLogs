@@ -1,0 +1,20 @@
+import { h } from 'preact';
+import 'ojs/ojdialog';
+import 'ojs/ojswitch';
+import 'oj-c/button';
+import 'oj-c/input-text';
+import 'oj-c/form-layout';
+import 'oj-c/select-multiple';
+import 'oj-c/card-view';
+import 'ojs/ojselector';
+import 'ojs/ojlistitemlayout';
+import 'ojs/ojavatar';
+import 'ojs/ojlistview';
+import 'ojs/ojbutton';
+import 'ojs/ojtoolbar';
+import "oj-c/message-toast";
+import 'oj-c/tab-bar';
+declare const Applications: (props: {
+    path?: string;
+}) => h.JSX.Element;
+export default Applications;
