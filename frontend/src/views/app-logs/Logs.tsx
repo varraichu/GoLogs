@@ -134,6 +134,13 @@ const Logs = (props: { path?: string }) => {
     setPagination(prev => ({ ...prev, page: 1 })); // reset to first page
   };
 
+  const getDir = (field: string) => {
+    // console.log("field: ", field);
+    return sortCriteria.find(c => c.attribute === field)?.direction;
+
+  }
+
+
   return (
     <div
       class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column"
@@ -145,7 +152,7 @@ const Logs = (props: { path?: string }) => {
       <div>
 
         <LogFilters onFilterChange={handleFilterChange} />
-        
+
       </div>
 
       <div
@@ -164,10 +171,10 @@ const Logs = (props: { path?: string }) => {
           data={dataProvider}
           onojSort={handleSort}
           columns={[
-            { headerText: 'App Name', field: 'app_name', resizable: "enabled", sortable: 'enabled', },
-            { headerText: 'Log Type', field: 'log_type', resizable: "enabled", sortable: 'enabled', },
-            { headerText: 'Message', field: 'message', resizable: "enabled", sortable: 'enabled', },
-            { headerText: 'Timestamp', field: 'timestamp', resizable: "enabled", sortable: 'enabled', }
+            { id: 'app_name', headerText: 'App Name', field: 'app_name', resizable: "enabled", sortable: 'enabled', },
+            { id: 'log_type', headerText: 'Log Type', field: 'log_type', resizable: "enabled", sortable: 'enabled', },
+            { id: 'message', headerText: 'Message', field: 'message', resizable: "enabled", sortable: 'enabled', },
+            { id: 'timestamp', headerText: 'Timestamp', field: 'timestamp', resizable: "enabled", sortable: 'enabled', }
           ]}
           display='grid'
           class=" oj-sm-12"
@@ -175,6 +182,34 @@ const Logs = (props: { path?: string }) => {
           horizontal-grid-visible="enabled"
           vertical-grid-visible="enabled"
         >
+          <template
+            slot="headerTemplate"
+            render={(col: any) => {
+              const dir = getDir(col.columnKey);
+              const icon = dir === 'ascending'
+                ? 'oj-ux-ico-caret-up'
+                : dir === 'descending'
+                  ? 'oj-ux-ico-caret-down'
+                  : ' oj-ux-ico-sort';
+
+              return (
+                <div
+                  class="oj-table-header-cell-label oj-hover-cursor-pointer"
+                  onClick={() => {
+                    const nextDir = dir === 'ascending' ? 'descending' : 'ascending';
+                    handleSort({
+                      detail: { header: col.columnKey, direction: nextDir }
+                    } as CustomEvent);
+                  }}
+                >
+                  <span>{col.headerText}</span>
+                  {icon && (
+                    <span class={`${icon} oj-sm-display-inline-block oj-sm-margin-start-2`} />
+                  )}
+                </div>
+              );
+            }}
+          />
         </oj-table>
       </div>
 

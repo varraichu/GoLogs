@@ -40,6 +40,51 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
 
 
   const { addNewToast } = useToast()
+  const [retention, setRetention] = useState<number>(0); // default
+
+  const now = new Date();
+  const localDateTime = now.getFullYear()
+    + '-' + String(now.getMonth() + 1).padStart(2, '0')
+    + '-' + String(now.getDate()).padStart(2, '0')
+    + 'T' + String(now.getHours()).padStart(2, '0')
+    + ':' + String(now.getMinutes()).padStart(2, '0');
+
+  const thirtyDaysAgo = new Date(now.getTime() - retention * 24 * 60 * 60 * 1000);
+  const minDateTime = thirtyDaysAgo.toISOString().slice(0, 16); // same format
+
+
+
+  useEffect(() => {
+    const token = localStorage.getItem('jwt');
+    if (!token) return;
+
+    try {
+      async function fetchRetention() {
+        try {
+          const response = await fetch('http://localhost:3001/api/logs/get/ttl', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch retention. Status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          setRetention(data.ttlInDays || 30);
+        } catch (error) {
+          console.error('Error fetching retention:', error);
+        }
+      }
+
+      fetchRetention();
+    } catch (err) {
+      console.error('Invalid JWT token:', err);
+    }
+  }, []);
 
   // const logTypes = ["info", "debug", "error", "warn"]
 
@@ -120,7 +165,7 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
       </div>
 
       <div class="oj-flex-item">
-        <label class="oj-label">Apps</label>
+        <label class="oj-label">Log Type</label>
         {/* Log Type Filter */}
         <oj-select-many
           options={logTypeOptions} // ✅ CORRECT WAY
@@ -142,7 +187,13 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
             console.log('From date changed:', e.detail.value);
             setFromDate(e.detail.value);
           }}
+          max={localDateTime}
+          min={minDateTime}
           class="oj-form-control-width-md"
+          timePicker={{
+            footerLayout: '',            // or "" if you don’t want the footer
+            timeIncrement: '00:01:00:00'    // 1 minute in hh:mm:ss:SS format
+          }}
         />
       </div>
 
@@ -155,7 +206,13 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
             console.log('To date changed:', e.detail.value);
             setToDate(e.detail.value);
           }}
+          max={localDateTime}
+          min={minDateTime}
           class="oj-form-control-width-md"
+          timePicker={{
+            footerLayout: '',            // or "" if you don’t want the footer
+            timeIncrement: '00:01:00:00'    // 1 minute in hh:mm:ss:SS format
+          }}
         />
       </div>
 
