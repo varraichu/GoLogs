@@ -6,15 +6,18 @@ import 'ojs/ojinputsearch';
 interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
-  data: any;
 }
 
-const SearchBar = ({ value, onChange, data }: SearchBarProps) => {
+const SearchBar = ({ value, onChange }: SearchBarProps) => {
+  const handleRawValueChange = (event: CustomEvent) => {
+    const newRawValue = event.detail.value;
+    onChange(newRawValue || '');
+  };
+
   const handleInput = (event: CustomEvent) => {
     const newValue = event.detail.value;
     onChange(newValue);
   };
-
 
   return (
     <div class="oj-sm-padding-4x-start oj-sm-padding-4x-end oj-flex oj-sm-align-items-center">
@@ -22,7 +25,7 @@ const SearchBar = ({ value, onChange, data }: SearchBarProps) => {
         value={value}
         placeholder="Search logs"
         onojValueAction={handleInput}
-        suggestions={data}
+        onrawValueChanged={handleRawValueChange}
         class="oj-form-control-max-width-md"
       ></oj-input-search>
     </div>

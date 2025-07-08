@@ -74,15 +74,68 @@ export const fetchPaginatedLogsWithAppInfo = async ({
     if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
     if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
   }
-  const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
 
   if (filters.search) {
-    if (hasSpecialChars) {
-      match.message = { $regex: filters.search, $options: 'i' };
-    } else {
-      match.$text = { $search: filters.search };
+    const trimmedSearch = filters.search.trim();
+
+    if (trimmedSearch) {
+      const keywords = trimmedSearch.split(/\s+/).filter((k) => !!k);
+
+      if (keywords.length === 1) {
+        const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = { $regex: escaped, $options: 'i' };
+
+        match.$or = [{ message: regex }, { log_type: regex }];
+      } else {
+        // Multi-keyword AND across all fields
+        const regexConditions = keywords.map((kw) => {
+          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = { $regex: escaped, $options: 'i' };
+
+          return {
+            $or: [{ message: regex }, { log_type: regex }],
+          };
+        });
+
+        match.$and = regexConditions;
+      }
     }
   }
+
+  // if (filters.search) {
+  //   // Trim trailing and leading spaces
+  //   const trimmedSearch = filters.search.trim();
+
+  //   // Only proceed if there's something to search after trimming
+  //   if (trimmedSearch) {
+  //     // Split by spaces and filter out empty strings
+  //     const keywords = trimmedSearch.split(/\s+/).filter((keyword) => keyword.length > 0);
+
+  //     if (keywords.length === 1) {
+  //       // Single keyword - use simple regex
+  //       const escapedSearch = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //       match.message = { $regex: escapedSearch, $options: 'i' };
+  //     } else if (keywords.length > 1) {
+  //       // Multiple keywords - all must be present (AND logic)
+  //       const regexConditions = keywords.map((keyword) => {
+  //         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //         return { message: { $regex: escapedKeyword, $options: 'i' } };
+  //       });
+
+  //       match.$and = regexConditions;
+  //     }
+  //   }
+  // }
+
+  // const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
+
+  // if (filters.search) {
+  //   if (hasSpecialChars) {
+  //     match.message = { $regex: filters.search, $options: 'i' };
+  //   } else {
+  //     match.$text = { $search: filters.search };
+  //   }
+  // }
 
   const appMatch: any = { 'application.is_active': true };
   if (filters.app_name) {
@@ -226,15 +279,84 @@ export const fetchUserLogsWithAppInfo = async ({
     if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
     if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
   }
-  const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
 
   if (filters.search) {
-    if (hasSpecialChars) {
-      match.message = { $regex: filters.search, $options: 'i' };
-    } else {
-      match.$text = { $search: filters.search };
+    const trimmedSearch = filters.search.trim();
+
+    if (trimmedSearch) {
+      const keywords = trimmedSearch.split(/\s+/).filter((k) => !!k);
+
+      if (keywords.length === 1) {
+        const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = { $regex: escaped, $options: 'i' };
+
+        match.$or = [{ message: regex }, { log_type: regex }];
+      } else {
+        const regexConditions = keywords.map((kw) => {
+          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = { $regex: escaped, $options: 'i' };
+
+          return {
+            $or: [{ message: regex }, { log_type: regex }],
+          };
+        });
+
+        match.$and = regexConditions;
+      }
     }
   }
+
+  // if (filters.search) {
+  //   // Trim trailing and leading spaces
+  //   const trimmedSearch = filters.search.trim();
+
+  //   // Only proceed if there's something to search after trimming
+  //   if (trimmedSearch) {
+  //     // Split by spaces and filter out empty strings
+  //     const keywords = trimmedSearch.split(/\s+/).filter((keyword) => keyword.length > 0);
+
+  //     if (keywords.length === 1) {
+  //       // Single keyword - use simple regex
+  //       const escapedSearch = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //       match.message = { $regex: escapedSearch, $options: 'i' };
+  //     } else if (keywords.length > 1) {
+  //       // Multiple keywords - all must be present (AND logic)
+  //       const regexConditions = keywords.map((keyword) => {
+  //         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //         return { message: { $regex: escapedKeyword, $options: 'i' } };
+  //       });
+
+  //       match.$and = regexConditions;
+  //     }
+  //   }
+  // }
+
+  // if (filters.search) {
+  //   // Trim trailing and leading spaces
+  //   const trimmedSearch = filters.search.trim();
+
+  //   // Only proceed if there's something to search after trimming
+  //   if (trimmedSearch) {
+  //     // Escape special regex characters to prevent regex injection
+  //     const escapedSearch = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //     match.message = { $regex: escapedSearch, $options: 'i' };
+  //   }
+  // }
+
+  // if (filters.search) {
+  //   // Escape special regex characters to prevent regex injection
+  //   const escapedSearch = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //   match.message = { $regex: escapedSearch, $options: 'i' };
+  // }
+  // const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
+
+  // if (filters.search) {
+  //   if (hasSpecialChars) {
+  //     match.message = { $regex: filters.search, $options: 'i' };
+  //   } else {
+  //     match.$text = { $search: filters.search };
+  //   }
+  // }
 
   const appMatch: any = { 'application.is_active': true };
   if (filters.app_name) {

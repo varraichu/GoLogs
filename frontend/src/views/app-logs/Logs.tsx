@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import 'ojs/ojtable';
 import 'ojs/ojbutton';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
+import { KeySetImpl } from 'ojs/ojkeyset';
 
 import { useToast } from '../../context/ToastContext'
 import Toast from '../../components/Toast';
@@ -12,6 +13,7 @@ import 'oj-c/table';
 import { logsService, LogEntry, Pagination, SortCriteria } from '../../services/logs.services';
 import LogFilters from './components/LogFilters';
 import SearchBar from '../../components/SearchBar';
+import LogDetailsModal from './components/LogDetailsModal';
 
 
 
@@ -51,7 +53,12 @@ const Logs = (props: { path?: string }) => {
   });
 
   const { addNewToast } = useToast()
-  const [suggestionsProvider, setSuggestionsProvider] = useState<any>(null);
+  const [selectedRows, setSelectedRows] = useState<{ row: KeySetImpl<any> }>({
+    row: new KeySetImpl<any>()
+  });
+
+  const [showLogDialog, setShowLogDialog] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<any>(null);
 
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
@@ -66,7 +73,8 @@ const Logs = (props: { path?: string }) => {
       console.log("filtera: ", filters);
       const data = await logsService.fetchLogs(page, pagination.limit, sortCriteria, filters);
 
-      const formattedLogs = (data.logs || []).map((log: LogEntry) => ({
+      const formattedLogs = (data.logs || []).map((log: LogEntry, idx) => ({
+        rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,
         ...log,
         timestamp: new Date(log.timestamp).toLocaleString(),
         ingested_at: new Date(log.ingested_at).toLocaleString(),
@@ -87,12 +95,6 @@ const Logs = (props: { path?: string }) => {
       const baseProvider = new ArrayDataProvider(formattedLogs || [], { keyAttributes: '_id' });
       setDataProvider(baseProvider);
 
-      const messageSnippets = Array.from(
-        new Set(formattedLogs.map(log => log.message).filter(m => !!m))
-      ).map(msg => ({ value: msg, label: msg }));
-
-      const suggProvider = new ArrayDataProvider(messageSnippets, { keyAttributes: 'value' });
-      setSuggestionsProvider(suggProvider);
 
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to fetch logs.');
@@ -155,8 +157,56 @@ const Logs = (props: { path?: string }) => {
   }
 
   const handleSearchChange = (value: string) => {
+    // Update the filters state immediately for UI feedback
     setFilters(prev => ({ ...prev, search: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+
+    // Clear existing timeout
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    // Debounce the API call and pagination reset
+    debounceTimeout.current = setTimeout(() => {
+      setPagination(prev => ({ ...prev, page: 1 }));
+      // The useEffect will automatically trigger fetchLogs when filters change
+    }, 300); // 300ms delay - adjust as needed
+  };
+
+  // const handleRowSelect = (event: CustomEvent) => {
+  //   const newSelection = event.detail.value;
+  //   setSelectedRows(newSelection); // 👈 this is now { row: KeySetImpl }
+
+  //   const selectedKey = [...(newSelection.row?.values?.() || [])][0]; // safely extract first selected
+  //   const log = adminLogs.find((log) => log._id === selectedKey);
+  //   setSelectedLog(log);
+
+  //   if (log) {
+  //     // Clear state first
+  //     setShowLogDialog(false);
+  //     setSelectedLog(null);
+  //     // Re-set after short delay
+  //     // setTimeout(() => {
+  //     // }, 0);
+
+  //     setSelectedLog(log);
+  //     setShowLogDialog(true);
+  //     console.log('Clicked row:', log, 'dialog stat: ', showLogDialog);
+
+  //   }
+  // };
+
+  const handleRowSelect = (event: CustomEvent) => {
+    const newSelection = event.detail.value;
+    setSelectedRows(newSelection);
+
+    const selectedKey = [...(newSelection.row?.values?.() || [])][0];
+    const log = adminLogs.find((log) => log._id === selectedKey);
+
+    if (log) {
+      setSelectedLog(log);
+      setShowLogDialog(true);
+      console.log('Clicked row:', log);
+    }
   };
 
   return (
@@ -173,8 +223,8 @@ const Logs = (props: { path?: string }) => {
       <div class="oj-flex oj-flex-1 oj-sm-align-items-center oj-sm-justify-content-start oj-sm-padding-3x-bottom" >
         {/* style={{backgroundColor: '#8ace00'}} */}
 
-        
-        <SearchBar value={filters.search} onChange={handleSearchChange} data={suggestionsProvider} />
+
+        <SearchBar value={filters.search} onChange={handleSearchChange} />
 
       </div>
 
@@ -198,6 +248,7 @@ const Logs = (props: { path?: string }) => {
           data={dataProvider}
           onojSort={handleSort}
           columns={[
+            { id: 'rowNumber', headerText: 'Row', field: 'rowNumber', resizable: "enabled", sortable: 'disabled' },
             { id: 'app_name', headerText: 'App Name', field: 'app_name', resizable: "enabled", sortable: 'enabled', },
             { id: 'log_type', headerText: 'Log Type', field: 'log_type', resizable: "enabled", sortable: 'enabled', },
             { id: 'message', headerText: 'Message', field: 'message', resizable: "enabled", sortable: 'enabled', },
@@ -207,7 +258,10 @@ const Logs = (props: { path?: string }) => {
           class=" oj-sm-12"
           layout='fixed'
           horizontal-grid-visible="enabled"
-          vertical-grid-visible="enabled"
+          vertical-grid-visible="disabled"
+          selectionMode={{ row: 'single' }}
+          selected={selectedRows}
+          onselectedChanged={handleRowSelect}
         >
           <template
             slot="headerTemplate"
@@ -230,7 +284,7 @@ const Logs = (props: { path?: string }) => {
                   }}
                 >
                   <span>{col.headerText}</span>
-                  {icon && (
+                  {col.headerText !== 'Row' && icon && (
                     <span class={`${icon} oj-sm-display-inline-block oj-sm-margin-start-2`} />
                   )}
                 </div>
@@ -243,7 +297,7 @@ const Logs = (props: { path?: string }) => {
       {/* Pagination */}
       {pagination && (
         <div
-          class="oj-flex oj-sm-flex-direction-row oj-sm-align-items-center oj-sm-justify-content-center oj-sm-margin-y-4x"
+          class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end"
           style="gap: 16px;"
         >
           <oj-button
@@ -271,6 +325,18 @@ const Logs = (props: { path?: string }) => {
       )}
 
       <Toast />
+
+      {showLogDialog && selectedRows && (
+        <LogDetailsModal
+          key={selectedLog._id}
+          logRow={selectedLog}
+          opened={showLogDialog}
+          onCancel={() => {
+            setShowLogDialog(false);
+            setSelectedLog(null);
+          }}
+        />
+      )}
 
     </div>
   );

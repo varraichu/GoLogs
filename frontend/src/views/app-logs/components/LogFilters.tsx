@@ -5,7 +5,6 @@ import 'ojs/ojselectcombobox';
 import 'ojs/ojdatetimepicker';
 import 'ojs/ojbutton';
 
-
 import { useToast } from '../../../context/ToastContext'
 import Toast from '../../../components/Toast';
 
@@ -32,13 +31,11 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
     { value: 'warn', label: 'warn' },
   ]);
 
-
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
   const [selectedLogTypes, setSelectedLogTypes] = useState<string[]>([]);
 
   const [fromDate, setFromDate] = useState<string | undefined>(undefined);
   const [toDate, setToDate] = useState<string | undefined>(undefined);
-
 
   const { addNewToast } = useToast()
   const [retention, setRetention] = useState<number>(0); // default
@@ -52,8 +49,6 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
 
   const thirtyDaysAgo = new Date(now.getTime() - retention * 24 * 60 * 60 * 1000);
   const minDateTime = thirtyDaysAgo.toISOString().slice(0, 16); // same format
-
-
 
   useEffect(() => {
     const token = localStorage.getItem('jwt');
@@ -87,14 +82,8 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
     }
   }, []);
 
-  // const logTypes = ["info", "debug", "error", "warn"]
-
   useEffect(() => {
     fetchApplications()
-
-    // Create log types data provider
-    // const logTypeOptions = logTypes.map(type => ({ value: type, label: type }));
-    // setLogTypeDataProvider(new ArrayDataProvider(logTypeOptions, { keyAttributes: 'value' }));
   }, [])
 
   const fetchApplications = async () => {
@@ -118,20 +107,47 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
   const toBackendDateFormat = (value?: string) =>
     value ? new Date(value).toISOString() : undefined;
 
-  const handleApplyFilters = () => {
-    console.log('Applying filters:', {
-      apps: selectedApps,
-      logTypes: selectedLogTypes,
-      fromDate,
-      toDate
-    });
-
+  // Apply filters immediately when any filter changes
+  const applyFilters = (
+    apps: string[] = selectedApps,
+    logTypes: string[] = selectedLogTypes,
+    from: string | undefined = fromDate,
+    to: string | undefined = toDate
+  ) => {
     onFilterChange({
-      apps: selectedApps,
-      logTypes: selectedLogTypes,
-      fromDate: toBackendDateFormat(fromDate),
-      toDate: toBackendDateFormat(toDate),
+      apps,
+      logTypes,
+      fromDate: toBackendDateFormat(from),
+      toDate: toBackendDateFormat(to),
     });
+  };
+
+  // Handle app selection changes
+  const handleAppChange = (e: CustomEvent) => {
+    const newApps = e.detail.value || [];
+    setSelectedApps(newApps);
+    applyFilters(newApps, selectedLogTypes, fromDate, toDate);
+  };
+
+  // Handle log type selection changes
+  const handleLogTypeChange = (e: CustomEvent) => {
+    const newLogTypes = e.detail.value || [];
+    setSelectedLogTypes(newLogTypes);
+    applyFilters(selectedApps, newLogTypes, fromDate, toDate);
+  };
+
+  // Handle from date changes
+  const handleFromDateChange = (e: CustomEvent) => {
+    const newFromDate = e.detail.value;
+    setFromDate(newFromDate);
+    applyFilters(selectedApps, selectedLogTypes, newFromDate, toDate);
+  };
+
+  // Handle to date changes
+  const handleToDateChange = (e: CustomEvent) => {
+    const newToDate = e.detail.value;
+    setToDate(newToDate);
+    applyFilters(selectedApps, selectedLogTypes, fromDate, newToDate);
   };
 
   const handleClearFilters = () => {
@@ -148,25 +164,14 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
     });
   };
 
-
   return (
-
-    <div class="oj-flex oj-sm-align-items-flex-end oj-sm-justify-content-space-around oj-sm-padding-4x-start oj-sm-padding-4x-end"
-      onKeyDown={(e: KeyboardEvent) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleApplyFilters();
-        }
-      }}
-    >
-      {/* <div class="oj-flex oj-sm-align-items-flex-end oj-sm-justify-content-space-around oj-sm-padding-4x" style={{ backgroundColor: '#8ace00'}}> */}
+    <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-space-around oj-sm-padding-4x-start oj-sm-padding-4x-end">
       {/* App Filter */}
       <div class="oj-flex-item oj-sm-flex-1" >
-        {/* <label class="oj-label">Apps</label> */}
         <oj-select-many
           options={appOptions}
           value={selectedApps}
-          onvalueChanged={(e: CustomEvent) => setSelectedApps(e.detail.value || [])}
+          onvalueChanged={handleAppChange}
           placeholder="Apps"
           class="oj-form-control-width-sm"
           label-hint="Apps"
@@ -176,11 +181,10 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
 
       {/* Log Type Filter */}
       <div class="oj-flex-item oj-sm-flex-1">
-        {/* <label class="oj-label">Log Type</label> */}
         <oj-select-many
           options={logTypeOptions}
           value={selectedLogTypes}
-          onvalueChanged={(e: CustomEvent) => setSelectedLogTypes(e.detail.value || [])}
+          onvalueChanged={handleLogTypeChange}
           placeholder="Type"
           class="oj-form-control-width-sm"
           label-hint="Log Type"
@@ -190,10 +194,9 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
 
       {/* From DateTime */}
       <div class="oj-flex-item oj-sm-flex-1">
-        {/* <label class="oj-label">From</label> */}
         <oj-input-date-time
           value={fromDate}
-          onvalueChanged={(e: CustomEvent) => setFromDate(e.detail.value)}
+          onvalueChanged={handleFromDateChange}
           max={localDateTime}
           min={minDateTime}
           class="oj-form-control-width-sm"
@@ -210,7 +213,7 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
       <div class="oj-flex-item oj-sm-flex-1">
         <oj-input-date-time
           value={toDate}
-          onvalueChanged={(e: CustomEvent) => setToDate(e.detail.value)}
+          onvalueChanged={handleToDateChange}
           max={localDateTime}
           min={minDateTime}
           class="oj-form-control-width-sm"
@@ -223,44 +226,17 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
         />
       </div>
 
-      <oj-button
-        onojAction={handleApplyFilters}
-        chroming="callToAction"
-        class='oj-sm-margin-4x-end'
-      >
-        Apply
-      </oj-button>
+      {/* Keep only the Clear button since filters apply automatically */}
       <oj-button
         onojAction={handleClearFilters}
         chroming="outlined"
       >
         Clear
       </oj-button>
-      {/* Filter Buttons */}
-      {/* <div
-        class="oj-flex-item oj-sm-flex oj-sm-justify-content-flex-start oj-sm-align-items-flex-start "
-        style={{ backgroundColor: '#12ffed' }}
-      >
-          <oj-button
-            onojAction={handleApplyFilters}
-            chroming="callToAction"
-          class='oj-sm-margin-4x-end'
-          >
-            Apply
-          </oj-button>
-        <oj-button
-          onojAction={handleClearFilters}
-          chroming="outlined"
-        >
-          Clear
-        </oj-button>
-      </div> */}
-
 
       <Toast />
     </div>
   );
-
 };
 
 export default LogFilters;

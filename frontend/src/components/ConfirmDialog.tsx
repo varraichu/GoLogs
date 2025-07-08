@@ -28,7 +28,7 @@ export const ConfirmDialog = ({
   children,
 }: ConfirmDialogProps) => {
   return (
-    <oj-dialog id="confirmDialog" dialogTitle={title} initialVisibility="show">
+    <oj-dialog id="confirmDialog" dialogTitle={title} initialVisibility="show" headerDecoration='off'>
       <div class="oj-dialog-body">
         {message && <p>{message}</p>}
         {children}
