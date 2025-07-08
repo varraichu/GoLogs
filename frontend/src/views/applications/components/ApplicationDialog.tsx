@@ -49,7 +49,7 @@ export const ApplicationDialog = ({
 
   const optionsData = useMemo(() => {
     const groupOptions = userGroups
-      .filter((g) => !g.is_deleted)
+      .filter((g) => !g.is_deleted && g.is_active)
       .map((g) => ({
         value: String(g._id),
         text: g.name,
@@ -125,19 +125,19 @@ export const ApplicationDialog = ({
           ></oj-c-input-text>
 
           {
-          editingState && (
-            <div>
-              <h4 class="oj-typography-heading-sm">Assigned To</h4>
-              <oj-c-select-multiple
-                label-hint="Assign to user groups"
-                value={assignedGroupIds}
-                onvalueChanged={onAssignedGroupsChange}
-                data={optionsData}
-                item-text="text"
-                class="oj-sm-margin-2x-vertical"
-              ></oj-c-select-multiple>
-            </div>
-          )
+            editingState && (
+              <div>
+                <h4 class="oj-typography-heading-sm">Assigned To</h4>
+                <oj-c-select-multiple
+                  label-hint="Assign to user groups"
+                  value={assignedGroupIds}
+                  onvalueChanged={onAssignedGroupsChange}
+                  data={optionsData}
+                  item-text="text"
+                  class="oj-sm-margin-2x-vertical"
+                ></oj-c-select-multiple>
+              </div>
+            )
           }
         </oj-c-form-layout>
       </div>

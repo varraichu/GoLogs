@@ -12,7 +12,7 @@ export const updateLogTTLSchema = object({
     newTTLInDays: number({
       required_error: 'newTTLInDays is required',
       invalid_type_error: 'newTTLInDays must be a number',
-    }).positive('newTTLInDays must be a positive number'),
+    }).refine( (num)=> [1,7,14,30].includes(num),"newTTLInDays must be one of: 1, 7, 14, or 30"),
   }),
 });
 

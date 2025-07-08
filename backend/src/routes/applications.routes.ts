@@ -16,7 +16,11 @@ import {
   getUserApplications,
   toggleApplicationStatus,
   updateApplication,
+  pinApplication, 
+  unpinApplication, 
+  getAppCriticalLogs,
 } from '../controllers/applications.controller';
+
 
 const router = express.Router();
 
@@ -35,5 +39,11 @@ router.patch(
   toggleApplicationStatus
 );
 router.delete('/:appId', protect, isAdmin, validate(applicationParamsSchema), deleteApplication);
+
+// Add routes for pinning, unpinning, and getting critical logs for apps
+router.post('/pin/:userId/:appId', protect, pinApplication); // Pin an app
+router.post('/unpin/:userId/:appId', protect, unpinApplication); // Unpin an app
+router.get('/logs/critical/:appId', protect, getAppCriticalLogs); // Get critical logs for an app
+
 
 export default router;

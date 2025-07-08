@@ -1,57 +1,56 @@
-import { h } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
-import DatabaseRetentionSettings from './components/DatabaseRetentionSettings';
+import { h } from 'preact'
+import { useEffect, useState } from 'preact/hooks'
+import DatabaseRetentionSettings from './components/DatabaseRetentionSettings'
 
-const Settings = (props: { path?: string }) => {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [retention, setRetention] = useState<number>(0); // default
+const Settings = (props: { path?: string; isAdmin?: boolean; userId?: string }) => {
+  // const [retention, setRetention] = useState<number>(0) // default
 
-  useEffect(() => {
-    const token = localStorage.getItem('jwt');
-    if (!token) return;
+  // useEffect(() => {
+  //   try {
+  //     if (!props.isAdmin) {
+  //       // Fetch retention for non-admin users
+  //       async function fetchRetention() {
+  //         try {
+  //           const response = await fetch('http://localhost:3001/api/logs/get/ttl', {
+  //             method: 'GET',
+  //             headers: {
+  //               Authorization: `Bearer ${token}`,
+  //               'Content-Type': 'application/json',
+  //             },
+  //           })
 
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setIsAdmin(payload.isAdmin);
+  //           if (!response.ok) {
+  //             throw new Error(`Failed to fetch retention. Status: ${response.status}`)
+  //           }
 
-      if (!payload.isAdmin) {
-        // Fetch retention for non-admin users
-        async function fetchRetention() {
-          try {
-            const response = await fetch('http://localhost:3001/api/logs/get/ttl', {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            });
+  //           const data = await response.json()
+  //           setRetention(data.ttlInDays || 30)
+  //         } catch (error) {
+  //           console.error('Error fetching retention:', error)
+  //         }
+  //       }
 
-            if (!response.ok) {
-              throw new Error(`Failed to fetch retention. Status: ${response.status}`);
-            }
+  //       fetchRetention()
+  //     }
+  //   } catch (err) {
+  //     console.error('Invalid JWT token:', err)
+  //   }
+  // }, [])
 
-            const data = await response.json();
-            setRetention(data.ttlInDays || 30);
-          } catch (error) {
-            console.error('Error fetching retention:', error);
-          }
-        }
-
-        fetchRetention();
-      }
-    } catch (err) {
-      console.error('Invalid JWT token:', err);
-    }
-  }, []);
-
-  if (isAdmin === null) return null; // wait until admin check completes
+  // if (props.isAdmin === null) return null // wait until admin check completes
 
   return (
     <div class="oj-sm-padding-4x">
       <h1 class="oj-typography-heading-lg">System Configuration</h1>
-      <p class="oj-typography-body-md">Configure database retention and system thresholds</p>
+      <p class="oj-typography-body-md oj-text-color-secondary">
+        Configure database retention and system thresholds
+      </p>
 
-      {isAdmin ? (
+      <DatabaseRetentionSettings
+        isAdmin={props.isAdmin as boolean}
+        userId={props.userId as string}
+      />
+      {/* {isAdmin ? (
         <DatabaseRetentionSettings />
       ) : (
         <oj-c-input-text
@@ -67,9 +66,9 @@ const Settings = (props: { path?: string }) => {
             border: '1px solid #ccc'
           }}
         ></oj-c-input-text>
-      )}
+      )} */}
     </div>
-  );
-};
+  )
+}
 
-export default Settings;
+export default Settings

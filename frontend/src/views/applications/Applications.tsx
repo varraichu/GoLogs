@@ -54,6 +54,8 @@ const Applications = (props: { path?: string }) => {
   const [errors, setErrors] = useState<{ name?: string; description?: string }>({})
   const [dataProvider, setDataProvider] = useState<any>(null)
 
+  const [searchTerm, setSearchTerm] = useState('')
+
   const [initialEditValues, setInitialEditValues] = useState<{
     name: string;
     description: string;
@@ -295,11 +297,32 @@ const Applications = (props: { path?: string }) => {
     }
   }
 
-  const filteredApps = useMemo(() => {
-    return (applications || []).filter(app =>
-      selectedItem === 'active' ? app.is_active : !app.is_active
-    )
-  }, [applications, selectedItem])
+  const handleSearchChange = (event: CustomEvent) => {
+    setSearchTerm(event.detail.value)
+  }
+
+ const filteredApps = useMemo(() => {
+  if (!applications || !Array.isArray(applications)) return [];
+  
+  const lowerSearchTerm = (searchTerm || '').toString().trim().toLowerCase();
+  
+  return applications.filter(app => {
+    const statusMatch = selectedItem === 'active' 
+      ? app.is_active === true 
+      : app.is_active !== true;
+    
+    if (!statusMatch) return false;
+    
+    if (!searchTerm) return true;
+    
+    // Search in both name and description
+    const appName = (app.name || '').toString().toLowerCase();
+    const appDesc = (app.description || '').toString().toLowerCase();
+    
+    return appName.includes(lowerSearchTerm) || 
+           appDesc.includes(lowerSearchTerm);
+  });
+}, [applications, selectedItem, searchTerm]);
 
   return (
     <div class="oj-flex oj-sm-padding-4x">
@@ -315,20 +338,38 @@ const Applications = (props: { path?: string }) => {
         </div>
       </div>
 
-      <div id="tabbarcontainer" style={{ paddingBottom: '8px' }}>
-        <TabBar
-          selectedItem={selectedItem}
-          onSelectionChange={handleSelectionChange}
-        />
+      <div class="oj-flex oj-sm-12 oj-sm-margin-2x-bottom oj-sm-align-items-center">
+  {/* <!-- Search Bar --> */}
+  <oj-c-input-text 
+    class="oj-flex-item oj-sm-8 oj-md-6 oj-lg-4"
+    labelHint="Search applications..."
+    value={searchTerm}
+    onvalueChanged={handleSearchChange}
+    clearIcon="conditional"
+  >
+    <span slot="startIcon" class="oj-ux-ico-search" style="color: var(--oj-core-text-color-primary);"></span>
+  </oj-c-input-text>
 
-        <ApplicationsList
-          applications={applications}
-          selectedItem={selectedItem}
-          onToggleStatus={handleToggleApplicationStatus}
-          onEdit={openDialog}
-          onDelete={confirmDeleteGroup}
-        />
-      </div>
+  {/* <!-- Tab Bar (active/inactive) --> */}
+  <div id="tabbarcontainer" style={{ paddingBottom: '8px', marginLeft: '20px'  }}>
+    <TabBar
+      selectedItem={selectedItem}
+      onSelectionChange={handleSelectionChange}
+    />
+  </div>
+</div>
+
+{/* <!-- Applications List --> */}
+<div id="applicationsListContainer">
+  <ApplicationsList
+    applications={filteredApps}
+    selectedItem={selectedItem}
+    onToggleStatus={handleToggleApplicationStatus}
+    onEdit={openDialog}
+    onDelete={confirmDeleteGroup}
+  />
+</div>
+
 
       {confirmDeleteDialogId && (
         <ConfirmDialog
@@ -391,6 +432,6 @@ const Applications = (props: { path?: string }) => {
     
     </div>
   )
-}
+};
 
 export default Applications

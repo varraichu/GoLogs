@@ -1,0 +1,39 @@
+[
+  {
+    "title": "At Risk Apps (Error Threshold)",
+    "description": "Error logs per minute to trigger alert",
+    "iconClass": "oj-ux-ico-exclamation",
+    "iconColorClass": "oj-text-color-danger",
+    "titleColorClass": "oj-text-color-danger",
+    "descriptionColorClass": "oj-text-color-danger",
+    "backgroundClass": "oj-bg-danger-30",
+    "selectBgClass": "oj-bg-warning",
+    "max":20,
+    "value": "error_rate_threshold"
+  },
+  {
+    "title": "Warning Apps (Warning Threshold)",
+    "description": "Warning logs per minute to trigger alert",
+    "iconClass": "oj-ux-ico-warning",
+    "iconColorClass": "oj-text-color-warning",
+    "titleColorClass": "oj-text-color-warning",
+    "descriptionColorClass": "oj-text-color-warning",
+    "backgroundClass": "oj-bg-warning-30",
+    "selectBgClass": "oj-bg-warning",
+    "max":50,
+    "value": "warning_rate_threshold"
+  },
+  {
+    "title": "Silent Apps (No Logs Threshold)",
+    "description": "Hours wihtout logs to trigger alert",
+    "iconClass": "oj-ux-ico-notification-off",
+    "iconColorClass": "oj-text-color-neutral",
+    "titleColorClass": "oj-text-color-neutral",
+    "descriptionColorClass": "oj-text-color-neutral",
+    "backgroundClass": "oj-bg-neutral-30",
+    "selectBgClass": "oj-bg-warning",
+    "max":24,
+    "unitLabel": "hours",
+    "value":"silent_duration"
+  }
+]

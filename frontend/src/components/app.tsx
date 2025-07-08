@@ -31,6 +31,7 @@ export const App = registerCustomElement(
     const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(true)
     const [startOpened, setStartOpened] = useState(true)
+    const [userId, setUserId] = useState<string>("")
     useEffect(() => {
       Context.getPageContext().getBusyContext().applicationBootstrapComplete()
 
@@ -46,6 +47,7 @@ export const App = registerCustomElement(
           setProfileUrl(payload.picture_url)
           setUsername(payload.username)
           setEmail(payload.email)
+          setUserId(payload._id)
         } catch (err) {
           console.error('Invalid JWT token', err)
         }
@@ -90,7 +92,7 @@ export const App = registerCustomElement(
             <Router>
               {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
               <Dashboard path="/dashboard" />
-              <Settings path="/settings" />
+              <Settings path="/settings" isAdmin={isAdmin} userId={userId}/>
               {isAdmin ? (
             <Applications path="/applications" />
           ) : (

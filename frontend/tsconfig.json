@@ -20,7 +20,8 @@
     "noEmitOnError": true,
     "experimentalDecorators": true,
     "skipLibCheck": true,
-    "removeComments": true
+    "removeComments": true,
+    "resolveJsonModule": true
   },
   "include": ["./src/**/*"]
 }
