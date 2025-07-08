@@ -4,10 +4,10 @@ import 'ojs/ojbutton'
 import 'ojs/ojselectsingle'
 import 'oj-c/message-toast'
 import { useToast } from '../../../context/ToastContext'
-import { Backoffs } from 'bullmq'
 import { getStatusBanner } from './StatusBanner'
 import * as statusConfig from './statusConfig.json'
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
+import * as settingsService from './settings.service'
 type retention = {
   value: number
   label: string
@@ -20,19 +20,21 @@ const RETENTION_OPTIONS: retention[] = [
 ]
 
 type DatabaseRetentionSettingsProps = {
-  isAdmin : boolean
+  isAdmin: boolean
+  userId: string
 }
 
 import { ConfirmDialog } from '../../../components/ConfirmDialog'
 
-const DatabaseRetentionSettings = ({ isAdmin }: DatabaseRetentionSettingsProps) => {
-  const [retention, setRetention] = useState<number>(30)
+const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSettingsProps) => {
+  // const [retention, setRetention] = useState<number>(30)
   const [retentionPeriod, setRetentionPeriod] = useState({ value: 14, label: '1 days' })
   const [settings, setSettings] = useState({
     error_rate_threshold: -1,
     warning_rate_threshold: -1,
     silent_duration: -1,
   })
+  
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const { addNewToast, messageDataProvider, removeToast } = useToast()
@@ -42,55 +44,49 @@ const DatabaseRetentionSettings = ({ isAdmin }: DatabaseRetentionSettingsProps) 
     async function fetchData() {
       setLoading(true)
       const token = localStorage.getItem('jwt')
-      let userId = null
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]))
-          userId = payload.userId || payload._id || payload.id
-        } catch (e) {
-          addNewToast('error', 'Invalid token', 'Could not parse user id from token')
-        }
-      }
+      // let userId = null
+      // if (token) {
+      //   try {
+      //     const payload = JSON.parse(atob(token.split('.')[1]))
+      //     userId = payload.userId || payload._id || payload.id
+      //   } catch (e) {
+      //     addNewToast('error', 'Invalid token', 'Could not parse user id from token')
+      //   }
+      // }
       // Fetch retention
       try {
-        const resp = await fetch('http://localhost:3001/api/logs/get/ttl', {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        })
-        const data = await resp.json()
-        if (resp.ok) {
-          setRetention(data.ttlInDays || 30)
+        const { ok, data } = await settingsService.fetchRetention(token || '')
+        if (ok) {
+          // setRetention(data.ttlInDays || 30)
           const found = RETENTION_OPTIONS.find((opt) => opt.value === data.ttlInDays)
           setRetentionPeriod(found || { value: 30, label: '30 days' })
         } else {
-          addNewToast('error', 'Failed to fetch retention', data.message || 'Error fetching retention')
+          addNewToast(
+            'error',
+            'Failed to fetch retention',
+            data.message || 'Error fetching retention'
+          )
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
         addNewToast('error', 'Failed to fetch retention', msg)
       }
       // Fetch settings
-      if (userId) {
+      if (!isAdmin && userId) {
         try {
-          const resp = await fetch(`http://localhost:3001/api/settings/${userId}`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          })
-          const data = await resp.json()
-          if (resp.ok) {
+          const { ok, data } = await settingsService.fetchSettings(token || '', userId)
+          if (ok) {
             setSettings({
               error_rate_threshold: data.error_rate_threshold,
               warning_rate_threshold: data.warning_rate_threshold,
               silent_duration: data.silent_duration,
             })
           } else {
-            addNewToast('error', 'Failed to fetch settings', data.message || 'Error fetching settings')
+            addNewToast(
+              'error',
+              'Failed to fetch settings',
+              data.message || 'Error fetching settings'
+            )
           }
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e)
@@ -135,52 +131,57 @@ const DatabaseRetentionSettings = ({ isAdmin }: DatabaseRetentionSettingsProps) 
   const handleConfirmSave = async () => {
     setConfirmDialogOpen(false)
     const token = localStorage.getItem('jwt')
-    let userId = null
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        userId = payload.userId || payload._id || payload.id
-      } catch (e) {
-        addNewToast('error', 'Invalid token', 'Could not parse user id from token')
-        return
-      }
-    }
+    // let userId = null
+    // if (token) {
+    //   try {
+    //     const payload = JSON.parse(atob(token.split('.')[1]))
+    //     userId = payload.userId || payload._id || payload.id
+    //   } catch (e) {
+    //     addNewToast('error', 'Invalid token', 'Could not parse user id from token')
+    //     return
+    //   }
+    // }
     // PATCH retention
-    try {
-      const resp = await fetch('http://localhost:3001/api/logs/config/ttl', {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ newTTLInDays: retentionPeriod.value }),
-      })
-      const data = await resp.json()
-      if (!resp.ok) {
-        addNewToast('error', 'Failed to update retention', data.message || 'Error updating retention')
-      } else {
-        addNewToast('confirmation', 'Retention updated', data.message || 'Retention updated successfully')
+    if (isAdmin) {
+      try {
+        const { ok, data } = await settingsService.patchRetention(
+          token || '',
+          retentionPeriod.value
+        )
+        if (!ok) {
+          addNewToast(
+            'error',
+            'Failed to update retention',
+            data.message || 'Error updating retention'
+          )
+        } else {
+          addNewToast(
+            'confirmation',
+            'Retention updated',
+            data.message || 'Retention updated successfully'
+          )
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        addNewToast('error', 'Failed to update retention', msg)
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      addNewToast('error', 'Failed to update retention', msg)
     }
     // PATCH settings
-    if (userId) {
+    if (!isAdmin && userId) {
       try {
-        const resp = await fetch(`http://localhost:3001/api/settings/${userId}`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(settings),
-        })
-        const data = await resp.json()
-        if (!resp.ok) {
-          addNewToast('error', 'Failed to update settings', data.message || 'Error updating settings')
+        const { ok, data } = await settingsService.patchSettings(token || '', userId, settings)
+        if (!ok) {
+          addNewToast(
+            'error',
+            'Failed to update settings',
+            data.message || 'Error updating settings'
+          )
         } else {
-          addNewToast('confirmation', 'Settings updated', data.message || 'Settings updated successfully')
+          addNewToast(
+            'confirmation',
+            'Settings updated',
+            data.message || 'Settings updated successfully'
+          )
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
@@ -201,7 +202,7 @@ const DatabaseRetentionSettings = ({ isAdmin }: DatabaseRetentionSettingsProps) 
         Configure database retention and system thresholds
       </p>
 
-      <div class="oj-web-applayout-max-width oj-web-applayout-content oj-panel">
+      <div class="oj-web-applayout-max-width oj-web-applayout-content oj-panel-border-0">
         <h3 class="oj-flex">
           <span class="oj-ux-ico-database oj-text-color-secondary oj-typography-heading-sm"></span>
           <span class="oj-typography-heading-sm oj-text-color-secondary">
@@ -229,21 +230,23 @@ const DatabaseRetentionSettings = ({ isAdmin }: DatabaseRetentionSettingsProps) 
           </div>
         </div>
       </div>
-      <div class="oj-web-applayout-max-width oj-web-applayout-content oj-panel oj-flex">
-        <h3 class="oj-flex-item oj-flex ">
-          <span class="oj-ux-ico-warning oj-text-color-secondary oj-typography-heading-sm"></span>
-          <span class="oj-typography-heading-sm oj-text-color-secondary">Alert Thresholds</span>
-        </h3>
-        {statusConfig.map((config, index) =>
-          getStatusBanner({
-            ...config,
-            selectValue: settings[config.value as keyof typeof settings],
-            onSelectChange: (event) => handleStatusChange(config, event),
-          })
-        )}
-      </div>
-      {isAdmin && (
-        <div class="oj-panel  oj-flex">
+      {!isAdmin && (
+        <div class="oj-web-applayout-max-width oj-web-applayout-content oj-panel-border-0 oj-flex">
+          <h3 class="oj-flex-item oj-flex ">
+            <span class="oj-ux-ico-warning oj-text-color-secondary oj-typography-heading-sm"></span>
+            <span class="oj-typography-heading-sm oj-text-color-secondary">Alert Thresholds</span>
+          </h3>
+          {statusConfig.map((config, index) =>
+            getStatusBanner({
+              ...config,
+              selectValue: settings[config.value as keyof typeof settings],
+              onSelectChange: (event) => handleStatusChange(config, event),
+            })
+          )}
+        </div>
+      )}
+      {
+        <div class="oj-panel-border-0 oj-panel-padding  oj-flex">
           <oj-c-button
             class="oj-flex-item oj-sm-2"
             label="Save Configuration"
@@ -251,7 +254,7 @@ const DatabaseRetentionSettings = ({ isAdmin }: DatabaseRetentionSettingsProps) 
             onojAction={handleSaveClick}
           ></oj-c-button>
         </div>
-      )}
+      }
       {confirmDialogOpen && (
         <ConfirmDialog
           title="Confirm configuration"
@@ -417,7 +420,6 @@ export default DatabaseRetentionSettings
 //     }
 //   }
 
-
 // 1. GET /api/settings/:user_id
 // Purpose:
 // Retrieve the settings for a specific user by their user ID.
@@ -469,7 +471,6 @@ export default DatabaseRetentionSettings
 //   "error_rate_threshold": number,     // logs per minute (critical threshold)
 //   "warning_rate_threshold": number,   // logs per minute (warning threshold)
 //   "silent_duration": number,          // hours of inactivity before alerting
-
 
 // }
 
