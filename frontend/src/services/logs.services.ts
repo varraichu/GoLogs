@@ -34,6 +34,7 @@ export interface LogFilters {
   logTypes: string[];        // e.g. ["debug", "error"]
   fromDate: string | undefined;   // ISO date string
   toDate: string | undefined;     // ISO date string
+  search: string;
 }
 
 class LogsService {
@@ -125,6 +126,9 @@ class LogsService {
 
     if (filters?.toDate) {
       params.append('endDate', filters.toDate);
+    }
+    if (filters?.search) {
+      params.append('search', filters.search);
     }
 
     const finalUrl = `${baseEndpoint}?${params.toString()}`;

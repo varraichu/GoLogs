@@ -5,6 +5,7 @@ import 'ojs/ojselectcombobox';
 import 'ojs/ojdatetimepicker';
 import 'ojs/ojbutton';
 
+
 import { useToast } from '../../../context/ToastContext'
 import Toast from '../../../components/Toast';
 
@@ -149,85 +150,117 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
 
 
   return (
-    <div class="oj-flex oj-sm-flex-wrap-nowrap oj-sm-align-items-end oj-sm-gap-4x oj-sm-margin-4x">
+
+    <div class="oj-flex oj-sm-align-items-flex-end oj-sm-justify-content-space-around oj-sm-padding-4x-start oj-sm-padding-4x-end"
+      onKeyDown={(e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleApplyFilters();
+        }
+      }}
+    >
+      {/* <div class="oj-flex oj-sm-align-items-flex-end oj-sm-justify-content-space-around oj-sm-padding-4x" style={{ backgroundColor: '#8ace00'}}> */}
       {/* App Filter */}
-      <div class="oj-flex-item">
-        <label class="oj-label">Apps</label>
+      <div class="oj-flex-item oj-sm-flex-1" >
+        {/* <label class="oj-label">Apps</label> */}
         <oj-select-many
-          options={appOptions} // ✅ CORRECT WAY
+          options={appOptions}
           value={selectedApps}
-          onvalueChanged={(e: CustomEvent) => {
-            setSelectedApps(e.detail.value || []);
-          }}
-          placeholder="Select apps"
-          class="oj-form-control-width-md"
+          onvalueChanged={(e: CustomEvent) => setSelectedApps(e.detail.value || [])}
+          placeholder="Apps"
+          class="oj-form-control-width-sm"
+          label-hint="Apps"
+          label-edge="inside"
         />
       </div>
 
-      <div class="oj-flex-item">
-        <label class="oj-label">Log Type</label>
-        {/* Log Type Filter */}
+      {/* Log Type Filter */}
+      <div class="oj-flex-item oj-sm-flex-1">
+        {/* <label class="oj-label">Log Type</label> */}
         <oj-select-many
-          options={logTypeOptions} // ✅ CORRECT WAY
+          options={logTypeOptions}
           value={selectedLogTypes}
-          onvalueChanged={(e: CustomEvent) => {
-            setSelectedLogTypes(e.detail.value || []);
-          }}
-          placeholder="Select log types"
-          class="oj-form-control-width-md"
+          onvalueChanged={(e: CustomEvent) => setSelectedLogTypes(e.detail.value || [])}
+          placeholder="Type"
+          class="oj-form-control-width-sm"
+          label-hint="Log Type"
+          label-edge="inside"
         />
       </div>
 
       {/* From DateTime */}
-      <div class="oj-flex-item">
-        <label class="oj-label">From</label>
+      <div class="oj-flex-item oj-sm-flex-1">
+        {/* <label class="oj-label">From</label> */}
         <oj-input-date-time
           value={fromDate}
-          onvalueChanged={(e: CustomEvent) => {
-            console.log('From date changed:', e.detail.value);
-            setFromDate(e.detail.value);
-          }}
+          onvalueChanged={(e: CustomEvent) => setFromDate(e.detail.value)}
           max={localDateTime}
           min={minDateTime}
-          class="oj-form-control-width-md"
+          class="oj-form-control-width-sm"
           timePicker={{
-            footerLayout: '',            // or "" if you don’t want the footer
-            timeIncrement: '00:01:00:00'    // 1 minute in hh:mm:ss:SS format
+            footerLayout: '',
+            timeIncrement: '00:01:00:00'
           }}
+          label-hint="From"
+          label-edge="inside"
         />
       </div>
 
       {/* To DateTime */}
-      <div class="oj-flex-item">
-        <label class="oj-label">To</label>
+      <div class="oj-flex-item oj-sm-flex-1">
         <oj-input-date-time
           value={toDate}
-          onvalueChanged={(e: CustomEvent) => {
-            console.log('To date changed:', e.detail.value);
-            setToDate(e.detail.value);
-          }}
+          onvalueChanged={(e: CustomEvent) => setToDate(e.detail.value)}
           max={localDateTime}
           min={minDateTime}
-          class="oj-form-control-width-md"
+          class="oj-form-control-width-sm"
           timePicker={{
-            footerLayout: '',            // or "" if you don’t want the footer
-            timeIncrement: '00:01:00:00'    // 1 minute in hh:mm:ss:SS format
+            footerLayout: '',
+            timeIncrement: '00:01:00:00'
           }}
+          label-hint="To"
+          label-edge="inside"
         />
       </div>
 
+      <oj-button
+        onojAction={handleApplyFilters}
+        chroming="callToAction"
+        class='oj-sm-margin-4x-end'
+      >
+        Apply
+      </oj-button>
+      <oj-button
+        onojAction={handleClearFilters}
+        chroming="outlined"
+      >
+        Clear
+      </oj-button>
       {/* Filter Buttons */}
-      <div class="oj-flex-item oj-flex oj-sm-gap-2x">
-        <oj-button onojAction={handleApplyFilters} chroming="callToAction">
-          Apply Filters
-        </oj-button>
-        <oj-button onojAction={handleClearFilters} chroming="outlined">
+      {/* <div
+        class="oj-flex-item oj-sm-flex oj-sm-justify-content-flex-start oj-sm-align-items-flex-start "
+        style={{ backgroundColor: '#12ffed' }}
+      >
+          <oj-button
+            onojAction={handleApplyFilters}
+            chroming="callToAction"
+          class='oj-sm-margin-4x-end'
+          >
+            Apply
+          </oj-button>
+        <oj-button
+          onojAction={handleClearFilters}
+          chroming="outlined"
+        >
           Clear
         </oj-button>
-      </div>
+      </div> */}
+
+
       <Toast />
     </div>
   );
+
 };
 
 export default LogFilters;

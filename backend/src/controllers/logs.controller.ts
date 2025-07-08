@@ -24,6 +24,7 @@ export const getAllLogs = async (req: IAuthRequest, res: Response) => {
     const app_name = req.query.app_name as string | string[] | undefined;
     const startDate = req.query.startDate as string | undefined;
     const endDate = req.query.endDate as string | undefined;
+    const search = req.query.search as string | undefined;
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
@@ -40,6 +41,7 @@ export const getAllLogs = async (req: IAuthRequest, res: Response) => {
       app_name,
       startDate,
       endDate,
+      search,
     };
 
     const { logs, total, pagination } = await fetchPaginatedLogsWithAppInfo({
@@ -74,6 +76,7 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
     const app_name = req.query.app_name as string | string[] | undefined;
     const startDate = req.query.startDate as string | undefined;
     const endDate = req.query.endDate as string | undefined;
+    const search = req.query.search as string | undefined;
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
@@ -90,6 +93,7 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
       app_name,
       startDate,
       endDate,
+      search,
     };
 
     const { logs, total, pagination } = await fetchUserLogsWithAppInfo({

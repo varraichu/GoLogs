@@ -18,6 +18,7 @@ interface PaginationOptions {
     app_name?: string | string[];
     startDate?: string;
     endDate?: string;
+    search?: string;
   };
 }
 
@@ -63,7 +64,6 @@ export const fetchPaginatedLogsWithAppInfo = async ({
   const skip = (page - 1) * limit;
   const sortObj = buildSortObject(sortCriteria);
 
-  // Build match stage
   const match: any = {};
 
   if (filters.log_type) {
@@ -74,6 +74,15 @@ export const fetchPaginatedLogsWithAppInfo = async ({
     if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
     if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
   }
+  const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
+
+  if (filters.search) {
+    if (hasSpecialChars) {
+      match.message = { $regex: filters.search, $options: 'i' };
+    } else {
+      match.$text = { $search: filters.search };
+    }
+  }
 
   const appMatch: any = { 'application.is_active': true };
   if (filters.app_name) {
@@ -81,6 +90,7 @@ export const fetchPaginatedLogsWithAppInfo = async ({
       ? { $in: filters.app_name }
       : filters.app_name;
   }
+
   const [logs, total] = await Promise.all([
     Log.aggregate([
       { $match: match },
@@ -148,6 +158,7 @@ interface UserLogsPaginationOptions {
     app_name?: string | string[];
     startDate?: string;
     endDate?: string;
+    search?: string;
   };
 }
 
@@ -161,7 +172,6 @@ export const fetchUserLogsWithAppInfo = async ({
   const skip = (page - 1) * limit;
   const sortObj = buildSortObject(sortCriteria);
 
-  // First, get the user's accessible app IDs
   const userGroups = await UserGroupMembers.find({
     user_id: userId,
     is_active: true,
@@ -204,7 +214,6 @@ export const fetchUserLogsWithAppInfo = async ({
     };
   }
 
-  // Build match stage for logs
   const match: any = {
     app_id: { $in: appIds },
   };
@@ -217,6 +226,15 @@ export const fetchUserLogsWithAppInfo = async ({
     if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
     if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
   }
+  const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
+
+  if (filters.search) {
+    if (hasSpecialChars) {
+      match.message = { $regex: filters.search, $options: 'i' };
+    } else {
+      match.$text = { $search: filters.search };
+    }
+  }
 
   const appMatch: any = { 'application.is_active': true };
   if (filters.app_name) {
@@ -225,7 +243,6 @@ export const fetchUserLogsWithAppInfo = async ({
       : filters.app_name;
   }
 
-  // Now fetch logs for these applications with filters
   const [logs, total] = await Promise.all([
     Log.aggregate([
       { $match: match },

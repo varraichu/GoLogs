@@ -71,7 +71,7 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
 export const getUserApplications = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params as UserIdParams;
-    console.log('Fetching applications for user ID:', userId);
+    // console.log('Fetching applications for user ID:', userId);
     const userGroups = await UserGroupMembers.find({
       user_id: userId,
       is_active: true,
@@ -110,7 +110,7 @@ export const getUserApplications = async (req: IAuthRequest, res: Response): Pro
 export const updateApplication = async (req: IAuthRequest, res: Response) => {
   try {
     const { appId } = req.params as ApplicationParams;
-    console.log('Updating application with ID:', appId);
+    // console.log('Updating application with ID:', appId);
     const { name, description } = req.body as UpdateApplicationInput;
 
     const app = await Applications.findById(appId);

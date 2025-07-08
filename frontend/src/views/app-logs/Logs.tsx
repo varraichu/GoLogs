@@ -11,6 +11,7 @@ import Toast from '../../components/Toast';
 import 'oj-c/table';
 import { logsService, LogEntry, Pagination, SortCriteria } from '../../services/logs.services';
 import LogFilters from './components/LogFilters';
+import SearchBar from '../../components/SearchBar';
 
 
 
@@ -31,11 +32,13 @@ const Logs = (props: { path?: string }) => {
     logTypes: string[];
     fromDate: string | undefined;
     toDate: string | undefined;
+    search: string;
   }>({
     apps: [],
     logTypes: [],
     fromDate: undefined,
     toDate: undefined,
+    search: '',
   });
 
   const [pagination, setPagination] = useState<Pagination>({
@@ -48,6 +51,7 @@ const Logs = (props: { path?: string }) => {
   });
 
   const { addNewToast } = useToast()
+  const [suggestionsProvider, setSuggestionsProvider] = useState<any>(null);
 
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
@@ -82,6 +86,13 @@ const Logs = (props: { path?: string }) => {
       // since sorting is handled by the backend
       const baseProvider = new ArrayDataProvider(formattedLogs || [], { keyAttributes: '_id' });
       setDataProvider(baseProvider);
+
+      const messageSnippets = Array.from(
+        new Set(formattedLogs.map(log => log.message).filter(m => !!m))
+      ).map(msg => ({ value: msg, label: msg }));
+
+      const suggProvider = new ArrayDataProvider(messageSnippets, { keyAttributes: 'value' });
+      setSuggestionsProvider(suggProvider);
 
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to fetch logs.');
@@ -129,9 +140,12 @@ const Logs = (props: { path?: string }) => {
     }, 150);
   };
 
-  const handleFilterChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
-    setPagination(prev => ({ ...prev, page: 1 })); // reset to first page
+  const handleFilterChange = (newFilters: Omit<typeof filters, 'search'>) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters,
+    }));
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const getDir = (field: string) => {
@@ -140,20 +154,33 @@ const Logs = (props: { path?: string }) => {
 
   }
 
+  const handleSearchChange = (value: string) => {
+    setFilters(prev => ({ ...prev, search: value }));
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
 
   return (
     <div
       class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column"
       style="height: 100%; min-height: 0; flex: 1 1 0;"
     >
-      <div class="oj-flex oj-sm-12 oj-sm-padding-2x oj-sm-justify-content-space-between oj-sm-align-items-center">
+      <div class="oj-flex oj-sm-12 oj-sm-padding-4x-start oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
-      <div>
+      {/* <div>
+      </div> */}
 
-        <LogFilters onFilterChange={handleFilterChange} />
+      <div class="oj-flex oj-flex-1 oj-sm-align-items-center oj-sm-justify-content-start oj-sm-padding-3x-bottom" >
+        {/* style={{backgroundColor: '#8ace00'}} */}
+
+        
+        <SearchBar value={filters.search} onChange={handleSearchChange} data={suggestionsProvider} />
 
       </div>
+
+
+      <LogFilters onFilterChange={handleFilterChange} />
+
 
       <div
         class="oj-flex oj-sm-margin-4x"
