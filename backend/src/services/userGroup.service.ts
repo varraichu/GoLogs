@@ -54,6 +54,7 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
           {
             $match: {
               'applicationDetails.is_active': true,
+              'applicationDetails.is_deleted': false,
             },
           },
           // Reshape the document to only include the application name

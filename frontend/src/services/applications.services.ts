@@ -17,6 +17,7 @@ export interface UserGroup {
   description: string
   created_at: string
   is_deleted: boolean
+  is_active: boolean
 }
 
 export interface CreateApplicationData {
