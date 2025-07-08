@@ -79,52 +79,52 @@ const UserApplications = (props: { path?: string }) => {
     };
 
 
-const handleTogglePin = async (appId: string) => {
-    console.log('handleTogglePin called with appId:', appId); // Debug log
-    try {
-        const token = localStorage.getItem('jwt');
-        if (!token || !userId) {
-            console.error('Missing token or userId');
-            return;
-        }
+// const handleTogglePin = async (appId: string) => {
+//     console.log('handleTogglePin called with appId:', appId); // Debug log
+//     try {
+//         const token = localStorage.getItem('jwt');
+//         if (!token || !userId) {
+//             console.error('Missing token or userId');
+//             return;
+//         }
 
-        const app = applications.find(a => a._id === appId);
-        if (!app) {
-            console.error('Application not found');
-            return;
-        }
+//         const app = applications.find(a => a._id === appId);
+//         if (!app) {
+//             console.error('Application not found');
+//             return;
+//         }
 
-        const endpoint = app.isPinned 
-            ? `http://localhost:3001/api/applications/unpin/${userId}/${appId}`
-            : `http://localhost:3001/api/applications/pin/${userId}/${appId}`;
+//         const endpoint = app.isPinned 
+//             ? `http://localhost:3001/api/applications/unpin/${userId}/${appId}`
+//             : `http://localhost:3001/api/applications/pin/${userId}/${appId}`;
 
-        console.log('Endpoint:', endpoint); // Debug log
+//         console.log('Endpoint:', endpoint); // Debug log
 
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
+//         const res = await fetch(endpoint, {
+//             method: 'POST',
+//             headers: {
+//                 'Authorization': `Bearer ${token}`,
+//                 'Content-Type': 'application/json',
+//             },
+//         });
 
-        console.log('API response status:', res.status); // Debug log
+//         console.log('API response status:', res.status); // Debug log
 
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            console.error('API Error:', errorData.message || 'Unknown error');
-            throw new Error(errorData.message || 'Failed to toggle pin status');
-        }
+//         if (!res.ok) {
+//             const errorData = await res.json().catch(() => ({}));
+//             console.error('API Error:', errorData.message || 'Unknown error');
+//             throw new Error(errorData.message || 'Failed to toggle pin status');
+//         }
 
-        // Refetch applications to get the updated `isPinned` status
-        fetchApplications(); // This will reload the applications and their updated statuses
+//         // Refetch applications to get the updated `isPinned` status
+//         fetchApplications(); // This will reload the applications and their updated statuses
 
-    } catch (error) {
-        console.error('Error in handleTogglePin:', error);
-        // Optionally, revert UI if API call failed
-        fetchApplications(); // Re-fetch applications if needed
-    }
-};
+//     } catch (error) {
+//         console.error('Error in handleTogglePin:', error);
+//         // Optionally, revert UI if API call failed
+//         fetchApplications(); // Re-fetch applications if needed
+//     }
+// };
 
     return (
         <div class="oj-flex oj-sm-padding-4x">
@@ -220,7 +220,7 @@ const handleTogglePin = async (appId: string) => {
 
 
                                 {/* Pin/Unpin Button */}
-                                <div style="display: flex; align-items: center; gap: 4px;">
+                                {/* <div style="display: flex; align-items: center; gap: 4px;">
                                     <span class="oj-typography-body-xs">
                                         {app.isPinned ? 'Pinned' : 'Pin'}
                                     </span>
@@ -231,7 +231,7 @@ const handleTogglePin = async (appId: string) => {
                                         }}
                                         aria-label={app.isPinned ? 'Unpin application' : 'Pin application'}
                                     ></oj-switch>
-                                </div>
+                                </div> */}
 
 
                             </div>
