@@ -4,19 +4,13 @@ import { admin_directory_v1 } from 'googleapis';
 import { IAuthRequest } from '../middleware/auth.middleware';
 
 export const searchDirectory = async (req: IAuthRequest, res: Response) => {
-  const query = req.query.q as string;
-
-  if (!query) {
-    res.status(400).json({ message: 'Query parameter is required' });
-  }
 
   try {
     const directory = getDirectoryClient();
 
     const result = await directory.users.list({
       customer: 'my_customer',
-      query: `email:${query}*`,
-      maxResults: 10,
+      maxResults: 500,
       projection: 'basic',
       viewType: 'domain_public',
     });

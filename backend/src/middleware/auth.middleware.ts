@@ -89,3 +89,50 @@ export const isAdmin = async (req: IAuthRequest, res: Response, next: NextFuncti
     return;
   }
 };
+
+export const isSelfOrAdmin = (getTargetUserId: (req: IAuthRequest) => string) => {
+  return async (req: IAuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authorized' });
+      return;
+    }
+
+    const targetUserId = getTargetUserId(req);
+
+    // Allow if self
+    if (req.user._id === targetUserId) {
+      next();
+      return;
+    }
+
+    try {
+      const adminGroup = await UserGroup.findOne({
+        name: config.get('admin_group_name'),
+        is_deleted: false,
+      });
+
+      if (!adminGroup) {
+        res.status(403).json({ message: 'Forbidden. Admin access required.' });
+        return;
+      }
+
+      const membership = await UserGroupMember.findOne({
+        user_id: req.user._id,
+        group_id: adminGroup._id,
+        is_active: true,
+      });
+
+      if (membership) {
+        next();
+        return;
+      }
+
+      res.status(403).json({ message: 'Forbidden. You can only access your own resources.' });
+      return
+    } catch (error) {
+      logger.error('Error during admin authorization check:', error);
+      res.status(500).json({ message: 'Server error during authorization.' });
+      return;
+    }
+  };
+};

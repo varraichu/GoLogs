@@ -7,8 +7,6 @@ import "oj-c/button";
 import "oj-c/input-text";
 import "oj-c/form-layout";
 import 'oj-c/select-multiple';
-import LengthValidator = require('ojs/ojvalidator-length');
-import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 
 interface Application {
     _id: string;
@@ -21,22 +19,9 @@ interface Application {
     logCount: number;
     isPinned: boolean;
 }
-
-interface JwtPayload {
-  _id: string;
-  // Add other expected properties from your JWT payload
-  [key: string]: any; // For any additional properties
-}
-
-interface UserApplicationsProps {
-    path?: string;  // Define the path prop type
-}
-
 const UserApplications = (props: { path?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [userId, setUserId] = useState("");
-    const [isToggling, setIsToggling] = useState(false); 
-
 
     useEffect(() => {
         fetchApplications();
@@ -47,12 +32,12 @@ const UserApplications = (props: { path?: string }) => {
             const token = localStorage.getItem('jwt');
             if (token) {
                 try {
-                    const base64Payload = token.split('.')[1]; // Get the payload part
-                    const payload = JSON.parse(atob(base64Payload)); // Decode from base64
+                    const base64Payload = token.split('.')[1]; 
+                    const payload = JSON.parse(atob(base64Payload)); 
 
                     const userId = payload._id;
                     console.log('User Id from token:', userId);
-                    setUserId(userId); // Set the userId here
+                    setUserId(userId); 
 
                     const res = await fetch(`http://localhost:3001/api/applications/${userId}`, {
                         method: 'GET',
@@ -62,7 +47,7 @@ const UserApplications = (props: { path?: string }) => {
                         }
                     });
                     const data = await res.json();
-                    console.log("API Response:", data); // Debug the actual response
+                    console.log("API Response:", data); 
                     setApplications(data.applications || []);
                     // console.log("Fetched: ", applications);
                 } catch (err) {
@@ -77,54 +62,6 @@ const UserApplications = (props: { path?: string }) => {
             console.error("Failed to fetch applications", error);
         }
     };
-
-
-// const handleTogglePin = async (appId: string) => {
-//     console.log('handleTogglePin called with appId:', appId); // Debug log
-//     try {
-//         const token = localStorage.getItem('jwt');
-//         if (!token || !userId) {
-//             console.error('Missing token or userId');
-//             return;
-//         }
-
-//         const app = applications.find(a => a._id === appId);
-//         if (!app) {
-//             console.error('Application not found');
-//             return;
-//         }
-
-//         const endpoint = app.isPinned 
-//             ? `http://localhost:3001/api/applications/unpin/${userId}/${appId}`
-//             : `http://localhost:3001/api/applications/pin/${userId}/${appId}`;
-
-//         console.log('Endpoint:', endpoint); // Debug log
-
-//         const res = await fetch(endpoint, {
-//             method: 'POST',
-//             headers: {
-//                 'Authorization': `Bearer ${token}`,
-//                 'Content-Type': 'application/json',
-//             },
-//         });
-
-//         console.log('API response status:', res.status); // Debug log
-
-//         if (!res.ok) {
-//             const errorData = await res.json().catch(() => ({}));
-//             console.error('API Error:', errorData.message || 'Unknown error');
-//             throw new Error(errorData.message || 'Failed to toggle pin status');
-//         }
-
-//         // Refetch applications to get the updated `isPinned` status
-//         fetchApplications(); // This will reload the applications and their updated statuses
-
-//     } catch (error) {
-//         console.error('Error in handleTogglePin:', error);
-//         // Optionally, revert UI if API call failed
-//         fetchApplications(); // Re-fetch applications if needed
-//     }
-// };
 
     return (
         <div class="oj-flex oj-sm-padding-4x">
@@ -217,23 +154,6 @@ const UserApplications = (props: { path?: string }) => {
                                 <div class="oj-typography-body-xs oj-text-color-secondary">
                                     Created {new Date(app.created_at).toLocaleString()}
                                 </div>
-
-
-                                {/* Pin/Unpin Button */}
-                                {/* <div style="display: flex; align-items: center; gap: 4px;">
-                                    <span class="oj-typography-body-xs">
-                                        {app.isPinned ? 'Pinned' : 'Pin'}
-                                    </span>
-                                    <oj-switch
-                                        value={app.isPinned}
-                                        onvalueChanged={(event) => {
-                                            handleTogglePin(app._id);
-                                        }}
-                                        aria-label={app.isPinned ? 'Unpin application' : 'Pin application'}
-                                    ></oj-switch>
-                                </div> */}
-
-
                             </div>
                         </div>
                     ))) : (<div class="oj-typography-body-md oj-sm-margin-4x">
