@@ -4,16 +4,149 @@ import Log from '../models/Logs';
 import UserGroupApplications from '../models/UserGroupApplications';
 import mongoose from 'mongoose';
 
+interface SortCriteria {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
 interface PaginationOptions {
   page: number;
   limit: number;
+  sortCriteria?: SortCriteria[];
+  filters?: {
+    log_type?: string | string[];
+    app_name?: string | string[];
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+  };
 }
 
-export const fetchPaginatedLogsWithAppInfo = async ({ page, limit }: PaginationOptions) => {
+const buildSortObject = (sortCriteria: SortCriteria[]): Record<string, 1 | -1> => {
+  const sortObj: Record<string, 1 | -1> = {};
+
+  sortCriteria.forEach((criteria) => {
+    let sortField = criteria.field;
+
+    // Map frontend field names to database field names
+    switch (criteria.field) {
+      case 'app_name':
+        sortField = 'application.name';
+        break;
+      case 'log_type':
+        sortField = 'log_type';
+        break;
+      case 'message':
+        sortField = 'message';
+        break;
+      case 'timestamp':
+        sortField = 'timestamp';
+        break;
+      case 'ingested_at':
+        sortField = 'ingested_at';
+        break;
+      default:
+        sortField = criteria.field;
+    }
+
+    sortObj[sortField] = criteria.direction === 'asc' ? 1 : -1;
+  });
+
+  return sortObj;
+};
+
+export const fetchPaginatedLogsWithAppInfo = async ({
+  page,
+  limit,
+  sortCriteria = [{ field: 'timestamp', direction: 'desc' }],
+  filters = {},
+}: PaginationOptions) => {
   const skip = (page - 1) * limit;
+  const sortObj = buildSortObject(sortCriteria);
+
+  const match: any = {};
+
+  if (filters.log_type) {
+    match.log_type = Array.isArray(filters.log_type) ? { $in: filters.log_type } : filters.log_type;
+  }
+  if (filters.startDate || filters.endDate) {
+    match.timestamp = {};
+    if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
+    if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
+  }
+
+  if (filters.search) {
+    const trimmedSearch = filters.search.trim();
+
+    if (trimmedSearch) {
+      const keywords = trimmedSearch.split(/\s+/).filter((k) => !!k);
+
+      if (keywords.length === 1) {
+        const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = { $regex: escaped, $options: 'i' };
+
+        match.$or = [{ message: regex }, { log_type: regex }];
+      } else {
+        // Multi-keyword AND across all fields
+        const regexConditions = keywords.map((kw) => {
+          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = { $regex: escaped, $options: 'i' };
+
+          return {
+            $or: [{ message: regex }, { log_type: regex }],
+          };
+        });
+
+        match.$and = regexConditions;
+      }
+    }
+  }
+
+  // if (filters.search) {
+  //   // Trim trailing and leading spaces
+  //   const trimmedSearch = filters.search.trim();
+
+  //   // Only proceed if there's something to search after trimming
+  //   if (trimmedSearch) {
+  //     // Split by spaces and filter out empty strings
+  //     const keywords = trimmedSearch.split(/\s+/).filter((keyword) => keyword.length > 0);
+
+  //     if (keywords.length === 1) {
+  //       // Single keyword - use simple regex
+  //       const escapedSearch = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //       match.message = { $regex: escapedSearch, $options: 'i' };
+  //     } else if (keywords.length > 1) {
+  //       // Multiple keywords - all must be present (AND logic)
+  //       const regexConditions = keywords.map((keyword) => {
+  //         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //         return { message: { $regex: escapedKeyword, $options: 'i' } };
+  //       });
+
+  //       match.$and = regexConditions;
+  //     }
+  //   }
+  // }
+
+  // const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
+
+  // if (filters.search) {
+  //   if (hasSpecialChars) {
+  //     match.message = { $regex: filters.search, $options: 'i' };
+  //   } else {
+  //     match.$text = { $search: filters.search };
+  //   }
+  // }
+
+  const appMatch: any = { 'application.is_active': true };
+  if (filters.app_name) {
+    appMatch['application.name'] = Array.isArray(filters.app_name)
+      ? { $in: filters.app_name }
+      : filters.app_name;
+  }
 
   const [logs, total] = await Promise.all([
     Log.aggregate([
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -23,8 +156,8 @@ export const fetchPaginatedLogsWithAppInfo = async ({ page, limit }: PaginationO
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
-      { $sort: { timestamp: -1 } },
+      { $match: appMatch },
+      { $sort: sortObj },
       { $skip: skip },
       { $limit: limit },
       {
@@ -40,6 +173,7 @@ export const fetchPaginatedLogsWithAppInfo = async ({ page, limit }: PaginationO
       },
     ]),
     Log.aggregate([
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -49,7 +183,7 @@ export const fetchPaginatedLogsWithAppInfo = async ({ page, limit }: PaginationO
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
+      { $match: appMatch },
       { $count: 'total' },
     ]).then((result) => result[0]?.total || 0),
   ]);
@@ -71,16 +205,26 @@ interface UserLogsPaginationOptions {
   userId: string;
   page: number;
   limit: number;
+  sortCriteria?: SortCriteria[];
+  filters?: {
+    log_type?: string | string[];
+    app_name?: string | string[];
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+  };
 }
 
 export const fetchUserLogsWithAppInfo = async ({
   userId,
   page,
   limit,
+  sortCriteria = [{ field: 'timestamp', direction: 'desc' }],
+  filters = {},
 }: UserLogsPaginationOptions) => {
   const skip = (page - 1) * limit;
+  const sortObj = buildSortObject(sortCriteria);
 
-  // First, get the user's accessible app IDs
   const userGroups = await UserGroupMembers.find({
     user_id: userId,
     is_active: true,
@@ -123,14 +267,107 @@ export const fetchUserLogsWithAppInfo = async ({
     };
   }
 
-  // Now fetch logs for these applications
+  const match: any = {
+    app_id: { $in: appIds },
+  };
+
+  if (filters.log_type) {
+    match.log_type = Array.isArray(filters.log_type) ? { $in: filters.log_type } : filters.log_type;
+  }
+  if (filters.startDate || filters.endDate) {
+    match.timestamp = {};
+    if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
+    if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
+  }
+
+  if (filters.search) {
+    const trimmedSearch = filters.search.trim();
+
+    if (trimmedSearch) {
+      const keywords = trimmedSearch.split(/\s+/).filter((k) => !!k);
+
+      if (keywords.length === 1) {
+        const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = { $regex: escaped, $options: 'i' };
+
+        match.$or = [{ message: regex }, { log_type: regex }];
+      } else {
+        const regexConditions = keywords.map((kw) => {
+          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = { $regex: escaped, $options: 'i' };
+
+          return {
+            $or: [{ message: regex }, { log_type: regex }],
+          };
+        });
+
+        match.$and = regexConditions;
+      }
+    }
+  }
+
+  // if (filters.search) {
+  //   // Trim trailing and leading spaces
+  //   const trimmedSearch = filters.search.trim();
+
+  //   // Only proceed if there's something to search after trimming
+  //   if (trimmedSearch) {
+  //     // Split by spaces and filter out empty strings
+  //     const keywords = trimmedSearch.split(/\s+/).filter((keyword) => keyword.length > 0);
+
+  //     if (keywords.length === 1) {
+  //       // Single keyword - use simple regex
+  //       const escapedSearch = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //       match.message = { $regex: escapedSearch, $options: 'i' };
+  //     } else if (keywords.length > 1) {
+  //       // Multiple keywords - all must be present (AND logic)
+  //       const regexConditions = keywords.map((keyword) => {
+  //         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //         return { message: { $regex: escapedKeyword, $options: 'i' } };
+  //       });
+
+  //       match.$and = regexConditions;
+  //     }
+  //   }
+  // }
+
+  // if (filters.search) {
+  //   // Trim trailing and leading spaces
+  //   const trimmedSearch = filters.search.trim();
+
+  //   // Only proceed if there's something to search after trimming
+  //   if (trimmedSearch) {
+  //     // Escape special regex characters to prevent regex injection
+  //     const escapedSearch = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //     match.message = { $regex: escapedSearch, $options: 'i' };
+  //   }
+  // }
+
+  // if (filters.search) {
+  //   // Escape special regex characters to prevent regex injection
+  //   const escapedSearch = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //   match.message = { $regex: escapedSearch, $options: 'i' };
+  // }
+  // const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
+
+  // if (filters.search) {
+  //   if (hasSpecialChars) {
+  //     match.message = { $regex: filters.search, $options: 'i' };
+  //   } else {
+  //     match.$text = { $search: filters.search };
+  //   }
+  // }
+
+  const appMatch: any = { 'application.is_active': true };
+  if (filters.app_name) {
+    appMatch['application.name'] = Array.isArray(filters.app_name)
+      ? { $in: filters.app_name }
+      : filters.app_name;
+  }
+
   const [logs, total] = await Promise.all([
     Log.aggregate([
-      {
-        $match: {
-          app_id: { $in: appIds },
-        },
-      },
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -140,8 +377,8 @@ export const fetchUserLogsWithAppInfo = async ({
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
-      { $sort: { timestamp: -1 } },
+      { $match: appMatch },
+      { $sort: sortObj },
       { $skip: skip },
       { $limit: limit },
       {
@@ -157,11 +394,7 @@ export const fetchUserLogsWithAppInfo = async ({
       },
     ]),
     Log.aggregate([
-      {
-        $match: {
-          app_id: { $in: appIds },
-        },
-      },
+      { $match: match },
       {
         $lookup: {
           from: 'applications',
@@ -171,7 +404,7 @@ export const fetchUserLogsWithAppInfo = async ({
         },
       },
       { $unwind: '$application' },
-      { $match: { 'application.is_active': true } },
+      { $match: appMatch },
       { $count: 'total' },
     ]).then((result) => result[0]?.total || 0),
   ]);

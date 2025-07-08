@@ -1,4 +1,4 @@
-// File: src/services/logs.service.ts
+// File: src/services/logs.services.ts
 
 export interface LogEntry {
   _id: string;
@@ -24,6 +24,19 @@ export interface LogsResponse {
   message?: string;
 }
 
+export interface SortCriteria {
+  attribute: string;
+  direction: 'ascending' | 'descending';
+}
+
+export interface LogFilters {
+  apps: string[];            // Optional: multiple app IDs (you can use the first one)
+  logTypes: string[];        // e.g. ["debug", "error"]
+  fromDate: string | undefined;   // ISO date string
+  toDate: string | undefined;     // ISO date string
+  search: string;
+}
+
 class LogsService {
   private baseUrl = 'http://localhost:3001/api';
 
@@ -47,17 +60,80 @@ class LogsService {
     }
   }
 
-  async fetchLogs(page: number, limit: number = 10): Promise<LogsResponse> {
+  private buildSortQueryString(sortCriteria?: SortCriteria[]): string {
+    if (!sortCriteria || sortCriteria.length === 0) {
+      return '';
+    }
+
+    // Convert sort criteria to query parameters
+    // Format: &sort=timestamp:desc,log_type:desc,app_name:desc
+    const sortParams = sortCriteria
+      .map(criteria => `${criteria.attribute}:${criteria.direction === 'descending' ? 'desc' : 'asc'}`)
+      .join(',');
+
+    return `&sort=${encodeURIComponent(sortParams)}`;
+  }
+
+  async fetchLogs(
+    page: number,
+    limit: number = 10,
+    sortCriteria?: SortCriteria[],
+    filters?: LogFilters
+  ): Promise<LogsResponse> {
     const token = localStorage.getItem('jwt');
     const user = this.parseJwt(token);
     const isAdmin = user?.isAdmin;
     const userId = user?._id;
 
-    const endpoint = isAdmin
-      ? `${this.baseUrl}/logs?page=${page}&limit=${limit}`
-      : `${this.baseUrl}/logs/${userId}?page=${page}&limit=${limit}`;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
 
-    const res = await fetch(endpoint, {
+    // Set base endpoint
+    let baseEndpoint = `${this.baseUrl}/logs`;
+
+    // If non-admin, use user-specific route
+    if (!isAdmin) {
+      baseEndpoint += `/${userId}`;
+    }
+
+    const params = new URLSearchParams();
+
+    // Pagination
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+
+    // Sorting
+    if (sortCriteria && sortCriteria.length > 0) {
+      const sortStr = sortCriteria
+        .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)
+        .join(',');
+      params.append('sort', sortStr);
+    }
+
+    // Filters — allow multiple
+    if (filters?.logTypes?.length) {
+      filters.logTypes.forEach(type => params.append('log_type', type));
+    }
+
+    if (filters?.apps?.length) {
+      filters.apps.forEach(app => params.append('app_name', app));
+    }
+
+    if (filters?.fromDate) {
+      params.append('startDate', filters.fromDate);
+    }
+
+    if (filters?.toDate) {
+      params.append('endDate', filters.toDate);
+    }
+    if (filters?.search) {
+      params.append('search', filters.search);
+    }
+
+    const finalUrl = `${baseEndpoint}?${params.toString()}`;
+
+    const res = await fetch(finalUrl, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });

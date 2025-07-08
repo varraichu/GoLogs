@@ -9,6 +9,7 @@ import 'oj-c/form-layout'
 import 'oj-c/select-multiple'
 import 'oj-c/card-view'
 import { useToast } from '../../context/ToastContext'
+import Toast from '../../components/Toast'
 
 import 'ojs/ojselector'
 import 'ojs/ojlistitemlayout'
@@ -16,7 +17,6 @@ import 'ojs/ojavatar'
 import 'ojs/ojlistview'
 import 'ojs/ojbutton'
 import 'ojs/ojtoolbar'
-import "oj-c/message-toast"
 
 import 'oj-c/tab-bar';
 
@@ -43,7 +43,9 @@ const Applications = (props: { path?: string }) => {
   const [assignedGroupIds, setAssignedGroupIds] = useState<any>(new Set([]))
   const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]))
   const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null>(null)
-  const { addNewToast, messageDataProvider, removeToast } = useToast()
+  
+  const { addNewToast} = useToast()
+  
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
   const [editingState, setEditingState] = useState<boolean>(false)
   const [selectedItem, setSelectedItem] = useState('active')
@@ -64,9 +66,7 @@ const Applications = (props: { path?: string }) => {
     assignedGroupIds: new Set(),
   })
 
-  const closeMessage = (event: CustomEvent<{ key: string }>) => {
-    removeToast(event.detail.key)
-  }
+
 
   const confirmDeleteGroup = (groupId: string) => {
     setConfirmDeleteDialogId(groupId)
@@ -428,12 +428,8 @@ const Applications = (props: { path?: string }) => {
       )}
 
 
-      <oj-c-message-toast
-        data={messageDataProvider}
-        onojClose={closeMessage}
-        position="top-right"
-        offset={{ horizontal: 10, vertical: 50 }}
-      />
+    <Toast/>
+    
     </div>
   )
 };

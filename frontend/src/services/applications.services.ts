@@ -51,6 +51,20 @@ class ApplicationsService {
     }
   }
 
+  private getUserIdFromToken(): string | null {
+    const token = localStorage.getItem('jwt');
+    if (!token) return null;
+
+    try {
+      const base64Payload = token.split('.')[1];
+      const payload = JSON.parse(atob(base64Payload));
+      return payload._id || null;
+    } catch (e) {
+      console.error('Error decoding JWT:', e);
+      return null;
+    }
+  }
+
   /**
    * Fetch all applications
    */
@@ -67,6 +81,26 @@ class ApplicationsService {
     }
 
     return data
+  }
+
+  async fetchUserApplications(): Promise<ApplicationsResponse> {
+    const userId = this.getUserIdFromToken();
+    if (!userId) {
+      throw new Error('User ID not found in token');
+    }
+
+    const response = await fetch(`${this.baseUrl}/applications/${userId}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch user applications');
+    }
+
+    return data;
   }
 
   /**
