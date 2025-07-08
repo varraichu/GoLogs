@@ -7,6 +7,7 @@ import userGroupRoutes from './routes/userGroups.routes';
 import directoryRoutes from './routes/directory.routes';
 import applicationRoutes from './routes/applications.routes';
 import logRoutes from './routes/logs.routes';
+import settingsRoutes from "./routes/settings.routes"
 import { errorHandler } from './middleware/error.middleware';
 import assignGroupRoutes from './routes/assignGroup.routes';
 
@@ -29,6 +30,7 @@ app.use('/api/userGroup', userGroupRoutes);
 app.use('/api/directory', directoryRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.use(errorHandler);
 
