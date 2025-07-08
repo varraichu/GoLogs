@@ -205,7 +205,6 @@ export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
   try {
     const { appId } = req.params as ApplicationParams;
 
-    // Fetch log data for the app
     const logStats = await Logs.aggregate([
       { $match: { app_id: new mongoose.Types.ObjectId(appId) } },
       { $group: {
@@ -235,27 +234,23 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
   try {
     const { userId, appId } = req.params as { userId: string, appId: string };
 
-    // Find the user
     const user = await Users.findById(userId);
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return;  // Early return on error
+      return;  
     }
 
-    // Check if the user already has 3 pinned apps
     if (user.pinned_apps.length >= 3) {
       res.status(400).json({ message: 'Cannot pin more than 3 apps' });
-      return;  // Early return if user has too many pinned apps
+      return;  
     }
 
-    // Check if the app is already pinned
     if (user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application already pinned' });
-      return;  // Early return if the app is already pinned
+      return; 
     }
 
-    // Pin the app (add appId to pinned_apps array)
     user.pinned_apps.push(new mongoose.Types.ObjectId(appId));
     await user.save();
 
@@ -270,21 +265,18 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
   try {
     const { userId, appId } = req.params as { userId: string, appId: string };
 
-    // Find the user
     const user = await Users.findById(userId);
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return;  // Early return on error
+      return; 
     }
 
-    // Check if the app is pinned
     if (!user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application is not pinned' });
-      return;  // Early return if the app is not pinned
+      return;  
     }
 
-    // Remove the appId from pinned_apps array
     user.pinned_apps = user.pinned_apps.filter((id) => id.toString() !== appId);
     await user.save();
 
