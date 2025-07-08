@@ -10,10 +10,6 @@ import 'oj-c/select-multiple';
 import LengthValidator = require('ojs/ojvalidator-length');
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 
-
-import { useToast } from '../../context/ToastContext'
-import Toast from '../../components/Toast';
-
 interface Application {
     _id: string;
     name: string;
@@ -26,20 +22,11 @@ interface Application {
     isPinned: boolean;
 }
 
-
 interface JwtPayload {
   _id: string;
   // Add other expected properties from your JWT payload
   [key: string]: any; // For any additional properties
 }
-
-
-import applicationsService, { Application, UserGroup } from '../../services/applications.services';
-
-
-const UserApplications = (props: { path?: string }) => {
-    const [applications, setApplications] = useState<Application[]>([]);
-    const { addNewToast } = useToast()
 
 interface UserApplicationsProps {
     path?: string;  // Define the path prop type
@@ -51,19 +38,43 @@ const UserApplications = (props: { path?: string }) => {
     const [isToggling, setIsToggling] = useState(false); 
 
 
-
     useEffect(() => {
         fetchApplications();
     }, []);
 
     const fetchApplications = async () => {
         try {
-          
-            const data = await applicationsService.fetchUserApplications();
-            setApplications(data.applications || []);
+            const token = localStorage.getItem('jwt');
+            if (token) {
+                try {
+                    const base64Payload = token.split('.')[1]; // Get the payload part
+                    const payload = JSON.parse(atob(base64Payload)); // Decode from base64
+
+                    const userId = payload._id;
+                    console.log('User Id from token:', userId);
+                    setUserId(userId); // Set the userId here
+
+                    const res = await fetch(`http://localhost:3001/api/applications/${userId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    const data = await res.json();
+                    console.log("API Response:", data); // Debug the actual response
+                    setApplications(data.applications || []);
+                    // console.log("Fetched: ", applications);
+                } catch (err) {
+                    console.error('Failed to fetch applications:', err);
+                }
+
+            } else {
+                console.warn('JWT token not found in localStorage');
+            }
+
         } catch (error) {
-            console.error('Failed to fetch applications', error);
-            addNewToast('error', 'Failed to fetch applications', String(error));
+            console.error("Failed to fetch applications", error);
         }
     };
 
@@ -231,7 +242,6 @@ const UserApplications = (props: { path?: string }) => {
                 }
             </div>
 
-            <Toast />
         </div>
     );
 };
