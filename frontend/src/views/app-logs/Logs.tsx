@@ -14,6 +14,8 @@ import { logsService, LogEntry, Pagination, SortCriteria } from '../../services/
 import LogFilters from './components/LogFilters';
 import SearchBar from '../../components/SearchBar';
 import LogDetailsModal from './components/LogDetailsModal';
+import LogExports from './components/LogExports';
+import LogExportsDialog from './components/LogExportsDialog';
 
 
 
@@ -22,6 +24,7 @@ const Logs = (props: { path?: string }) => {
   const [dataProvider, setDataProvider] = useState<any>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [exportDialog,setExportDialog]= useState(false)
 
   // Set default sort criteria for backend
   const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
@@ -220,11 +223,12 @@ const Logs = (props: { path?: string }) => {
       {/* <div>
       </div> */}
 
-      <div class="oj-flex oj-flex-1 oj-sm-align-items-center oj-sm-justify-content-start oj-sm-padding-3x-bottom" >
+      <div class="oj-flex oj-flex-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom" >
         {/* style={{backgroundColor: '#8ace00'}} */}
 
 
         <SearchBar value={filters.search} onChange={handleSearchChange} />
+        <LogExports setExportDialog={()=>{setExportDialog(!exportDialog)}}/>
 
       </div>
 
@@ -334,9 +338,16 @@ const Logs = (props: { path?: string }) => {
           onCancel={() => {
             setShowLogDialog(false);
             setSelectedLog(null);
-          }}
+          }}      
         />
       )}
+        <LogExportsDialog opened={exportDialog} close={()=>{setExportDialog(!exportDialog)}}></LogExportsDialog>
+      {
+          // exportDialog && (
+          //   <LogExportsDialog opened={exportDialog}></LogExportsDialog>
+          // )
+          
+        }
 
     </div>
   );
