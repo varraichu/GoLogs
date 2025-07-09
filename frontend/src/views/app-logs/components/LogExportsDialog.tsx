@@ -18,8 +18,9 @@ import ArrayDataProvider = require('ojs/ojarraydataprovider')
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 
 interface LogExportsDialogProps {
-  close: ()=>void,
-  opened: boolean
+  close: ()=>void;
+  export: ()=>void;
+  opened: boolean;
 }
 
 const exportOptions = [
@@ -32,7 +33,7 @@ const optionsDP = new ArrayDataProvider(exportOptions, {
 });
 
 
-const LogExportsDialog = ({ opened, close}: LogExportsDialogProps) => {
+const LogExportsDialog = ({  close, export:exp,opened }: LogExportsDialogProps) => {
   const [exportFormat, setExportFormat] = useState("csv");
   return (
     <div>
@@ -73,7 +74,7 @@ const LogExportsDialog = ({ opened, close}: LogExportsDialogProps) => {
           <oj-button chroming="borderless" class="oj-sm-padding-4x-end" onojAction={close}>
             Cancel
           </oj-button>
-          <oj-button chroming="danger" class="oj-sm-padding-4x-start">
+          <oj-button chroming="danger" class="oj-sm-padding-4x-start" onojAction={exp} >
             Export
           </oj-button>
         </div>
