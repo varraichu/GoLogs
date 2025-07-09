@@ -128,7 +128,7 @@ export const isSelfOrAdmin = (getTargetUserId: (req: IAuthRequest) => string) =>
       }
 
       res.status(403).json({ message: 'Forbidden. You can only access your own resources.' });
-      return
+      return;
     } catch (error) {
       logger.error('Error during admin authorization check:', error);
       res.status(500).json({ message: 'Server error during authorization.' });

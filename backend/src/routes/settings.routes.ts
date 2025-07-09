@@ -1,14 +1,9 @@
 import express from 'express';
-import { protect, isAdmin ,isSelfOrAdmin} from '../middleware/auth.middleware';
+import { protect, isAdmin, isSelfOrAdmin } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
-import {
-  settingsParamsSchema,
-  updateSettingsSchema,
-} from '../schemas/settings.validator';
+import { settingsParamsSchema, updateSettingsSchema } from '../schemas/settings.validator';
 
-import {
-  getSettingsById,updateSettingsController
-} from '../controllers/settings.controller';
+import { getSettingsById, updateSettingsController } from '../controllers/settings.controller';
 
 const router = express.Router();
 

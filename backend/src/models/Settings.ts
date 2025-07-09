@@ -1,6 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-
 export interface ISettings extends Document {
   user_id: mongoose.Types.ObjectId;
   error_rate_threshold: number;
@@ -14,14 +13,13 @@ const settingsSchema: Schema<ISettings> = new Schema({
   error_rate_threshold: { type: Number, required: true },
   warning_rate_threshold: { type: Number, required: true },
   silent_duration: { type: Number, required: true },
-
 });
 
 settingsSchema.index(
-  {user_id:1},
+  { user_id: 1 },
   {
-    unique: true
+    unique: true,
   }
-)
+);
 
 export default mongoose.model<ISettings>('Settings', settingsSchema);

@@ -7,7 +7,7 @@ import userGroupRoutes from './routes/userGroups.routes';
 import directoryRoutes from './routes/directory.routes';
 import applicationRoutes from './routes/applications.routes';
 import logRoutes from './routes/logs.routes';
-import settingsRoutes from "./routes/settings.routes"
+import settingsRoutes from './routes/settings.routes';
 import { errorHandler } from './middleware/error.middleware';
 import assignGroupRoutes from './routes/assignGroup.routes';
 

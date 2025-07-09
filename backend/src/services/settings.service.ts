@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
 import Settings from '../models/Settings';
-import {ISettings} from "../models/Settings"
+import { ISettings } from '../models/Settings';
 
-export const getOrCreateSettings = async (
-  user_id: mongoose.Types.ObjectId
-): Promise<ISettings> => {
+export const getOrCreateSettings = async (user_id: mongoose.Types.ObjectId): Promise<ISettings> => {
   const defaultSettings = {
     user_id,
     error_rate_threshold: 10,
@@ -31,9 +29,5 @@ export const updateSettings = async (
   user_id: mongoose.Types.ObjectId,
   updates: UpdateSettingsInput
 ): Promise<ISettings | null> => {
-  return await Settings.findOneAndUpdate(
-    { user_id },
-    { $set: updates },
-    { new: true }
-  );
+  return await Settings.findOneAndUpdate({ user_id }, { $set: updates }, { new: true });
 };
