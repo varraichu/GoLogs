@@ -124,9 +124,10 @@ const Applications = (props: { path?: string }) => {
     if (!showDialog) return false
     if (name !== initialEditValues.name) return true
     if (description !== initialEditValues.description) return true
-
+    
     const current = new Set(Array.from(assignedGroupIds))
-    const initial = new Set(Array.from(initialEditValues.assignedGroupIds))
+    const initial = new Set(Array.from(initialAssignedGroupIds))
+    console.log("here",name,description,current,initial,initialEditValues,showDialog)
     if (current.size !== initial.size) return true
     for (let id of current) {
       if (!initial.has(id as string)) return true

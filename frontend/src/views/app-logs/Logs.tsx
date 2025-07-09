@@ -15,6 +15,8 @@ import LogFilters from './components/LogFilters';
 import SearchBar from '../../components/SearchBar';
 import LogDetailsModal from './components/LogDetailsModal';
 
+
+
 const Logs = (props: { path?: string }) => {
   const [adminLogs, setAdminLogs] = useState<LogEntry[]>([]);
   const [dataProvider, setDataProvider] = useState<any>(null);

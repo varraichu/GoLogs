@@ -239,7 +239,9 @@ export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
     await UserGroupApplications.updateMany({ group_id: groupId }, { is_active: is_active });
     await UserGroupMember.updateMany({ group_id: groupId }, { is_active: is_active });
 
-    res.status(200).json({ message: `User group successfully set to ${is_active ? 'Active' : 'Inactive'}` });
+    res
+      .status(200)
+      .json({ message: `User group successfully set to ${is_active ? 'Active' : 'Inactive'}` });
     return;
   } catch (error) {
     logger.error('Error toggling application status:', error);

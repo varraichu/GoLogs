@@ -17,7 +17,6 @@ import { getDetailedApplications } from '../services/applications.service';
 import Logs from '../models/Logs';
 import Users from '../models/Users';
 
-
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {
     const { name, description } = req.body as CreateApplicationInput;
@@ -108,15 +107,15 @@ export const getUserApplications = async (req: IAuthRequest, res: Response): Pro
     }
 
     // Add isPinned status to each application
-    const applicationsWithPinStatus = detailedApps.map(app => ({
+    const applicationsWithPinStatus = detailedApps.map((app) => ({
       ...app,
       isPinned: user.pinned_apps.includes(app._id),
     }));
-     
 
-    res
-      .status(200)
-      .json({ message: 'Applications fetched successfully', applications: applicationsWithPinStatus  });
+    res.status(200).json({
+      message: 'Applications fetched successfully',
+      applications: applicationsWithPinStatus,
+    });
   } catch (error) {
     logger.error('Error fetching all user groups:', error);
     res.status(500).json({ message: 'Server error' });
@@ -200,27 +199,27 @@ export const toggleApplicationStatus = async (req: IAuthRequest, res: Response) 
   }
 };
 
-
 export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
   try {
     const { appId } = req.params as ApplicationParams;
 
     const logStats = await Logs.aggregate([
       { $match: { app_id: new mongoose.Types.ObjectId(appId) } },
-      { $group: {
+      {
+        $group: {
           _id: '$log_type',
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
-    const totalLogs = logStats.reduce((sum, log) => sum + log.count, 0);  // Sum of all logs
+    const totalLogs = logStats.reduce((sum, log) => sum + log.count, 0); // Sum of all logs
 
     const criticalLogs = {
       totalLogs: totalLogs,
       // infoLogs: logStats.find(log => log._id === 'info')?.count || 0,
-      errorLogs: logStats.find(log => log._id === 'error')?.count || 0,
-      warningLogs: logStats.find(log => log._id === 'warning')?.count || 0
+      errorLogs: logStats.find((log) => log._id === 'error')?.count || 0,
+      warningLogs: logStats.find((log) => log._id === 'warn')?.count || 0,
     };
 
     res.status(200).json(criticalLogs);
@@ -232,23 +231,23 @@ export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
 
 export const pinApplication = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
-    const { userId, appId } = req.params as { userId: string, appId: string };
+    const { userId, appId } = req.params as { userId: string; appId: string };
 
     const user = await Users.findById(userId);
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return;  
+      return; // Early return on error
     }
 
     if (user.pinned_apps.length >= 3) {
       res.status(400).json({ message: 'Cannot pin more than 3 apps' });
-      return;  
+      return; // Early return if user has too many pinned apps
     }
 
     if (user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application already pinned' });
-      return; 
+      return; // Early return if the app is already pinned
     }
 
     user.pinned_apps.push(new mongoose.Types.ObjectId(appId));
@@ -263,18 +262,18 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
 
 export const unpinApplication = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
-    const { userId, appId } = req.params as { userId: string, appId: string };
+    const { userId, appId } = req.params as { userId: string; appId: string };
 
     const user = await Users.findById(userId);
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return; 
+      return; // Early return on error
     }
 
     if (!user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application is not pinned' });
-      return;  
+      return; // Early return if the app is not pinned
     }
 
     user.pinned_apps = user.pinned_apps.filter((id) => id.toString() !== appId);

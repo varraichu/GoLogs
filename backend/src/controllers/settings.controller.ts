@@ -1,7 +1,11 @@
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import Settings from '../models/Settings';
-import { CreateSettingsInput, UpdateSettingsInput, SettingsParams } from "../schemas/settings.validator"
+import {
+  CreateSettingsInput,
+  UpdateSettingsInput,
+  SettingsParams,
+} from '../schemas/settings.validator';
 import { getOrCreateSettings, updateSettings } from '../services/settings.service';
 import mongoose from 'mongoose';
 import logger from '../config/logger';
@@ -11,8 +15,8 @@ export const getSettingsById = async (req: IAuthRequest, res: Response) => {
   try {
     const { user_id } = req.params as SettingsParams;
     const userObjectId = new mongoose.Types.ObjectId(user_id);
-    if (!(await Users.exists({_id:userObjectId}))){
-      res.status(404).json({message:"User not found"})
+    if (!(await Users.exists({ _id: userObjectId }))) {
+      res.status(404).json({ message: 'User not found' });
       return;
     }
     const settings = await getOrCreateSettings(userObjectId);
@@ -45,24 +49,18 @@ export const getSettingsById = async (req: IAuthRequest, res: Response) => {
 //   }
 // };
 
-export const updateSettingsController = async (
-  req: IAuthRequest,
-  res: Response
-) => {
+export const updateSettingsController = async (req: IAuthRequest, res: Response) => {
   try {
     const { user_id } = req.params as SettingsParams;
     const userObjectId = new mongoose.Types.ObjectId(user_id);
 
-    if (!(await Users.exists({_id:userObjectId}))){
-      res.status(404).json({message:"User not found"})
-      return 
+    if (!(await Users.exists({ _id: userObjectId }))) {
+      res.status(404).json({ message: 'User not found' });
+      return;
     }
     const updates = req.body as UpdateSettingsInput;
 
-    const updated = await updateSettings(
-      userObjectId,
-      updates
-    );
+    const updated = await updateSettings(userObjectId, updates);
 
     if (!updated) {
       res.status(404).json({ message: 'Settings not found for user' });

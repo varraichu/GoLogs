@@ -4,7 +4,6 @@ import { admin_directory_v1 } from 'googleapis';
 import { IAuthRequest } from '../middleware/auth.middleware';
 
 export const searchDirectory = async (req: IAuthRequest, res: Response) => {
-
   try {
     const directory = getDirectoryClient();
 

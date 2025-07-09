@@ -142,7 +142,7 @@ export const ApplicationDialog = ({
         </oj-c-form-layout>
       </div>
       <div class="oj-dialog-footer">
-        <oj-button onojAction={handleSave}>Save</oj-button>
+        <oj-button onojAction={handleSave}>Create</oj-button>
         <oj-button onojAction={handleCancel} chroming="borderless">
           Cancel
         </oj-button>

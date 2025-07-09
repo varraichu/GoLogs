@@ -16,11 +16,10 @@ import {
   getUserApplications,
   toggleApplicationStatus,
   updateApplication,
-  pinApplication, 
-  unpinApplication, 
+  pinApplication,
+  unpinApplication,
   getAppCriticalLogs,
 } from '../controllers/applications.controller';
-
 
 const router = express.Router();
 
@@ -43,6 +42,5 @@ router.delete('/:appId', protect, isAdmin, validate(applicationParamsSchema), de
 router.post('/pin/:userId/:appId', protect, pinApplication); 
 router.post('/unpin/:userId/:appId', protect, unpinApplication); 
 router.get('/logs/critical/:appId', protect, getAppCriticalLogs);
-
 
 export default router;
