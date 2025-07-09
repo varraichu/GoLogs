@@ -82,7 +82,7 @@ export function SideBar({
       </div>
       <li class="oj-navigationlist-category-divider"></li>
       {/* <!-- Navigation list --> */}
-      <oj-navigation-list aria-label="Main Navigation" selection-mode="single">
+      <oj-navigation-list aria-label="Main Navigation" selection-mode="single" selection={activeItem}>
         <ul>
           <oj-list-item-layout
             id="dashboard"
