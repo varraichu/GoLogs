@@ -4,7 +4,7 @@ import 'ojs/ojlistitemlayout'
 import { h } from 'preact'
 import { route } from 'preact-router'
 import { Slot } from 'ojs/ojvcomponent'
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import './SideBar.css' // <-- Add this line to import custom styles
 
 // Inside your component:
@@ -17,6 +17,15 @@ type Props = {
   pictureUrl?: string
 }
 
+const pathnameMappings: { [key: string]: string } = {
+  '/usergroups': 'usergroups',
+  '/': 'dashboard',
+  '/dashboard': 'dashboard',
+  '/applications': 'applications',
+  '/user-applications': 'applications',
+  '/logs': 'logs',
+  '/settings': 'settings',
+}
 export function SideBar({
   // slot = 'start',
   setIsAuthenticated,
@@ -27,7 +36,20 @@ export function SideBar({
   // isAdmin=false
   const [activeItem, setActiveItem] = useState<string>('dashboard')
 
+  useEffect(() => {
+    const pathName = window.location.pathname
+    if (pathName == '/') {
+      route('/dashboard')
+    }
+    // return
+    setActiveItem(pathnameMappings[window.location.pathname] as string)
+  }, [])
+
   const handleNavigation = (path: string, id: string) => {
+    if (path === '/') {
+      handleNavigation('/dashboard', 'dashboard')
+      return
+    }
     setActiveItem(id)
     route(path)
   }
