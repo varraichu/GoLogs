@@ -269,7 +269,14 @@ const UserGroups = (props: { path?: string }) => {
         <oj-dialog dialogTitle={`Users in ${selectedGroupForUsers.name}`} initialVisibility="show" onojClose={() => setShowUsersDialog(false)}>
           <div class="oj-dialog-body">
             {selectedGroupForUsers.users?.length > 0 ? (
-              <ul>{selectedGroupForUsers.users.map(user => <li key={user._id}>{user.username}</li>)}</ul>
+              // <ul>{selectedGroupForUsers.users.map(user => <li key={user._id}>{user.username}</li>)}</ul>
+              <ul>
+                {selectedGroupForUsers.users
+                  ?.filter((user): user is User => !!user && typeof user.username === 'string')
+                  .map(user => (
+                    <li key={user._id}>{user.username}</li>
+                  ))}
+              </ul>
             ) : <p>No users in this group.</p>}
           </div>
           <div class="oj-dialog-footer">
