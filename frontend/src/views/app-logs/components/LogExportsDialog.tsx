@@ -21,11 +21,13 @@ interface LogExportsDialogProps {
   close: ()=>void;
   export: ()=>void;
   opened: boolean;
+  exportFormat : "csv"|"txt";
+  setExportFormat : (str:"csv"|"txt")=>void;
 }
 
 const exportOptions = [
   { value: "csv", label: "CSV" },
-  { value: "text", label: "Text" }
+  { value: "txt", label: "Text" }
 ];
 
 const optionsDP = new ArrayDataProvider(exportOptions, {
@@ -33,8 +35,8 @@ const optionsDP = new ArrayDataProvider(exportOptions, {
 });
 
 
-const LogExportsDialog = ({  close, export:exp,opened }: LogExportsDialogProps) => {
-  const [exportFormat, setExportFormat] = useState("csv");
+const LogExportsDialog = ({  close, export:exp,opened,exportFormat,setExportFormat }: LogExportsDialogProps) => {
+  
   return (
     <div>
       <oj-c-dialog

@@ -26,6 +26,7 @@ const Logs = (props: { path?: string }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [exportDialog, setExportDialog] = useState(false)
   const [logs,setLogs] = useState<any[]>([])
+  const [exportFormat, setExportFormat] = useState<"csv"|"txt">("csv");
 
   // Set default sort criteria for backend
   const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
@@ -388,8 +389,10 @@ const Logs = (props: { path?: string }) => {
         }}
         export = {()=>{
           setExportDialog(!exportDialog)
-          downloadCSV(logs,"Logs.txt");
+          downloadCSV(logs,`Logs.${exportFormat}`);
         }}
+        exportFormat={exportFormat}
+        setExportFormat={setExportFormat}
       ></LogExportsDialog>
       {
         // exportDialog && (
