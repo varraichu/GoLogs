@@ -1,16 +1,10 @@
 import express from 'express';
-import { protect, isAdmin } from '../middleware/auth.middleware';
+import { protect, isAdmin, isSelfOrAdmin } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
 
-import {
-  getAllCachedLogSummary,
-  getAllLogs,
-  getCachedLogSummary,
-  getLogTTL,
-  getUserLogs,
-  getUserLogSummary,
-  updateLogTTL,
-} from '../controllers/logs.controller';
+
+import {getAllCachedLogSummary, getAllLogs,  getCachedLogSummary, getLogTTL, getUserLogs,  getUserLogSummary, updateLogTTL, exportUserLogs, exportAdminLogs } from '../controllers/logs.controller';
+
 import { updateLogTTLSchema, logsQuerySchema } from '../schemas/logs.validator';
 
 const router = express.Router();
@@ -30,10 +24,18 @@ router.get('/admin-cached-summary/', protect, isAdmin, getAllCachedLogSummary);
 router.get('/cached-summary/:userId', validate(logsQuerySchema), getCachedLogSummary);
 router.get('/get/ttl', getLogTTL);
 
-router.get('/:userId', validate(logsQuerySchema), getUserLogs);
+router.get('/export', protect,
+  isAdmin, validate(logsQuerySchema), exportAdminLogs);
+router.get('/export/:userId', protect,
+  isSelfOrAdmin((req) => req.params.userId as string), validate(logsQuerySchema), exportUserLogs);
 router.get('/summary/:userId', validate(logsQuerySchema), getUserLogSummary);
+router.get('/:userId', validate(logsQuerySchema), getUserLogs);
+
+
+
 
 // router.get('/cached-summary/:userId', validate(logsQuerySchema), getCachedLogSummary);
+
 // router.patch(
 //   '/config/ttl',
 //   validate(updateLogTTLSchema), // Using the new schema

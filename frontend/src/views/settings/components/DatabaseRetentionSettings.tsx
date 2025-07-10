@@ -72,7 +72,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
         addNewToast('error', 'Failed to fetch retention', msg)
       }
       // Fetch settings
-      if (!isAdmin && userId) {
+      if ( userId) {
         try {
           const { ok, data } = await settingsService.fetchSettings(token || '', userId)
           if (ok) {
@@ -230,7 +230,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
           </div>
         </div>
       </div>
-      {!isAdmin && (
+      { (
         <div class="oj-web-applayout-max-width oj-web-applayout-content oj-panel-border-0 oj-flex">
           <h3 class="oj-flex-item oj-flex ">
             <span class="oj-ux-ico-warning oj-text-color-secondary oj-typography-heading-sm"></span>
