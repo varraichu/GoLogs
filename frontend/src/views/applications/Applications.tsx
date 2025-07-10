@@ -62,7 +62,7 @@ const Applications = (props: { path?: string }) => {
   
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 4,
+    limit: 6,
     total: 0,
     totalPages: 1,
     hasNextPage: false,
@@ -384,7 +384,7 @@ return (
     {/* 5. CONTENT (APP CARDS) */}
     <div
       id="applicationsListContainer"
-      class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-padding-4x-start"
+      class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top"
       style="flex: 1; min-height: 0; gap: 16px;" 
     >
       <ApplicationsList
