@@ -70,6 +70,7 @@ export const ApplicationDialog = ({
       return
     }
 
+
     onSave()
   }
 
@@ -99,10 +100,10 @@ export const ApplicationDialog = ({
             validators={[
               new LengthValidator({ min: 5, max: 20 }),
               new RegExpValidator({
-                pattern: '^[a-zA-Z0-9_-]+$',
-                hint: 'Only letters, numbers, underscores (_), and hyphens (-) are allowed.',
+                pattern: '^[a-zA-Z0-9 _.-]+$',
+                hint: 'Only letters, numbers, spaces, periods (.), underscores (_), and hyphens (-) are allowed.',
                 messageSummary: 'Invalid name format.',
-                messageDetail: 'Use only letters, numbers, underscores (_), and hyphens (-).',
+                messageDetail: 'Use only letters, numbers, spaces, periods (.), underscores (_), and hyphens (-).',
               })
             ]}
           ></oj-c-input-text>

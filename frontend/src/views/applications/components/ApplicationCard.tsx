@@ -40,7 +40,7 @@ export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: Appli
             class="oj-typography-heading-sm"
             style={{ margin: 0, flex: 1, wordBreak: 'break-word' }}
           >
-            {app.name}
+            {app.name.replace(/\./g, ' ')}
           </h3>
           <span
             class="oj-typography-body-xs"

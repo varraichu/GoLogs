@@ -30,7 +30,7 @@ export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[])
         foreignField: '_id', // The field to match in the 'usergroups' collection
         as: 'groupDetails', // Store the full group documents here
         pipeline: [
-          { $match: { is_deleted: false,is_active:true } }, // Only count active groups
+          { $match: { is_deleted: false, is_active: true } }, // Only count active groups
         ],
       },
     },

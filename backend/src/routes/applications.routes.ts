@@ -27,7 +27,8 @@ const router = express.Router();
 
 router.get('/', protect, isAdmin, getAllApplications);
 router.get('/:userId', getUserApplications);
-router.post('/', protect, isAdmin, validate(createApplicationSchema), createApplication);
+router.post('/', validate(createApplicationSchema), createApplication);
+// router.post('/', protect, isAdmin, validate(createApplicationSchema), createApplication);
 
 router.patch('/:appId', protect, isAdmin, validate(updateApplicationSchema), updateApplication);
 router.patch(

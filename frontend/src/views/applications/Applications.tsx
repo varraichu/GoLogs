@@ -136,9 +136,10 @@ const Applications = (props: { path?: string }) => {
   }
 
   const saveApplication = async () => {
-    console.log('Saving application:', name, description)
+    const transformedName = name.replace(/ /g, '.');
+    console.log('Saving application:', transformedName, description)
 
-    const applicationData = { name, description }
+    const applicationData = { name: transformedName, description }
 
     try {
       let result
