@@ -377,7 +377,8 @@ const Logs = (props: { path?: string }) => {
               }}
             />
           </oj-table>
-        );
+        )
+        };
       </div>
 
 

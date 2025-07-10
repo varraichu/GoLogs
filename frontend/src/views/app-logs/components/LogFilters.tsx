@@ -52,7 +52,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
   const thirtyDaysAgo = new Date(now.getTime() - retention * 24 * 60 * 60 * 1000);
   const minDateTime = thirtyDaysAgo.toISOString().slice(0, 16); // same format
 
-  const [filters, setFilters] = useState<{ search: string; groupIds: string[]; status: string }>({
+  const [userFilters, setUserFilters] = useState<{ search: string; groupIds: string[]; status: string }>({
     search: '',
     groupIds: [],
     status: 'all',
@@ -106,7 +106,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
   const fetchApplications = async () => {
     try {
       const data = await applicationsService.fetchApplicationsByRole(
-        filters, pagination
+        userFilters, pagination
       );
       const apps = data.applications || [];
       setApplications(apps);

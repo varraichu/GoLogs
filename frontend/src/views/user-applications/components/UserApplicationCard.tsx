@@ -1,10 +1,7 @@
-// File: src/components/UserApplicationCard.tsx
+// File: src/components/OldApplicationCard.tsx
 import { h } from 'preact';
 import '../../../styles/userapplication-card.css';
 
-interface UserApplicationCardProps {
-  app: Application;
-}
 interface Application {
   _id: string;
   name: string;
@@ -17,9 +14,14 @@ interface Application {
   isPinned: boolean;
 }
 
+interface UserApplicationCardProps {
+  app: Application;
+}
+
 export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
   return (
     <div key={app._id} class="oj-panel oj-panel-shadow-md application-card">
+      {/* Header with app name and status */}
       <div class="application-header">
         <div class="application-title-container">
           <h3 class="oj-typography-heading-sm application-title">
@@ -42,10 +44,12 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
         </div>
       </div>
 
+      {/* App description */}
       <p class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x application-description">
         {app.description}
       </p>
 
+      {/* Log stats */}
       <div class="stats-container">
         <div class="stat-box">
           <div class="oj-typography-body-sm oj-text-color-secondary">Logs</div>
@@ -53,6 +57,7 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
         </div>
       </div>
 
+      {/* Footer with creation date */}
       <div class="application-footer">
         <div class="oj-typography-body-xs oj-text-color-secondary">
           Created {new Date(app.created_at).toLocaleString()}
