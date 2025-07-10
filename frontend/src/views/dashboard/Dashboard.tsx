@@ -9,6 +9,7 @@ import { Application } from "../../services/dashboard.services";
 import dashboardService from "../../services/dashboard.services";
 import { handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
 import AppsHealth from "./components/AppsHealth";
+import DashboardRecentLogs from "./components/DashboardRecentLogs";
 
 const Dashboard = (props: { path?: string; userId?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
@@ -296,6 +297,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                 ) : (
                     <div class="oj-typography-body-md oj-sm-margin-4x">No applications pinned yet.</div>
                 )}
+                <DashboardRecentLogs></DashboardRecentLogs>
                 {showErrorDialog && (
                     <oj-dialog
                         id="errorDialog"
