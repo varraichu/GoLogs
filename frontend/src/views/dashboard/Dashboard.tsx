@@ -42,32 +42,46 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
     return (
         <div class="oj-flex oj-sm-padding-4x">
 
-            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
-                style={{ marginBottom: "12px" }}>
-                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
+            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
+                <div class="oj-flex oj-flex-direction-col oj-sm-flex-items-1 oj-sm-justify-content-space-between oj-sm-margin-2x-bottom">
                     <h3 style={{
                         margin: 0,
                         fontWeight: "bold",
                         fontSize: "1.3rem"
                     }}>Application Health</h3>
                 </div>
-            </div>
-            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
                 <AppsHealth userId={userId} />
+                {/* <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x">
+                </div> */}
             </div>
 
-            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
-                style={{ marginBottom: "12px" }}>
-                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
-                    <h3 style={{
-                        margin: 0,
-                        fontWeight: "bold",
-                        fontSize: "1.3rem"
-                    }}>Logs in the past 24 hours</h3>
-                </div>
-            </div>
             <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
-                <LogGraph></LogGraph>
+                <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x">
+                    <div class="oj-flex oj-flex-direction-col oj-sm-flex-items-1 oj-sm-justify-content-space-between oj-sm-margin-4x-bottom">
+                        <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center" style={{gap: '0.5rem'}}>
+                            <span class="oj-ux-ico-trending-up" style={{
+                                color: "#000000",
+                                fontSize: "1.5rem",
+                                fontFamily: "ojuxIconFont !important"
+                            }}></span>
+                            <h3 style={{
+                                margin: 0,
+                                fontWeight: "bold",
+                                fontSize: "1.3rem"
+                            }}>Logs in the past 24 hours</h3>
+                        </div>
+                        <oj-button
+                            onojAction={() => setShowPinDialog(true)}
+                            chroming="callToAction"
+                            class="oj-button-sm"
+                            style={{ marginRight: '20px' }}
+                        >
+                            Refresh
+                        </oj-button>
+                    </div>
+                    <LogGraph></LogGraph>
+
+                </div>
             </div>
 
             <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
