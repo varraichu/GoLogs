@@ -4,6 +4,8 @@ import { useEffect, useState } from 'preact/hooks'
 import 'ojs/ojselectcombobox'
 import 'ojs/ojdatetimepicker'
 import 'ojs/ojbutton'
+import "oj-c/progress-button"
+// import "./LogExports.css"
 
 import { useToast } from '../../../context/ToastContext'
 import Toast from '../../../components/Toast'
@@ -16,19 +18,22 @@ import ArrayDataProvider = require('ojs/ojarraydataprovider')
 
 interface LogExportsProps {
   setExportDialog: ()=>void
+  isLoading : boolean
 }
 
-const LogExports = ({setExportDialog}:LogExportsProps) => {
+const LogExports = ({setExportDialog,isLoading}:LogExportsProps) => {
 
   return (
-    <oj-c-button
+    <oj-c-progress-button
       class="oj-sm-padding-4x-end"
       label="Export Logs"
-      chroming="danger"
+      chroming="callToAction"
       onojAction={setExportDialog}
+      isLoading = {isLoading}
+      // style="bg:red !important"
     >
       <span slot="startIcon" class="oj-ux-ico-download"></span>
-    </oj-c-button>
+    </oj-c-progress-button>
   )
 }
 

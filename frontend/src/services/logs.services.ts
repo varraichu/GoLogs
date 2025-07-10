@@ -146,7 +146,61 @@ class LogsService {
 
     return data;
   }
+  getExportUrl(
+    limit: number = 10,
+    filters?: LogFilters,
+    sortCriteria?: SortCriteria[]
+  ): string {
+    const token = localStorage.getItem('jwt');
+    const user = this.parseJwt(token);
+    const isAdmin = user?.isAdmin;
+    const userId = user?._id;
+
+    // let baseEndpoint = `${this.baseUrl}/logs`;
+
+    // if (!isAdmin) {
+    //   baseEndpoint += `/${userId}`;
+    // }
+    
+    let exportEndpoint = `${this.baseUrl}/logs/export`; // Always use export endpoint
+    if (!isAdmin){
+      exportEndpoint+=`/${userId}`
+    }
+      // baseEndpoint += `/${userId}`;
+
+    const params = new URLSearchParams();
+    params.append('limit', String(limit));
+    
+    if (sortCriteria && sortCriteria.length > 0) {
+      const sortStr = sortCriteria
+        .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)
+        .join(',');
+      params.append('sort', sortStr);
+    }
+
+    if (filters?.logTypes?.length) {
+      filters.logTypes.forEach(type => params.append('log_type', type));
+    }
+
+    if (filters?.apps?.length) {
+      filters.apps.forEach(app => params.append('app_name', app));
+    }
+
+    if (filters?.fromDate) {
+      params.append('startDate', filters.fromDate);
+    }
+
+    if (filters?.toDate) {
+      params.append('endDate', filters.toDate);
+    }
+    if (filters?.search) {
+      params.append('search', filters.search);
+    }
+
+    return `${exportEndpoint}?${params.toString()}`;
+  }
 }
+
 
 export const logsService = new LogsService();
 export default logsService;

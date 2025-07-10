@@ -1,8 +1,8 @@
 import express from 'express';
-import { protect, isAdmin } from '../middleware/auth.middleware';
+import { protect, isAdmin, isSelfOrAdmin } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
 
-import { getAllLogs, getLogTTL, getUserLogs, updateLogTTL } from '../controllers/logs.controller';
+import { getAllLogs, getLogTTL, getUserLogs, updateLogTTL, exportUserLogs, exportAdminLogs } from '../controllers/logs.controller';
 import { updateLogTTLSchema, logsQuerySchema } from '../schemas/logs.validator';
 
 const router = express.Router();
@@ -20,6 +20,10 @@ router.patch(
 );
 
 router.get('/get/ttl', getLogTTL);
+router.get('/export/:userId', protect,
+  isSelfOrAdmin((req) => req.params.userId as string), validate(logsQuerySchema), exportUserLogs);
+router.get('/export', protect,
+  isAdmin, validate(logsQuerySchema), exportAdminLogs);
 // router.patch(
 //   '/config/ttl',
 //   validate(updateLogTTLSchema), // Using the new schema

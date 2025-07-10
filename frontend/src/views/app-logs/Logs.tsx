@@ -16,7 +16,9 @@ import SearchBar from '../../components/SearchBar'
 import LogDetailsModal from './components/LogDetailsModal'
 import LogExports from './components/LogExports'
 import LogExportsDialog from './components/LogExportsDialog'
-import {downloadCSV} from "../../services/downloadCSV"
+import 'oj-c/progress-circle'
+import 'oj-c/dialog'
+import { downloadCSV } from '../../services/downloadCSV'
 import { log } from 'console'
 
 const Logs = (props: { path?: string }) => {
@@ -25,8 +27,9 @@ const Logs = (props: { path?: string }) => {
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [exportDialog, setExportDialog] = useState(false)
-  const [logs,setLogs] = useState<any[]>([])
-  const [exportFormat, setExportFormat] = useState<"csv"|"txt">("csv");
+  const [logs, setLogs] = useState<any[]>([])
+  const [exportFormat, setExportFormat] = useState<'csv' | 'txt'>('csv')
+  const [isExporting, setIsExporting] = useState(false)
 
   // Set default sort criteria for backend
   const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
@@ -65,20 +68,65 @@ const Logs = (props: { path?: string }) => {
   const [showLogDialog, setShowLogDialog] = useState(false)
   const [selectedLog, setSelectedLog] = useState<any>(null)
 
-  useEffect(() => {
-    console.log('sort criteria: ', sortCriteria)
-      console.log('filtera: ', filters)
-    logsService.fetchLogs(1, pagination.total, sortCriteria, filters).then((data)=>setLogs((data.logs || []).map((log: LogEntry, idx) => ({
-        rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,
-        ...log,
-        timestamp: new Date(log.timestamp).toLocaleString(),
-        ingested_at: new Date(log.ingested_at).toLocaleString(),
-      }))))
-  }, [exportDialog])
+  // useEffect(() => {
+  //   console.log('sort criteria: ', sortCriteria)
+  //   console.log('filtera: ', filters)
+  //   logsService.fetchLogs(1, pagination.total, sortCriteria, filters).then((data) =>
+  //     setLogs(
+  //       (data.logs || []).map((log: LogEntry, idx) => ({
+  //         rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,
+  //         ...log,
+  //         timestamp: new Date(log.timestamp).toLocaleString(),
+  //         ingested_at: new Date(log.ingested_at).toLocaleString(),
+  //       }))
+  //     )
+  //   )
+  // }, [exportDialog])
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
     fetchLogs(pagination.page)
   }, [pagination.page, sortCriteria, filters])
+
+  const exportFunc = async () => {
+    try {
+      setIsExporting(true)
+      setExportDialog(false) // close the dialog first (or keep if async behavior preferred)
+
+      const url = logsService.getExportUrl(pagination.total, filters, sortCriteria)
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('jwt')}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Export failed')
+      }
+
+      const blob = await response.blob()
+
+      // Trigger file download
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `Logs.${exportFormat || 'csv'}`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      // Optional: show success toast
+      console.log('Download triggered successfully.')
+      addNewToast("confirmation","Exported Successfully","Logs Exported Successfully as "+`Logs.${exportFormat || 'csv'}`)
+    } catch (err) {
+      console.error('Export failed:', err)
+      // useToast("error",)
+      addNewToast("error","Failed to Export Logs",err as string || "Internal Server error")
+      // Optional: show error toast or dialog
+    } finally {
+      setIsExporting(false) // Hide progress bar
+    }
+  }
 
   const fetchLogs = async (page: number) => {
     setIsLoading(true)
@@ -241,6 +289,7 @@ const Logs = (props: { path?: string }) => {
           setExportDialog={() => {
             setExportDialog(!exportDialog)
           }}
+          isLoading={isExporting}
         />
       </div>
 
@@ -369,7 +418,25 @@ const Logs = (props: { path?: string }) => {
         </div>
       )}
 
-      <Toast />
+      <LogExportsDialog
+        opened={exportDialog}
+        close={() => {
+          setExportDialog(!exportDialog)
+        }}
+        export={exportFunc}
+        exportFormat={exportFormat}
+        setExportFormat={setExportFormat}
+      ></LogExportsDialog>
+      {
+        // exportDialog && (
+        //   <LogExportsDialog opened={exportDialog}></LogExportsDialog>
+        // )
+      }
+      {/* {isExporting && (
+        <div>
+          <oj-c-progress-circle value={-1}></oj-c-progress-circle> 
+        </div>
+      )} */}
 
       {showLogDialog && selectedRows && (
         <LogDetailsModal
@@ -382,23 +449,7 @@ const Logs = (props: { path?: string }) => {
           }}
         />
       )}
-      <LogExportsDialog
-        opened={exportDialog}
-        close={() => {
-          setExportDialog(!exportDialog)
-        }}
-        export = {()=>{
-          setExportDialog(!exportDialog)
-          downloadCSV(logs,`Logs.${exportFormat}`);
-        }}
-        exportFormat={exportFormat}
-        setExportFormat={setExportFormat}
-      ></LogExportsDialog>
-      {
-        // exportDialog && (
-        //   <LogExportsDialog opened={exportDialog}></LogExportsDialog>
-        // )
-      }
+      <Toast />
     </div>
   )
 }
