@@ -224,6 +224,20 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                         margin: 0,
                         fontWeight: "bold",
                         fontSize: "1.3rem"
+                    }}>Application Health</h3>
+                </div>
+            </div>
+            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
+                <AppsHealth userId={userId} />
+            </div>
+
+            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
+                style={{ marginBottom: "12px" }}>
+                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
+                    <h3 style={{
+                        margin: 0,
+                        fontWeight: "bold",
+                        fontSize: "1.3rem"
                     }}>Logs in the past 24 hours</h3>
                 </div>
             </div>
