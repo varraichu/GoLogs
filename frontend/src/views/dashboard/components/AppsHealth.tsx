@@ -42,7 +42,7 @@ export default function AppsHealth({ userId }: { userId: string }) {
 
     return (
         <>
-            <div class="oj-sm-margin-8x oj-flex-item oj-flex oj-sm-flex-items-1 oj-sm-justify-content-space-around ">
+            <div class="oj-sm-margin-4x oj-flex-item oj-flex oj-sm-flex-items-1 oj-sm-justify-content-space-around ">
                 <AppsHealthCard
                     title="Errors"
                     description="Database Timeouts, Failed Payments"

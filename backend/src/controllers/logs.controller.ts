@@ -33,12 +33,12 @@ export const getAllLogs = async (req: IAuthRequest, res: Response) => {
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-        const [field, direction] = item.split(':');
-        return {
-          field: field.trim(),
-          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-        } as SortCriteria;
-      })
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -85,12 +85,12 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-        const [field, direction] = item.split(':');
-        return {
-          field: field.trim(),
-          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-        } as SortCriteria;
-      })
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -193,7 +193,6 @@ export const getLogTTL = async (req: IAuthRequest, res: Response): Promise<void>
   }
 };
 
-
 // File: controllers/logs.controller.ts
 import { Parser } from 'json2csv'; // for CSV conversion
 
@@ -214,12 +213,12 @@ export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-        const [field, direction] = item.split(':');
-        return {
-          field: field.trim(),
-          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-        } as SortCriteria;
-      })
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -246,11 +245,11 @@ export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
     res.header('Content-Type', 'text/csv');
     res.attachment('logs-export.csv');
     res.send(csv);
-    return
+    return;
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to export logs' });
-    return
+    return;
   }
 };
 export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
@@ -270,12 +269,12 @@ export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-        const [field, direction] = item.split(':');
-        return {
-          field: field.trim(),
-          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-        } as SortCriteria;
-      })
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -301,13 +300,13 @@ export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
     res.header('Content-Type', 'text/csv');
     res.attachment('logs-export.csv');
     res.send(csv);
-    return
+    return;
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to export logs' });
-    return
+    return;
   }
-}
+};
 
 export const getUserLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
@@ -377,6 +376,5 @@ export const getAllCachedLogSummary = async (req: IAuthRequest, res: Response): 
   } catch (error) {
     logger.error('Error fetching user log summary:', error);
     res.status(500).json({ message: 'Server error' });
-
   }
 };

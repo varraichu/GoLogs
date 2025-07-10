@@ -9,7 +9,7 @@ interface FilterOptions {
   search?: string;
   status?: 'active' | 'inactive';
   groupIds?: string[];
-  userId?: string; 
+  userId?: string;
 }
 
 const escapeRegex = (text: string) => {
@@ -46,7 +46,14 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
     if (accessibleAppIds.length === 0) {
       return {
         applications: [],
-        pagination: { total: 0, page, limit, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
       };
     }
     matchStage._id = { $in: accessibleAppIds };
@@ -57,7 +64,7 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
   }
 
   if (search) {
-    const searchParts = search.split(' ').map(part => escapeRegex(part));
+    const searchParts = search.split(' ').map((part) => escapeRegex(part));
     const flexibleSearchRegex = searchParts.join('.*');
 
     matchStage.$or = [
@@ -69,31 +76,67 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
   pipeline.push({ $match: matchStage });
 
   if (groupIds && groupIds.length > 0) {
-    pipeline.push({
-      $lookup: {
-        from: 'usergroupapplications',
-        localField: '_id',
-        foreignField: 'app_id',
-        as: 'groupAssignments',
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'usergroupapplications',
+          localField: '_id',
+          foreignField: 'app_id',
+          as: 'groupAssignments',
+        },
       },
-    },
-    {
-      $match: {
-        'groupAssignments.group_id': {
-          $in: groupIds.map(id => new mongoose.Types.ObjectId(id))
-        }
+      {
+        $match: {
+          'groupAssignments.group_id': {
+            $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)),
+          },
+        },
       }
-    });
+    );
   }
 
   pipeline.push({
     $facet: {
       metadata: [{ $count: 'total' }],
       data: [
-        { $lookup: { from: 'usergroupapplications', localField: '_id', foreignField: 'app_id', as: 'groups', pipeline: [{ $match: { is_active: true } }] }},
-        { $lookup: { from: 'usergroups', localField: 'groups.group_id', foreignField: '_id', as: 'groupDetails', pipeline: [{ $match: { is_deleted: false, is_active: true } }] }},
-        { $lookup: { from: 'logs', let: { appId: '$_id' }, pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] }}}, { $count: 'total' }], as: 'logStats' }},
-        { $project: { _id: 1, name: 1, description: 1, created_at: 1, is_active: 1, groupCount: { $size: '$groupDetails' }, groupNames: '$groupDetails.name', logCount: { $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0] }}},
+        {
+          $lookup: {
+            from: 'usergroupapplications',
+            localField: '_id',
+            foreignField: 'app_id',
+            as: 'groups',
+            pipeline: [{ $match: { is_active: true } }],
+          },
+        },
+        {
+          $lookup: {
+            from: 'usergroups',
+            localField: 'groups.group_id',
+            foreignField: '_id',
+            as: 'groupDetails',
+            pipeline: [{ $match: { is_deleted: false, is_active: true } }],
+          },
+        },
+        {
+          $lookup: {
+            from: 'logs',
+            let: { appId: '$_id' },
+            pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] } } }, { $count: 'total' }],
+            as: 'logStats',
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            description: 1,
+            created_at: 1,
+            is_active: 1,
+            groupCount: { $size: '$groupDetails' },
+            groupNames: '$groupDetails.name',
+            logCount: { $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0] },
+          },
+        },
         { $sort: { created_at: -1 } },
         { $skip: (page - 1) * limit },
         { $limit: limit },
@@ -148,7 +191,7 @@ export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[])
         foreignField: '_id', // The field to match in the 'usergroups' collection
         as: 'groupDetails', // Store the full group documents here
         pipeline: [
-          { $match: { is_deleted: false,is_active:true } }, // Only count active groups
+          { $match: { is_deleted: false, is_active: true } }, // Only count active groups
         ],
       },
     },

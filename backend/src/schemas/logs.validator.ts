@@ -28,7 +28,7 @@ export const logsQuerySchema = object({
     limit: string()
       .optional()
       .transform((val) => (val ? parseInt(val) : 20)),
-      // .refine((val) => val > 0 && val <= 100, { message: 'Limit must be between 1 and 100' }),
+    // .refine((val) => val > 0 && val <= 100, { message: 'Limit must be between 1 and 100' }),
     sort: string()
       .optional()
       .refine(

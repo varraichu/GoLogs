@@ -32,7 +32,7 @@ app.use('/api/directory', directoryRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/appsHealth', appsHealthRoutes)
+app.use('/api/appsHealth', appsHealthRoutes);
 
 app.use(errorHandler);
 

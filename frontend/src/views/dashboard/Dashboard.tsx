@@ -8,6 +8,7 @@ import LogGraph from "./components/LogGraph";
 import { Application } from "../../services/dashboard.services";
 import dashboardService from "../../services/dashboard.services";
 import { handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
+import AppsHealth from "./components/AppsHealth";
 
 const Dashboard = (props: { path?: string; userId?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
@@ -40,6 +41,20 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
 
     return (
         <div class="oj-flex oj-sm-padding-4x">
+
+            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
+                style={{ marginBottom: "12px" }}>
+                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
+                    <h3 style={{
+                        margin: 0,
+                        fontWeight: "bold",
+                        fontSize: "1.3rem"
+                    }}>Application Health</h3>
+                </div>
+            </div>
+            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
+                <AppsHealth userId={userId} />
+            </div>
 
             <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
                 style={{ marginBottom: "12px" }}>
