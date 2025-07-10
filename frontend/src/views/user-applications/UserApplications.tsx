@@ -7,6 +7,9 @@ import "oj-c/button";
 import "oj-c/input-text";
 import "oj-c/form-layout";
 import 'oj-c/select-multiple';
+import 'oj-c/progress-circle';
+import { UserApplicationCard } from './components/UserApplicationCard';
+import '../../styles/applications-page.css';
 
 interface Application {
     _id: string;
@@ -21,6 +24,7 @@ interface Application {
 }
 const UserApplications = (props: { path?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
+    const [isLoadingPage, setIsLoadingPage] = useState(true);
     const [userId, setUserId] = useState("");
 
     useEffect(() => {
@@ -28,16 +32,17 @@ const UserApplications = (props: { path?: string }) => {
     }, []);
 
     const fetchApplications = async () => {
+        setIsLoadingPage(true);
         try {
             const token = localStorage.getItem('jwt');
             if (token) {
                 try {
-                    const base64Payload = token.split('.')[1]; 
-                    const payload = JSON.parse(atob(base64Payload)); 
+                    const base64Payload = token.split('.')[1];
+                    const payload = JSON.parse(atob(base64Payload));
 
                     const userId = payload._id;
                     console.log('User Id from token:', userId);
-                    setUserId(userId); 
+                    setUserId(userId);
 
                     const res = await fetch(`http://localhost:3001/api/applications/${userId}`, {
                         method: 'GET',
@@ -47,7 +52,7 @@ const UserApplications = (props: { path?: string }) => {
                         }
                     });
                     const data = await res.json();
-                    console.log("API Response:", data); 
+                    console.log("API Response:", data);
                     setApplications(data.applications || []);
                     // console.log("Fetched: ", applications);
                 } catch (err) {
@@ -60,108 +65,44 @@ const UserApplications = (props: { path?: string }) => {
 
         } catch (error) {
             console.error("Failed to fetch applications", error);
+        } finally {
+            setIsLoadingPage(false)
         }
     };
 
     return (
-        <div class="oj-flex oj-sm-padding-4x">
-            <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
-                <div class="" >
-                    <h1 class="oj-typography-heading-lg">Applications</h1>
+        <div class="oj-flex oj-sm-flex-direction-column applications-page">
+            <div class="oj-flex oj-sm-12 oj-sm-padding-5x-start oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-padding-5x-end">
+                <h1 class="oj-typography-heading-md">Applications</h1>
+            </div>
+
+            <div
+                id="applicationsListContainer"
+                class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-center"
+                style="flex: 1; min-height: 0; gap: 16px; position: relative;"
+            >
+
+                <div
+                    class="oj-flex oj-flex-wrap oj-sm-padding-4x oj-sm-align-items-stretch oj-sm-justify-content-flex-start"
+                    style={{
+                        gap: '24px',
+                    }}
+                >
+                    {isLoadingPage ? (
+                        <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
+                    ) : (
+
+                        applications.length > 0 ? (
+                            (applications || []).map((app) => (
+                                <UserApplicationCard key={app._id} app={app} />
+                            ))) : (<div class="oj-typography-body-md oj-sm-margin-4x">
+                                No applications found. Contact administrator for application access.
+                            </div>)
+
+                    )}
                 </div>
+
             </div>
-            <div class="oj-flex oj-flex-wrap oj-flex-space-" style={"gap: 24px"}>
-                {applications.length > 0 ? (
-                    (applications || []).map((app) => (
-                        <div
-                            key={app._id}
-                            class="oj-panel oj-panel-shadow-md"
-                            style="
-                                border: 1px solid #e5e7eb; 
-                                border-radius: 12px; 
-                                padding: 20px 20px 16px 20px; 
-                                max-width: 400px; 
-                                min-width: 400px; 
-                                flex: 1;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: space-between;
-                            "
-                        >
-                            {/* Header: Name + Toggle */}
-                            <div
-                                class="oj-flex"
-                                style="
-                                    align-items: center;
-                                    justify-content: space-between;
-                                    margin-bottom: 8px;
-                                    width: 100%;
-                                "
-                            >
-                                <div style="flex: 1; display: flex; align-items: center;">
-                                    <h3 class="oj-typography-heading-sm" style="margin: 0; flex: 1; word-break: break-word;">
-                                        {app.name}
-                                        {app.isPinned && (
-                                        <span 
-                                            class="oj-ux-ico-pin-filled" 
-                                            style="color: #4CAF50; margin-left: 8px;"
-                                            title="Pinned application"
-                                        ></span>
-                                    )}
-                                    </h3>
-                                    
-                                    <span
-                                        class="oj-typography-body-xs"
-                                        style={`
-                                            margin-left: 12px;
-                                            padding: 2px 10px;
-                                            font-weight: 500;
-                                            color: ${app.is_active ? '#065f46' : '#991b1b'};
-                                            font-size: 0.85em;
-            `}
-                                    >
-                                        {app.is_active ? 'Active' : 'Inactive'}
-                                    </span>
-                                </div>
-
-                                
-                            </div>
-
-                            <p
-                                class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x"
-                                style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"
-                            >
-                                {app.description}
-                            </p>
-
-                            <div
-                                class="oj-flex"
-                                style="justify-content: space-between; align-items: stretch; gap: 32px; margin-bottom: 24px;"
-                            >
-                                {/* Logs column */}
-                                <div style="display: flex; flex-direction: column; align-items: flex-start;
-                            background-color: rgba(243, 243, 243, 0.6); padding: 8px; border-radius: 8px; flex: 1;">
-                                    <div class="oj-typography-body-sm oj-text-color-secondary">Logs</div>
-                                    <div class="oj-typography-heading-md">{app.logCount.toLocaleString()}</div>
-                                </div>
-                            </div>
-
-                            {/* Footer: Created At and pin toggle */}
-                            <div
-                                class="oj-flex"
-                                style="justify-content: space-between; align-items: center; gap: 12px; margin-top: auto;"
-                            >
-                                <div class="oj-typography-body-xs oj-text-color-secondary">
-                                    Created {new Date(app.created_at).toLocaleString()}
-                                </div>
-                            </div>
-                        </div>
-                    ))) : (<div class="oj-typography-body-md oj-sm-margin-4x">
-                        No applications found. Contact administrator for application access.
-                    </div>)
-                }
-            </div>
-
         </div>
     );
 };

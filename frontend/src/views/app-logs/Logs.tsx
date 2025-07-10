@@ -221,7 +221,7 @@ const Logs = (props: { path?: string }) => {
         }}
       >
         {isLoading ? (
-          <oj-c-progress-circle value={-1} size="lg" />
+          <oj-c-progress-circle value={-1} size="md" />
         ) : (
           <oj-table
             data={dataProvider}

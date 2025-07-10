@@ -406,7 +406,7 @@ const Applications = (props: { path?: string }) => {
         style="flex: 1; min-height: 0; gap: 16px; position: relative;"
       >
         {isLoadingPage ? (
-          <oj-c-progress-circle value={-1} size="lg" style="margin-top: 40px;" />
+          <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
         ) : (
           <ApplicationsList
             applications={applications}
