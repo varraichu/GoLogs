@@ -7,6 +7,7 @@ import app from './app';
 import logger from './config/logger';
 import config from 'config';
 import { connectDB } from './config/db';
+import './jobs/startSummaryScheduler';
 
 process.on('uncaughtException', (err) => {
   logger.error(`Uncaught Exception: ${err.message}`);

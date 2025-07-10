@@ -284,13 +284,18 @@ const Logs = (props: { path?: string }) => {
       <div class="oj-flex oj-flex-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom">
         {/* style={{backgroundColor: '#8ace00'}} */}
 
-        <SearchBar value={filters.search} onChange={handleSearchChange} />
+
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
         <LogExports
           setExportDialog={() => {
             setExportDialog(!exportDialog)
           }}
           isLoading={isExporting}
         />
+
+
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
+
       </div>
 
       <LogFilters onFilterChange={handleFilterChange} />
