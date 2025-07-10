@@ -22,6 +22,9 @@ import { downloadCSV } from '../../services/downloadCSV'
 import { log } from 'console'
 
 const Logs = (props: { path?: string }) => {
+  const params = new URLSearchParams(window.location.search);
+  const log_type: string | null = params.get('log-type');
+
   const [adminLogs, setAdminLogs] = useState<LogEntry[]>([])
   const [dataProvider, setDataProvider] = useState<any>(null)
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -30,6 +33,7 @@ const Logs = (props: { path?: string }) => {
   const [logs, setLogs] = useState<any[]>([])
   const [exportFormat, setExportFormat] = useState<'csv' | 'txt'>('csv')
   const [isExporting, setIsExporting] = useState(false)
+
 
   // Set default sort criteria for backend
   const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
@@ -45,7 +49,7 @@ const Logs = (props: { path?: string }) => {
     search: string
   }>({
     apps: [],
-    logTypes: [],
+    logTypes: log_type ? [log_type] : [],
     fromDate: undefined,
     toDate: undefined,
     search: '',
@@ -68,6 +72,7 @@ const Logs = (props: { path?: string }) => {
   const [showLogDialog, setShowLogDialog] = useState(false)
   const [selectedLog, setSelectedLog] = useState<any>(null)
 
+
   // useEffect(() => {
   //   console.log('sort criteria: ', sortCriteria)
   //   console.log('filtera: ', filters)
@@ -82,6 +87,7 @@ const Logs = (props: { path?: string }) => {
   //     )
   //   )
   // }, [exportDialog])
+
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
     fetchLogs(pagination.page)
@@ -117,11 +123,11 @@ const Logs = (props: { path?: string }) => {
 
       // Optional: show success toast
       console.log('Download triggered successfully.')
-      addNewToast("confirmation","Exported Successfully","Logs Exported Successfully as "+`Logs.${exportFormat || 'csv'}`)
+      addNewToast("confirmation", "Exported Successfully", "Logs Exported Successfully as " + `Logs.${exportFormat || 'csv'}`)
     } catch (err) {
       console.error('Export failed:', err)
       // useToast("error",)
-      addNewToast("error","Failed to Export Logs",err as string || "Internal Server error")
+      addNewToast("error", "Failed to Export Logs", err as string || "Internal Server error")
       // Optional: show error toast or dialog
     } finally {
       setIsExporting(false) // Hide progress bar
@@ -295,7 +301,10 @@ const Logs = (props: { path?: string }) => {
 
       </div>
 
-      <LogFilters onFilterChange={handleFilterChange} />
+
+
+      <LogFilters filters={filters} onFilterChange={handleFilterChange} />
+
 
       <div
         class="oj-flex oj-sm-margin-4x"
@@ -366,8 +375,8 @@ const Logs = (props: { path?: string }) => {
                 dir === 'ascending'
                   ? 'oj-ux-ico-caret-up'
                   : dir === 'descending'
-                  ? 'oj-ux-ico-caret-down'
-                  : ' oj-ux-ico-sort'
+                    ? 'oj-ux-ico-caret-down'
+                    : ' oj-ux-ico-sort'
 
               return (
                 <div

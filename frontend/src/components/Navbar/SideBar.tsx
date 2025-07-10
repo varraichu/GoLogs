@@ -41,6 +41,8 @@ export function SideBar({
     if (pathName == '/') {
       route('/dashboard')
     }
+
+    console.log(pathName)
     // return
     setActiveItem(pathnameMappings[window.location.pathname] as string)
   }, [])

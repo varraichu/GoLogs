@@ -40,8 +40,8 @@ router.patch(
 );
 router.delete('/:appId', protect, isAdmin, validate(applicationParamsSchema), deleteApplication);
 
-router.post('/pin/:userId/:appId', protect, pinApplication); 
-router.post('/unpin/:userId/:appId', protect, unpinApplication); 
+router.post('/pin/:userId/:appId', protect, pinApplication);
+router.post('/unpin/:userId/:appId', protect, unpinApplication);
 router.get('/logs/critical/:appId', protect, getAppCriticalLogs);
 
 export default router;

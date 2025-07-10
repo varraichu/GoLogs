@@ -16,17 +16,17 @@ import logger from '../config/logger';
 import { getDetailedApplications } from '../services/applications.service';
 import Logs from '../models/Logs';
 import Users from '../models/Users';
-import { getPaginatedFilteredApplications } from '../services/applications.service'; 
+import { getPaginatedFilteredApplications } from '../services/applications.service';
 
 interface Application {
-  _id: string
-  name: string
-  description: string
-  created_at: string
-  is_active: boolean
-  groupCount: number
-  groupNames: string[]
-  logCount: number
+  _id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  is_active: boolean;
+  groupCount: number;
+  groupNames: string[];
+  logCount: number;
 }
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
@@ -94,7 +94,6 @@ export const getUserApplications = async (req: IAuthRequest, res: Response): Pro
     const status = req.query.status as 'active' | 'inactive' | undefined;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 8; // Default limit
-    
 
     const { applications, pagination } = await getPaginatedFilteredApplications({
       userId,
@@ -110,24 +109,22 @@ export const getUserApplications = async (req: IAuthRequest, res: Response): Pro
       return;
     }
 
-const pinnedAppIds = new Set(user.pinned_apps.map(id => id.toString()));
+    const pinnedAppIds = new Set(user.pinned_apps.map((id) => id.toString()));
     const applicationsWithPinStatus = applications.map((app: Application) => ({
       ...app,
       isPinned: pinnedAppIds.has(app._id.toString()),
     }));
 
-
     res.status(200).json({
       message: 'Applications fetched successfully',
       applications: applicationsWithPinStatus,
-      pagination, 
+      pagination,
     });
   } catch (error) {
     logger.error('Error fetching user applications:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 export const updateApplication = async (req: IAuthRequest, res: Response) => {
   try {
@@ -244,7 +241,7 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return; 
+      return;
     }
 
     if (user.pinned_apps.length >= 3) {
@@ -275,12 +272,12 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return; 
+      return;
     }
 
     if (!user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application is not pinned' });
-      return; 
+      return;
     }
 
     user.pinned_apps = user.pinned_apps.filter((id) => id.toString() !== appId);

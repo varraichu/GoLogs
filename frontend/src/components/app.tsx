@@ -14,7 +14,7 @@ import Context = require('ojs/ojcontext')
 import { SideBar } from './Navbar/SideBar'
 import { Header } from './header'
 import UserApplications from "../views/user-applications/UserApplications";
-import { ToastProvider} from '../context/ToastContext'
+import { ToastProvider } from '../context/ToastContext'
 
 type Props = {
   appName?: string
@@ -75,35 +75,35 @@ export const App = registerCustomElement(
     if (!isAuthenticated) {
       return <Login />
     }
-    const setStartOpen = ()=>setStartOpened(!startOpened);
+    const setStartOpen = () => setStartOpened(!startOpened);
     return (
       <ToastProvider>
-      <div>
-        <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
-        <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={startOpened}>
-          <SideBar
-          // slot="start" 
-            setIsAuthenticated={setIsAuthenticated}
-            isAdmin={isAdmin}
-            pictureUrl={profileUrl}
-            username={username}
-          />
-          <div>
-            <Router>
-              {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
-              <Dashboard path="/dashboard" />
-              <Settings path="/settings" isAdmin={isAdmin} userId={userId}/>
-              {isAdmin ? (
-            <Applications path="/applications" />
-          ) : (
-            <UserApplications path="/user-applications" />
-          )}
-              <Logs path="/logs" />
-              {isAdmin && <UserGroups path="/usergroups" />}
-            </Router>
-          </div>
-        </oj-c-drawer-layout>
-      </div>
+        <div>
+          <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
+          <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={startOpened}>
+            <SideBar
+              // slot="start" 
+              setIsAuthenticated={setIsAuthenticated}
+              isAdmin={isAdmin}
+              pictureUrl={profileUrl}
+              username={username}
+            />
+            <div>
+              <Router>
+                {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
+                <Dashboard path="/dashboard" userId={userId} />
+                <Settings path="/settings" isAdmin={isAdmin} userId={userId} />
+                {isAdmin ? (
+                  <Applications path="/applications" />
+                ) : (
+                  <UserApplications path="/user-applications" />
+                )}
+                <Logs path="/logs" />
+                {isAdmin && <UserGroups path="/usergroups" />}
+              </Router>
+            </div>
+          </oj-c-drawer-layout>
+        </div>
       </ToastProvider>
     )
   }

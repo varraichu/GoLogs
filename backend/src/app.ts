@@ -10,6 +10,7 @@ import logRoutes from './routes/logs.routes';
 import settingsRoutes from './routes/settings.routes';
 import { errorHandler } from './middleware/error.middleware';
 import assignGroupRoutes from './routes/assignGroup.routes';
+import appsHealthRoutes from './routes/appsHealth.routes';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/directory', directoryRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/appsHealth', appsHealthRoutes);
 
 app.use(errorHandler);
 

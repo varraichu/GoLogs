@@ -10,17 +10,19 @@ import Toast from '../../../components/Toast';
 
 import applicationsService, { Application, UserGroup } from '../../../services/applications.services';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
-
-interface LogFiltersProps {
-  onFilterChange: (filters: {
-    apps: string[];
-    logTypes: string[];
-    fromDate: string | undefined;
-    toDate: string | undefined;
-  }) => void;
+interface filters {
+  apps: string[];
+  logTypes: string[];
+  fromDate: string | undefined;
+  toDate: string | undefined;
 }
 
-const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
+interface LogFiltersProps {
+  filters: filters;
+  onFilterChange: (filters: filters) => void;
+}
+
+const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
 
   const [appOptions, setAppOptions] = useState<{ value: string, label: string }[]>([]);
@@ -32,7 +34,7 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
   ]);
 
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
-  const [selectedLogTypes, setSelectedLogTypes] = useState<string[]>([]);
+  const [selectedLogTypes, setSelectedLogTypes] = useState<string[]>(filters.logTypes);
 
   const [fromDate, setFromDate] = useState<string | undefined>(undefined);
   const [toDate, setToDate] = useState<string | undefined>(undefined);
