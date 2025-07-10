@@ -421,3 +421,184 @@ export const fetchUserLogsWithAppInfo = async ({
     },
   };
 };
+
+interface LogSummaryOptions {
+  userId: string;
+  startDate: Date;
+  endDate: Date;
+}
+
+export const fetchUserLogSummaryByApp = async ({
+  userId,
+  startDate,
+  endDate,
+}: LogSummaryOptions) => {
+  const effectiveStartDate = startDate || new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const effectiveEndDate = endDate || new Date();
+
+  const userGroups = await UserGroupMembers.find({
+    user_id: userId,
+    is_active: true,
+  }).select('group_id');
+
+  const groupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
+
+  if (groupIds.length === 0) return [];
+
+  const userGroupApps = await UserGroupApplications.find({
+    group_id: { $in: groupIds },
+    is_active: true,
+  }).select('app_id');
+
+  const appIds = userGroupApps.map((g) => g.app_id as mongoose.Types.ObjectId);
+  if (appIds.length === 0) return [];
+
+  const match = {
+    app_id: { $in: appIds },
+    timestamp: { $gte: effectiveStartDate, $lte: effectiveEndDate },
+  };
+
+  const summary = await Log.aggregate([
+    { $match: match },
+    {
+      $lookup: {
+        from: 'applications',
+        localField: 'app_id',
+        foreignField: '_id',
+        as: 'application',
+      },
+    },
+    { $unwind: '$application' },
+
+    // Count per log_type per app
+    {
+      $group: {
+        _id: {
+          app_id: '$app_id',
+          app_name: '$application.name',
+          log_type: { $toLower: '$log_type' }, // normalize
+        },
+        count: { $sum: 1 },
+      },
+    },
+
+    // Group all log_types under each app
+    {
+      $group: {
+        _id: {
+          app_id: '$_id.app_id',
+          app_name: '$_id.app_name',
+        },
+        logTypePairs: {
+          $push: {
+            k: '$_id.log_type',
+            v: '$count',
+          },
+        },
+        total: { $sum: '$count' },
+      },
+    },
+
+    // Flatten logTypePairs into fields
+    {
+      $addFields: {
+        logTypes: { $arrayToObject: '$logTypePairs' },
+      },
+    },
+
+    // Final projection with flattened fields
+    {
+      $project: {
+        _id: 0,
+        app_id: '$_id.app_id',
+        app_name: '$_id.app_name',
+        total: 1,
+        debug: '$logTypes.debug',
+        info: '$logTypes.info',
+        warn: '$logTypes.warn',
+        error: '$logTypes.error',
+      },
+    },
+  ]);
+
+  return summary;
+};
+
+interface AllAppsLogSummaryOptions {
+  startDate: Date;
+  endDate: Date;
+}
+
+export const fetchAllAppsLogSummary = async ({ startDate, endDate }: AllAppsLogSummaryOptions) => {
+  const effectiveStartDate = startDate || new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const effectiveEndDate = endDate || new Date();
+
+  const match = {
+    timestamp: { $gte: effectiveStartDate, $lte: effectiveEndDate },
+  };
+
+  const summary = await Log.aggregate([
+    { $match: match },
+    {
+      $lookup: {
+        from: 'applications',
+        localField: 'app_id',
+        foreignField: '_id',
+        as: 'application',
+      },
+    },
+    { $unwind: '$application' },
+
+    // Count per log_type per app
+    {
+      $group: {
+        _id: {
+          app_id: '$app_id',
+          app_name: '$application.name',
+          log_type: { $toLower: '$log_type' }, // normalize
+        },
+        count: { $sum: 1 },
+      },
+    },
+
+    // Group all log_types under each app
+    {
+      $group: {
+        _id: {
+          app_id: '$_id.app_id',
+          app_name: '$_id.app_name',
+        },
+        logTypePairs: {
+          $push: {
+            k: '$_id.log_type',
+            v: '$count',
+          },
+        },
+        total: { $sum: '$count' },
+      },
+    },
+
+    // Flatten logTypePairs into fields
+    {
+      $addFields: {
+        logTypes: { $arrayToObject: '$logTypePairs' },
+      },
+    },
+
+    // Final projection with flattened fields
+    {
+      $project: {
+        _id: 0,
+        app_id: '$_id.app_id',
+        app_name: '$_id.app_name',
+        total: 1,
+        debug: '$logTypes.debug',
+        info: '$logTypes.info',
+        warn: '$logTypes.warn',
+        error: '$logTypes.error',
+      },
+    },
+  ]);
+
+  return summary;
+};

@@ -2,13 +2,18 @@
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import logger from '../config/logger';
-import { fetchPaginatedLogsWithAppInfo, fetchUserLogsWithAppInfo } from '../services/logs.service';
+import {
+  fetchPaginatedLogsWithAppInfo,
+  fetchUserLogSummaryByApp,
+  fetchUserLogsWithAppInfo,
+} from '../services/logs.service';
 import UserGroupMembers from '../models/UserGroupMembers';
 import mongoose from 'mongoose';
 import UserGroupApplications from '../models/UserGroupApplications';
 import { UserIdParams } from '../schemas/application.validator';
 import { UpdateLogTTLInput, LogsQueryInput, logsQuerySchema } from '../schemas/logs.validator';
 import Logs from '../models/Logs';
+import LogsSummary from '../models/LogsSummary';
 
 interface SortCriteria {
   field: string;
@@ -28,12 +33,12 @@ export const getAllLogs = async (req: IAuthRequest, res: Response) => {
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-          const [field, direction] = item.split(':');
-          return {
-            field: field.trim(),
-            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-          } as SortCriteria;
-        })
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -80,12 +85,12 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-          const [field, direction] = item.split(':');
-          return {
-            field: field.trim(),
-            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-          } as SortCriteria;
-        })
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -185,5 +190,193 @@ export const getLogTTL = async (req: IAuthRequest, res: Response): Promise<void>
   } catch (error) {
     logger.error('Error fetching TTL:', error);
     res.status(500).json({ message: 'Server error while fetching TTL.' });
+  }
+};
+
+
+// File: controllers/logs.controller.ts
+import { Parser } from 'json2csv'; // for CSV conversion
+
+export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params as UserIdParams;
+
+    // Convert query params
+    const page = 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sort = req.query.sort as string | undefined;
+
+    const log_type = req.query.log_type as string | string[] | undefined;
+    const app_name = req.query.app_name as string | string[] | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const search = req.query.search as string | undefined;
+
+    const sortCriteria: SortCriteria[] = sort
+      ? sort.split(',').map((item) => {
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
+      : [{ field: 'timestamp', direction: 'desc' }];
+
+    const filters = {
+      log_type,
+      app_name,
+      startDate,
+      endDate,
+      search,
+    };
+
+    const { logs, total, pagination } = await fetchUserLogsWithAppInfo({
+      userId,
+      page,
+      limit,
+      sortCriteria,
+      filters,
+    });
+
+    // Convert logs to CSV
+    const fields = ['timestamp', 'log_type', 'message', 'app_name', 'ingested_at'];
+    const parser = new Parser({ fields });
+    const csv = parser.parse(logs);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('logs-export.csv');
+    res.send(csv);
+    return
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to export logs' });
+    return
+  }
+};
+export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
+  try {
+    // const { userId } = req.params as UserIdParams;
+
+    // Convert query params
+    const page = 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sort = req.query.sort as string | undefined;
+
+    const log_type = req.query.log_type as string | string[] | undefined;
+    const app_name = req.query.app_name as string | string[] | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const search = req.query.search as string | undefined;
+
+    const sortCriteria: SortCriteria[] = sort
+      ? sort.split(',').map((item) => {
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
+      : [{ field: 'timestamp', direction: 'desc' }];
+
+    const filters = {
+      log_type,
+      app_name,
+      startDate,
+      endDate,
+      search,
+    };
+
+    const { logs, total, pagination } = await fetchPaginatedLogsWithAppInfo({
+      page,
+      limit,
+      sortCriteria,
+      filters,
+    });
+
+    // Convert logs to CSV
+    const fields = ['timestamp', 'log_type', 'message', 'app_name', 'ingested_at'];
+    const parser = new Parser({ fields });
+    const csv = parser.parse(logs);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('logs-export.csv');
+    res.send(csv);
+    return
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to export logs' });
+    return
+  }
+}
+
+export const getUserLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params as UserIdParams;
+
+    // Optional date range (default to last 24h)
+    const startDate = req.query.startDate
+      ? new Date(req.query.startDate as string)
+      : new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
+
+    const data = await fetchUserLogSummaryByApp({ userId, startDate, endDate });
+
+    res.status(200).json({
+      message: 'Log summary fetched successfully',
+      data,
+    });
+  } catch (error) {
+    logger.error('Error fetching log summary:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getCachedLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params as UserIdParams;
+
+    // Step 1: Get active groups the user belongs to
+    const userGroups = await UserGroupMembers.find({
+      user_id: userId,
+      is_active: true,
+    }).select('group_id');
+
+    const groupIds = userGroups.map((userGroup) => userGroup.group_id);
+
+    if (groupIds.length === 0) {
+      res.status(200).json({ message: 'User has no groups', data: [] });
+    }
+
+    const groupApps = await UserGroupApplications.find({
+      group_id: { $in: groupIds },
+      is_active: true,
+    }).select('app_id');
+
+    const appIds = groupApps.map((groupApp) => groupApp.app_id);
+
+    if (appIds.length === 0) {
+      res.status(200).json({ message: 'User has no app access', data: [] });
+    }
+
+    const summaries = await LogsSummary.find({
+      app_id: { $in: appIds },
+    });
+
+    res.status(200).json({ message: 'User summary fetched', data: summaries });
+  } catch (error) {
+    logger.error('Error fetching user log summary:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getAllCachedLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
+  try {
+    const summaries = await LogsSummary.find({});
+
+    res.status(200).json({ message: 'Admin summaries fetched', data: summaries });
+  } catch (error) {
+    logger.error('Error fetching user log summary:', error);
+    res.status(500).json({ message: 'Server error' });
+
   }
 };

@@ -3,6 +3,7 @@ import { h } from 'preact';
 import 'ojs/ojdialog';
 import 'ojs/ojbutton';
 import 'ojs/ojformlayout';
+import LogGraph from "./components/LogGraph";
 
 import AppsHealth from './components/AppsHealth'
 
@@ -215,8 +216,21 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
 
     return (
         <div class="oj-flex oj-sm-padding-4x">
-            <AppsHealth userId={userId} />
-            {/* Header with pin icon and +Pin Apps button */}
+
+            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
+                style={{ marginBottom: "12px" }}>
+                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
+                    <h3 style={{
+                        margin: 0,
+                        fontWeight: "bold",
+                        fontSize: "1.3rem"
+                    }}>Logs in the past 24 hours</h3>
+                </div>
+            </div>
+            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
+                <LogGraph></LogGraph>
+            </div>
+
             <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
                 style={{ marginBottom: "12px" }}>
                 <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
@@ -231,6 +245,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                         fontSize: "1.3rem"
                     }}>Pinned Applications</h3>
                 </div>
+
 
                 <oj-button
                     onojAction={() => setShowPinDialog(true)}
@@ -467,5 +482,6 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
 };
 
 export default Dashboard;
+
 
 
