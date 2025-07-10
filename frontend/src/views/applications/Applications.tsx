@@ -402,11 +402,14 @@ const Applications = (props: { path?: string }) => {
       {/* 5. CONTENT (APP CARDS) */}
       <div
         id="applicationsListContainer"
-        class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-center"
+        class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-flex-start"
         style="flex: 1; min-height: 0; gap: 16px; position: relative;"
       >
         {isLoadingPage ? (
-          <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
+          <div class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-center">
+            <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
+
+          </div>
         ) : (
           <ApplicationsList
             applications={applications}
