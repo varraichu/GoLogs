@@ -5,24 +5,9 @@ import 'ojs/ojbutton';
 import 'ojs/ojformlayout';
 import LogGraph from "./components/LogGraph";
 
-import AppsHealth from './components/AppsHealth'
-
-interface CriticalLogs {
-    totalLogs: number;
-    errorLogs: number;
-    warningLogs: number;
-}
-
-interface Application {
-    _id: string;
-    name: string;
-    description: string;
-    isPinned: boolean;
-    is_active: boolean;
-    logCount: number;
-    created_at: string;
-    criticalLogs: CriticalLogs;
-}
+import { Application } from "../../services/dashboard.services";
+import dashboardService from "../../services/dashboard.services";
+import { handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
 
 const Dashboard = (props: { path?: string; userId?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
@@ -34,7 +19,16 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
     const [errorDialogMessage, setErrorDialogMessage] = useState("");
 
     useEffect(() => {
-        fetchApplications();
+        const loadApplications = async () => {
+            try {
+                const { applications: fetchedApplications, userId: fetchedUserId } = await dashboardService.fetchApplications();
+                setApplications(fetchedApplications);
+                setUserId(fetchedUserId);
+            } catch (error) {
+                console.error("Failed to fetch applications", error);
+            }
+        };
+        loadApplications();
     }, []);
 
     useEffect(() => {
@@ -42,194 +36,10 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
         setSelectedAppIds(pinnedAppIds);
     }, [applications]);
 
-    const fetchApplications = async () => {
-        try {
-            const token = localStorage.getItem('jwt');
-            if (token) {
-                const base64Payload = token.split('.')[1];
-                const payload = JSON.parse(atob(base64Payload));
-                const userId = payload._id;
-                setUserId(userId);
-
-                const res = await fetch(`http://localhost:3001/api/applications/${userId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                const data = await res.json();
-                setApplications(data.applications || []);
-                fetchCriticalLogs(data.applications || []);
-            } else {
-                console.warn('JWT token not found in localStorage');
-            }
-        } catch (error) {
-            console.error("Failed to fetch applications", error);
-        }
-    };
-
-    const fetchCriticalLogs = async (applications: Application[]) => {
-        const token = localStorage.getItem('jwt');
-        if (!token) return;
-
-        const updatedApps = await Promise.all(applications.map(async (app) => {
-            try {
-                const res = await fetch(`http://localhost:3001/api/applications/logs/critical/${app._id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (!res.ok) throw new Error(`Failed to fetch logs for app ${app._id}`);
-
-                const criticalLogs = await res.json();
-                return {
-                    ...app,
-                    criticalLogs: {
-                        totalLogs: criticalLogs.totalLogs ?? 0,
-                        errorLogs: criticalLogs.errorLogs ?? 0,
-                        warningLogs: criticalLogs.warningLogs ?? 0,
-                    },
-                };
-            } catch (error) {
-                console.error(`Error fetching logs for app ${app._id}:`, error);
-                return {
-                    ...app,
-                    criticalLogs: { totalLogs: 0, errorLogs: 0, warningLogs: 0 },
-                };
-            }
-        }));
-
-        setApplications(updatedApps);
-    };
-
-    const handleCheckboxChange = async (appId: string) => {
-        const wasSelected = selectedAppIds.includes(appId);
-        setSelectedAppIds(prev =>
-            wasSelected
-                ? prev.filter(id => id !== appId)
-                : prev.length < 3
-                    ? [...prev, appId]
-                    : prev
-        );
-
-        if (wasSelected) {
-            try {
-                const token = localStorage.getItem('jwt');
-                if (!token || !userId) return;
-
-                const response = await fetch(
-                    `http://localhost:3001/api/applications/unpin/${userId}/${appId}`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error('Failed to unpin application');
-                }
-
-                setApplications(prev => prev.map(app =>
-                    app._id === appId ? { ...app, isPinned: false } : app
-                ));
-
-
-            } catch (error) {
-                console.error('Error unpinning application:', error);
-                setSelectedAppIds(prev => [...prev, appId]);
-                setErrorDialogMessage("Failed to unpin application");
-                setShowErrorDialog(true);
-            }
-        } else {
-            if (selectedAppIds.length >= 3) {
-                setErrorDialogMessage("You can pin a maximum of 3 applications.");
-                setShowErrorDialog(true);
-            }
-        }
-    };
-
-
-    const savePinnedApps = async () => {
-        try {
-            const token = localStorage.getItem('jwt');
-            if (!token || !userId) return;
-
-            const appsToPin = selectedAppIds.filter(appId =>
-                !applications.find(app => app._id === appId)?.isPinned
-            );
-
-            const results = await Promise.all(appsToPin.map(async appId => {
-                const response = await fetch(
-                    `http://localhost:3001/api/applications/pin/${userId}/${appId}`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to pin application');
-                }
-                return appId;
-            }));
-
-            setApplications(prev => prev.map(app =>
-                selectedAppIds.includes(app._id)
-                    ? { ...app, isPinned: true }
-                    : app
-            ));
-            if (appsToPin.length > 0) {
-                const pinnedNames = applications
-                    .filter(app => appsToPin.includes(app._id))
-                    .map(app => app.name)
-                    .join(', ');
-
-                setErrorDialogMessage(`Pinned: ${pinnedNames}`);
-                setShowErrorDialog(true);
-            }
-            setShowPinDialog(false);
-
-
-        } catch (error) {
-            console.error('Error saving pinned apps:', error);
-            setErrorDialogMessage(
-                error && typeof error === "object" && "message" in error
-                    ? (error as { message: string }).message
-                    : "Failed to save pinned apps"
-            );
-            setShowErrorDialog(true);
-        }
-    };
-
     const pinnedApplications = applications.filter(app => app.isPinned);
 
     return (
         <div class="oj-flex oj-sm-padding-4x">
-
-            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
-                style={{ marginBottom: "12px" }}>
-                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
-                    <h3 style={{
-                        margin: 0,
-                        fontWeight: "bold",
-                        fontSize: "1.3rem"
-                    }}>Application Health</h3>
-                </div>
-            </div>
-            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
-                <AppsHealth userId={userId} />
-            </div>
 
             <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
                 style={{ marginBottom: "12px" }}>
@@ -293,7 +103,8 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                                             class="oj-checkbox-input"
 
                                             checked={selectedAppIds.includes(app._id)}
-                                            onChange={() => handleCheckboxChange(app._id)}
+                                            // onChange={() => handleCheckboxChange(app._id)}
+                                            onChange={() => handleCheckboxChange(app._id, userId, selectedAppIds, setSelectedAppIds, setApplications, setErrorDialogMessage, setShowErrorDialog)}
                                             style="margin-right: 8px;"
                                         />
                                         <span class="oj-typography-body-md" style="flex-grow: 1;">
@@ -330,7 +141,10 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                             Cancel
                         </oj-button>
 
-                        <oj-button onojAction={savePinnedApps} chroming="callToAction" style="margin-left: 0.5rem;">
+                        <oj-button onojAction={() => savePinnedApps(userId, selectedAppIds, applications, setApplications, setShowPinDialog, setErrorDialogMessage, setShowErrorDialog)}
+                            chroming="callToAction"
+                            style="margin-left: 0.5rem;"
+                        >
                             Pin Selected
                         </oj-button>
                     </div>
@@ -496,6 +310,3 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
 };
 
 export default Dashboard;
-
-
-
