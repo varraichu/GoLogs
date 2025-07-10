@@ -224,7 +224,7 @@ const Logs = (props: { path?: string }) => {
         {/* style={{backgroundColor: '#8ace00'}} */}
 
 
-        <SearchBar value={filters.search} onChange={handleSearchChange} />
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
 
       </div>
 

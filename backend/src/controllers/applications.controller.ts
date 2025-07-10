@@ -16,6 +16,7 @@ import logger from '../config/logger';
 import { getDetailedApplications } from '../services/applications.service';
 import Logs from '../models/Logs';
 import Users from '../models/Users';
+import { getPaginatedFilteredApplications } from '../services/applications.service'; 
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {
@@ -49,24 +50,30 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
 
 export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   try {
-    const apps = await Applications.find({ is_deleted: false }).select('_id');
-    const appIds = apps.map((g) => g._id as mongoose.Types.ObjectId);
+    // Extract query parameters for filtering, searching, and pagination
+    const search = req.query.search as string | undefined;
+    const groupIds = (req.query.groupIds as string)?.split(',') || [];
+    const status = req.query.status as 'active' | 'inactive' | undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
-    if (appIds.length === 0) {
-      res.status(200).json([]);
-      return;
-    }
+    // Pass parameters to the new service function
+    const { applications, pagination } = await getPaginatedFilteredApplications({
+      search,
+      groupIds,
+      status,
+      page,
+      limit,
+    });
 
-    const detailedApps = await getDetailedApplications(appIds);
-
-    res
-      .status(200)
-      .json({ message: 'Applications fetched successfully', applications: detailedApps });
-    return;
+    res.status(200).json({
+      message: 'Applications fetched successfully',
+      applications,
+      pagination,
+    });
   } catch (error) {
-    logger.error('Error fetching all user groups:', error);
+    logger.error('Error fetching all applications:', error);
     res.status(500).json({ message: 'Server error' });
-    return;
   }
 };
 
@@ -203,7 +210,6 @@ export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
   try {
     const { appId } = req.params as ApplicationParams;
 
-    // Fetch log data for the app
     const logStats = await Logs.aggregate([
       { $match: { app_id: new mongoose.Types.ObjectId(appId) } },
       {
@@ -234,7 +240,6 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
   try {
     const { userId, appId } = req.params as { userId: string; appId: string };
 
-    // Find the user
     const user = await Users.findById(userId);
 
     if (!user) {
@@ -242,19 +247,16 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
       return; // Early return on error
     }
 
-    // Check if the user already has 3 pinned apps
     if (user.pinned_apps.length >= 3) {
       res.status(400).json({ message: 'Cannot pin more than 3 apps' });
       return; // Early return if user has too many pinned apps
     }
 
-    // Check if the app is already pinned
     if (user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application already pinned' });
       return; // Early return if the app is already pinned
     }
 
-    // Pin the app (add appId to pinned_apps array)
     user.pinned_apps.push(new mongoose.Types.ObjectId(appId));
     await user.save();
 
@@ -269,7 +271,6 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
   try {
     const { userId, appId } = req.params as { userId: string; appId: string };
 
-    // Find the user
     const user = await Users.findById(userId);
 
     if (!user) {
@@ -277,13 +278,11 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
       return; // Early return on error
     }
 
-    // Check if the app is pinned
     if (!user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application is not pinned' });
       return; // Early return if the app is not pinned
     }
 
-    // Remove the appId from pinned_apps array
     user.pinned_apps = user.pinned_apps.filter((id) => id.toString() !== appId);
     await user.save();
 
