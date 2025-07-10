@@ -10,7 +10,6 @@ const router = express.Router();
 router.get('/', protect, isAdmin, validate(logsQuerySchema), getAllLogs);
 // router.get('/', validate(logsQuerySchema), getAllLogs);
 
-router.get('/:userId', validate(logsQuerySchema), getUserLogs);
 router.patch(
   '/config/ttl',
   protect,
@@ -20,10 +19,11 @@ router.patch(
 );
 
 router.get('/get/ttl', getLogTTL);
-router.get('/export/:userId', protect,
-  isSelfOrAdmin((req) => req.params.userId as string), validate(logsQuerySchema), exportUserLogs);
 router.get('/export', protect,
   isAdmin, validate(logsQuerySchema), exportAdminLogs);
+router.get('/export/:userId', protect,
+  isSelfOrAdmin((req) => req.params.userId as string), validate(logsQuerySchema), exportUserLogs);
+router.get('/:userId', validate(logsQuerySchema), getUserLogs);
 // router.patch(
 //   '/config/ttl',
 //   validate(updateLogTTLSchema), // Using the new schema
