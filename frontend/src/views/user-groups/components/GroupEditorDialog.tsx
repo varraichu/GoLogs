@@ -44,7 +44,9 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
     }, [availableApps]);
 
     return (
-        <oj-dialog id="groupDialog" dialogTitle={editingGroup ? 'Edit Group' : 'Create Group'} initialVisibility="show" onojClose={onClose}>
+        <oj-dialog id="groupDialog" dialogTitle={editingGroup ? 'Edit Group' : 'Create Group'} initialVisibility="show" onojClose={onClose}
+        headerDecoration='off' 
+        >
             <div class="oj-dialog-body">
                 <oj-c-form-layout>
                     <oj-c-input-text

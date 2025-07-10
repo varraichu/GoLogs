@@ -51,7 +51,7 @@ export interface Pagination {
 
 export interface ApplicationsResponse {
   applications: Application[];
-  pagination?: Pagination; 
+  pagination?: Pagination;
   message?: string;
 }
 
@@ -87,9 +87,9 @@ class ApplicationsService {
     filters: { search?: string; groupIds?: string[]; status?: string },
     pagination: { page: number; limit: number }
   ): Promise<ApplicationsResponse> {
-    
+
     const params = new URLSearchParams();
-    
+
     // Pagination
     params.append('page', String(pagination.page));
     params.append('limit', String(pagination.limit));
@@ -137,6 +137,30 @@ class ApplicationsService {
     }
 
     return data;
+  }
+
+  async fetchApplicationsByRole(
+    filters: { search?: string; groupIds?: string[]; status?: string },
+    pagination: { page: number; limit: number }
+  ): Promise<ApplicationsResponse> {
+    const token = localStorage.getItem('jwt');
+    if (!token) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const base64Payload = token.split('.')[1];
+      const payload = JSON.parse(atob(base64Payload));
+
+      if (payload.isAdmin) {
+        return await this.fetchApplications(filters, pagination);
+      } else {
+        return await this.fetchUserApplications();
+      }
+    } catch (err) {
+      console.error('Error decoding JWT or fetching applications:', err);
+      throw new Error('Failed to fetch applications based on user role');
+    }
   }
 
   /**

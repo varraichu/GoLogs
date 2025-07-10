@@ -1,0 +1,148 @@
+/* File: src/components/user-group-card.css */
+
+.user-group-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  flex: 1 1 calc(33.33% - 24px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 280px;
+}
+
+/* Header */
+.user-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.user-group-title-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.user-group-title {
+  margin: 0;
+  flex: 1;
+  word-break: break-word;
+}
+
+.status-badge {
+  margin-left: 12px;
+  padding: 2px 10px;
+  font-weight: 500;
+  font-size: 0.85em;
+}
+
+.status-active {
+  color: #065f46;
+}
+
+.status-inactive {
+  color: #991b1b;
+}
+
+/* Description */
+.user-group-description {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+
+  display: box;
+  line-clamp: 2;
+  box-orient: vertical;
+}
+
+/* Stats */
+.stats-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: rgba(243, 243, 243, 0.6);
+  padding: 8px;
+  border-radius: 8px;
+  flex: 1;
+}
+
+.stat-link {
+  cursor: pointer;
+}
+
+/* Chips */
+.group-chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 0;
+}
+
+.group-chip,
+.more-chip {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 20px;
+}
+
+.group-chip {
+  color: rgb(25, 85, 160);
+  background-color: rgb(220, 235, 255);
+}
+
+.more-chip {
+  color: rgb(0, 0, 0);
+  background-color: rgb(243, 243, 243);
+}
+
+/* Footer */
+.user-group-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .user-group-card {
+    flex: 1 1 calc(50% - 24px);
+  }
+}
+
+@media (max-width: 600px) {
+  .user-group-card {
+    flex: 1 1 100%;
+  }
+
+  .stats-container {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .user-group-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

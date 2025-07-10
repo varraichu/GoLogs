@@ -8,7 +8,7 @@ import 'oj-c/input-text'
 import 'oj-c/form-layout'
 import 'oj-c/select-multiple'
 import 'oj-c/card-view'
-import 'ojs/ojinputsearch'; 
+import 'ojs/ojinputsearch';
 import { useToast } from '../../context/ToastContext'
 import Toast from '../../components/Toast'
 import SearchBar from '../../components/SearchBar';
@@ -21,6 +21,7 @@ import 'ojs/ojbutton'
 import 'ojs/ojtoolbar'
 
 import 'oj-c/tab-bar';
+import 'oj-c/progress-circle';
 
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 import ArrayDataProvider = require('ojs/ojarraydataprovider')
@@ -29,12 +30,14 @@ import { ApplicationsList } from './components/ApplicationLists';
 import { ApplicationDialog } from './components/ApplicationDialog';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 
-import { ApplicationFilters } from './components/ApplicationFilters'; 
+import { ApplicationFilters } from './components/ApplicationFilters';
 
 import applicationsService, { Application, UserGroup } from '../../services/applications.services'
+import '../../styles/applications-page.css';
 
 const Applications = (props: { path?: string }) => {
   const [applications, setApplications] = useState<Application[]>([])
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
   const { addNewToast } = useToast();
   const [showDialog, setShowDialog] = useState(false)
   const [editingApplication, setEditingApplication] = useState<Application | null>(null)
@@ -45,7 +48,7 @@ const Applications = (props: { path?: string }) => {
   const [assignedGroupIds, setAssignedGroupIds] = useState<any>(new Set([]))
   const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]))
   const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null>(null)
-    
+
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
   const [editingState, setEditingState] = useState<boolean>(false)
   const [selectedItem, setSelectedItem] = useState('active')
@@ -59,10 +62,10 @@ const Applications = (props: { path?: string }) => {
     groupIds: [],
     status: 'all',
   });
-  
+
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 4,
+    limit: 6,
     total: 0,
     totalPages: 1,
     hasNextPage: false,
@@ -90,9 +93,6 @@ const Applications = (props: { path?: string }) => {
     setSelectedItem(newSelection)
   }
 
-  useEffect(() => {
-    fetchApplications()
-  }, [])
 
   useEffect(() => {
     fetchAllUserGroupsForFilter();
@@ -103,15 +103,20 @@ const Applications = (props: { path?: string }) => {
   }, [filters, pagination.page]);
 
   const fetchAllUserGroupsForFilter = async () => {
+    setIsLoadingPage(true);
     try {
       const groups = await applicationsService.fetchAllUserGroups();
       setAllUserGroups(groups.filter(g => !g.is_deleted));
     } catch (error) {
       console.error('Error fetching usergroups for filter:', error);
+      addNewToast('error', 'Failed to fetch user groups', String(error));
+    } finally {
+      setIsLoadingPage(false);
     }
   };
 
   const fetchApplications = async () => {
+    setIsLoadingPage(true);
     try {
       const data = await applicationsService.fetchApplications(filters, { page: pagination.page, limit: pagination.limit });
       setApplications(data.applications || []);
@@ -121,32 +126,35 @@ const Applications = (props: { path?: string }) => {
     } catch (error) {
       console.error('Failed to fetch applications', error);
       addNewToast('error', 'Failed to fetch applications', String(error));
+    } finally {
+      setIsLoadingPage(false);
     }
   };
-  
-  const handleFilterChange = (newFilters: { groupIds: string[]; status:string; }) => {
+
+
+  const handleFilterChange = (newFilters: { groupIds: string[]; status: string; }) => {
     setFilters(prev => ({
       ...prev,
       ...newFilters,
     }));
     setPagination(prev => ({ ...prev, page: 1 }));
   };
-  
+
   const handleSearchChange = (newSearchTerm: string) => {
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
 
     const trimmedSearchTerm = newSearchTerm.trim();
 
-    debounceTimeout.current = setTimeout(() => {
+    debounceTimeout.current = setTimeout(() => {
 
       if (trimmedSearchTerm !== filters.search) {
         setFilters(prev => ({ ...prev, search: trimmedSearchTerm }));
-        setPagination(prev => ({ ...prev, page: 1 }));
+        setPagination(prev => ({ ...prev, page: 1 }));
       }
-    }, 300);
-  };
+    }, 300);
+  };
 
   const openDialog = async (application?: Application) => {
     if (application) {
@@ -180,10 +188,10 @@ const Applications = (props: { path?: string }) => {
     if (!showDialog) return false
     if (name !== initialEditValues.name) return true
     if (description !== initialEditValues.description) return true
-    
+
     const current = new Set(Array.from(assignedGroupIds))
     const initial = new Set(Array.from(initialAssignedGroupIds))
-    console.log("here",name,description,current,initial,initialEditValues,showDialog)
+    console.log("here", name, description, current, initial, initialEditValues, showDialog)
     if (current.size !== initial.size) return true
     for (let id of current) {
       if (!initial.has(id as string)) return true
@@ -192,9 +200,10 @@ const Applications = (props: { path?: string }) => {
   }
 
   const saveApplication = async () => {
-    console.log('Saving application:', name, description)
+    const transformedName = name.replace(/ /g, '.');
+    console.log('Saving application:', transformedName, description)
 
-    const applicationData = { name, description }
+    const applicationData = { name: transformedName, description }
 
     try {
       let result
@@ -238,32 +247,33 @@ const Applications = (props: { path?: string }) => {
 
   const deleteGroup = async () => {
     try {
-      if (!confirmDeleteDialogId) return
+      if (!confirmDeleteDialogId) return;
 
-      const result = await applicationsService.deleteApplication(confirmDeleteDialogId)
-
-      const data = await result.json().catch(() => ({}))
-
+      const result = await applicationsService.deleteApplication(confirmDeleteDialogId);
+      const data = await result.json().catch(() => ({}));
+      
       if (!result.ok) {
         addNewToast(
           'error',
           'Failed to delete application',
           data.message || 'An error occurred while deleting the application.'
-        )
+        );
       } else {
         addNewToast(
           'confirmation',
           'Application deleted',
           data.message || 'Application deleted successfully.'
-        )
+        );
       }
-      fetchApplications()
-      setConfirmDeleteDialogId(null)
+      
+      fetchApplications();
+      setConfirmDeleteDialogId(null);
     } catch (error) {
-      addNewToast('error', 'Failed to delete application', String(error))
-      console.error('Failed to delete application', error)
+      addNewToast('error', 'Failed to delete application', String(error));
+      console.error('Failed to delete application', error);
     }
-  }
+  };
+
 
   const handleToggleApplicationStatus = async (appId: string, isActive: boolean) => {
     try {
@@ -283,38 +293,46 @@ const Applications = (props: { path?: string }) => {
     }
   }
 
+
   const fetchAllUserGroups = async () => {
+    // setIsLoadingPage(true);
     try {
-      const groups = await applicationsService.fetchAllUserGroups()
-      setUserGroups(groups)
-      console.log('Fetched user groups:', groups)
+      const groups = await applicationsService.fetchAllUserGroups();
+      setUserGroups(groups);
+      console.log('Fetched user groups:', groups);
     } catch (error) {
-      console.error('Error fetching usergroups:', error)
-      addNewToast('error', 'Failed to fetch user groups', String(error))
+      console.error('Error fetching usergroups:', error);
+      addNewToast('error', 'Failed to fetch user groups', String(error));
+    } finally {
+      setIsLoadingPage(false);
     }
-  }
+  };
 
   const fetchAppUserGroups = async (appId: string) => {
+    // setIsLoadingPage(true);
     try {
-      const result = await applicationsService.fetchAppUserGroups(appId)
+      const result = await applicationsService.fetchAppUserGroups(appId);
       const validIds = (result.groupIds || [])
         .map(String)
-        .filter((id: string) => userGroups.some((g) => String(g._id) === id))
+        .filter((id: string) => userGroups.some((g) => String(g._id) === id));
 
-      setAssignedGroupIds(new Set(validIds))
-      setInitialAssignedGroupIds(new Set(validIds))
+      setAssignedGroupIds(new Set(validIds));
+      setInitialAssignedGroupIds(new Set(validIds));
 
       if (setAppUserGroups) {
         const assignedNames = userGroups
           .filter((g) => validIds.includes(String(g._id)))
-          .map((g) => g.name)
-        setAppUserGroups(assignedNames)
+          .map((g) => g.name);
+        setAppUserGroups(assignedNames);
       }
     } catch (error) {
-      console.error('Error fetching App usergroups:', error)
-      addNewToast('error', 'Failed to fetch app user groups', String(error))
+      console.error('Error fetching App usergroups:', error);
+      addNewToast('error', 'Failed to fetch app user groups', String(error));
+    } finally {
+      setIsLoadingPage(false);
     }
-  }
+  };
+
 
   const optionsData = useMemo(() => {
     const groupOptions = userGroups
@@ -334,146 +352,154 @@ const Applications = (props: { path?: string }) => {
   }
 
   const assignGroups = async (appId: string) => {
-    if (!appId) return
+    if (!appId) return;
 
     const prevIds = Array.from(
       initialAssignedGroupIds instanceof Set
         ? initialAssignedGroupIds
         : new Set(initialAssignedGroupIds)
-    )
+    );
     const newIds = Array.from(
       assignedGroupIds instanceof Set ? assignedGroupIds : new Set(assignedGroupIds)
-    )
+    );
 
     try {
-      await applicationsService.updateUserGroupAssignments(appId, prevIds, newIds)
-      console.log('Groups assigned successfully')
+      await applicationsService.updateUserGroupAssignments(appId, prevIds, newIds);
+      console.log('Groups assigned successfully');
     } catch (error) {
-      console.error('Failed to assign groups', error)
-      throw error
+      console.error('Failed to assign groups', error);
+      throw error;
+    } finally {
+      setIsLoadingPage(false);
     }
-  }
+  };
 
-return (
-  // 1. MAIN CONTAINER
-  <div
-    class="oj-flex oj-sm-flex-direction-column"
-    style="height: 100%; min-height: 0; flex: 1 1 0;"
-  >
-    {/* 2. PAGE TITLE */}
-    <div class="oj-flex oj-sm-12 oj-sm-padding-5x-start oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-padding-5x-end">
-      <h1 class="oj-typography-heading-md">Applications</h1>
-       <oj-button 
-      class="oj-sm-margin-6x-top" 
-      onojAction={() => openDialog()} 
-      chroming="callToAction"
-    >
-        + Create Application
-      </oj-button>
-    </div>
 
-    {/* 3. SEARCH BAR */}
-    <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-start oj-sm-padding-1x-bottom ">
-      <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Applications" />
-    </div>
 
-    {/* 4. FILTERS */}
-    <ApplicationFilters onFilterChange={handleFilterChange} />
-
-    {/* 5. CONTENT (APP CARDS) */}
-    <div
-      id="applicationsListContainer"
-      class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-padding-4x-start"
-      style="flex: 1; min-height: 0; gap: 16px;" 
-    >
-      <ApplicationsList
-        applications={applications}
-        onToggleStatus={handleToggleApplicationStatus}
-        onEdit={openDialog}
-        onDelete={confirmDeleteGroup}
-      />
-    </div>
-
-    {/* --- PAGINATION --- */}
-    {pagination && pagination.total > 0 && (
-      <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end" style="gap: 16px; margin-top: 24px;">
+  return (
+    // 1. MAIN CONTAINER
+    <div class="oj-flex oj-sm-flex-direction-column applications-page">
+      {/* 2. PAGE TITLE */}
+      <div class="oj-flex oj-sm-12 oj-sm-padding-5x-start oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-padding-5x-end">
+        <h1 class="oj-typography-heading-md">Applications</h1>
         <oj-button
+          class="oj-sm-margin-6x-top"
+          onojAction={() => openDialog()}
           chroming="callToAction"
-          onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-          disabled={!pagination.hasPrevPage}
         >
-          <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
-          Previous
-        </oj-button>
-        <span class="oj-typography-body-md oj-text-color-primary">
-          Page {pagination.page} of {pagination.totalPages}
-        </span>
-        <oj-button
-          chroming="callToAction"
-          onojAction={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-          disabled={!pagination.hasNextPage}
-        >
-          Next
-          <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
+          + Create Application
         </oj-button>
       </div>
-    )}
 
-    {/* --- DIALOGS AND TOAST --- */}
-    {confirmDeleteDialogId && (
-      <ConfirmDialog
-        title="Confirm Deletion"
-        message="Are you sure you want to delete this application?"
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={deleteGroup}
-        onCancel={() => setConfirmDeleteDialogId(null)}
-      />
-    )}
-    {showDialog && (
-      <ApplicationDialog
-        editingApplication={editingApplication}
-        name={name}
-        description={description}
-        userGroups={userGroups}
-        assignedGroupIds={assignedGroupIds}
-        editingState={editingState}
-        onNameChange={setName}
-        onDescriptionChange={setDescription}
-        onAssignedGroupsChange={handleAssignedGroupsChange}
-        onSave={saveApplication}
-        onCancel={() => {
-          if (hasUnsavedChanges()) {
-            setShowDiscardDialog(true)
-          } else {
+      {/* 3. SEARCH BAR */}
+      <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-start oj-sm-padding-1x-bottom ">
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Applications" />
+      </div>
+
+      {/* 4. FILTERS */}
+      <ApplicationFilters onFilterChange={handleFilterChange} />
+
+      {/* 5. CONTENT (APP CARDS) */}
+      <div
+        id="applicationsListContainer"
+        class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-flex-start"
+        style="flex: 1; min-height: 0; gap: 16px; position: relative;"
+      >
+        {isLoadingPage ? (
+          <div class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-center">
+            <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
+
+          </div>
+        ) : (
+          <ApplicationsList
+            applications={applications}
+            onToggleStatus={handleToggleApplicationStatus}
+            onEdit={openDialog}
+            onDelete={confirmDeleteGroup}
+          />
+        )}
+      </div>
+
+      {/* --- PAGINATION --- */}
+      {pagination && pagination.total > 0 && (
+        <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end" style="gap: 16px; margin-top: 24px;">
+          <oj-button
+            chroming="callToAction"
+            onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+            disabled={!pagination.hasPrevPage}
+          >
+            <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
+            Previous
+          </oj-button>
+          <span class="oj-typography-body-md oj-text-color-primary">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <oj-button
+            chroming="callToAction"
+            onojAction={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+            disabled={!pagination.hasNextPage}
+          >
+            Next
+            <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
+          </oj-button>
+        </div>
+      )}
+
+      {/* --- DIALOGS AND TOAST --- */}
+      {confirmDeleteDialogId && (
+        <ConfirmDialog
+          title="Confirm Deletion"
+          message="Are you sure you want to delete this application?"
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={deleteGroup}
+          onCancel={() => setConfirmDeleteDialogId(null)}
+        />
+      )}
+      {showDialog && (
+        <ApplicationDialog
+          editingApplication={editingApplication}
+          name={name}
+          description={description}
+          userGroups={userGroups}
+          assignedGroupIds={assignedGroupIds}
+          editingState={editingState}
+          onNameChange={setName}
+          onDescriptionChange={setDescription}
+          onAssignedGroupsChange={handleAssignedGroupsChange}
+          onSave={saveApplication}
+          onCancel={() => {
+            if (hasUnsavedChanges()) {
+              setShowDiscardDialog(true)
+            } else {
+              setShowDialog(false)
+              setErrors({})
+            }
+          }}
+          hasUnsavedChanges={hasUnsavedChanges()}
+          onDiscardChanges={() => {
             setShowDialog(false)
+            setShowDiscardDialog(false)
             setErrors({})
-          }
-        }}
-        hasUnsavedChanges={hasUnsavedChanges()}
-        onDiscardChanges={() => {
-          setShowDialog(false)
-          setShowDiscardDialog(false)
-          setErrors({})
-        }}
-      />
-    )}
-    {showDiscardDialog && (
-      <ConfirmDialog
-        title="Discard Changes?"
-        message="You have unsaved changes. Are you sure you want to discard them?"
-        confirmText="Discard"
-        cancelText="Cancel"
-        onConfirm={() => {
-          setShowDialog(false)
-          setShowDiscardDialog(false)
-          setErrors({})
-        }}
-        onCancel={() => setShowDiscardDialog(false)}
-      />
-    )}
-    <Toast />
-  </div>
-);
+          }}
+        />
+      )}
+      {showDiscardDialog && (
+        <ConfirmDialog
+          title="Discard Changes?"
+          message="You have unsaved changes. Are you sure you want to discard them?"
+          confirmText="Discard"
+          cancelText="Cancel"
+          onConfirm={() => {
+            setShowDialog(false)
+            setShowDiscardDialog(false)
+            setErrors({})
+          }}
+          onCancel={() => setShowDiscardDialog(false)}
+        />
+      )}
+      <Toast />
+    </div>
+  );
 };
 export default Applications

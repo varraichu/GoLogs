@@ -1,0 +1,867 @@
+Attaching to postgres-db, redis-server, poller, app-fluent3, worker, bridge, app-fluent, app-fluent2, backend, frontend
+[36mapp-fluent     |[0m Waiting for Postgres to be ready...
+[36mapp-fluent     |[0m postgres:5432 - no response
+[36mapp-fluent     |[0m Postgres is unavailable - sleeping
+[36mapp-fluent     |[0m postgres:5432 - accepting connections
+[36mapp-fluent     |[0m Postgres is up!
+[36mapp-fluent     |[0m Starting Node.js application...
+[36mapp-fluent     |[0m 🚀 Writing 10 logs/sec to /demo-app/src/logs/app.log AND stdout for 1 seconds...
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #0","timestamp":"2025-07-10T05:36:18.657Z","log_type":"debug"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #1","timestamp":"2025-07-10T05:36:18.728Z","log_type":"debug"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #2","timestamp":"2025-07-10T05:36:18.737Z","log_type":"warn"}
+[36mapp-fluent     |[0m DB connected
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #3","timestamp":"2025-07-10T05:36:18.740Z","log_type":"warn"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #4","timestamp":"2025-07-10T05:36:18.742Z","log_type":"error"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #5","timestamp":"2025-07-10T05:36:18.745Z","log_type":"debug"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #6","timestamp":"2025-07-10T05:36:18.747Z","log_type":"debug"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #7","timestamp":"2025-07-10T05:36:18.749Z","log_type":"info"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #8","timestamp":"2025-07-10T05:36:18.751Z","log_type":"debug"}
+[36mapp-fluent     |[0m {"message":"Synthetic log entry #9","timestamp":"2025-07-10T05:36:18.753Z","log_type":"debug"}
+[36mapp-fluent     |[0m Wrote batch #1
+[36mapp-fluent     |[0m ✅ Finished writing logs. File stream closed.
+[36mapp-fluent     |[0m App started
+[36mapp-fluent     |[0m Starting Fluent Bit...
+[36mapp-fluent     |[0m Fluent Bit v4.0.0
+[36mapp-fluent     |[0m * Copyright (C) 2015-2025 The Fluent Bit Authors
+[36mapp-fluent     |[0m * Fluent Bit is a CNCF sub-project under the umbrella of Fluentd
+[36mapp-fluent     |[0m * https://fluentbit.io
+[36mapp-fluent     |[0m 
+[36mapp-fluent     |[0m ______ _                  _    ______ _ _             ___  _____ 
+[36mapp-fluent     |[0m |  ___| |                | |   | ___ (_) |           /   ||  _  |
+[36mapp-fluent     |[0m | |_  | |_   _  ___ _ __ | |_  | |_/ /_| |_  __   __/ /| || |/' |
+[36mapp-fluent     |[0m |  _| | | | | |/ _ \ '_ \| __| | ___ \ | __| \ \ / / /_| ||  /| |
+[36mapp-fluent     |[0m | |   | | |_| |  __/ | | | |_  | |_/ / | |_   \ V /\___  |\ |_/ /
+[36mapp-fluent     |[0m \_|   |_|\__,_|\___|_| |_|\__| \____/|_|\__|   \_/     |_(_)___/ 
+[36mapp-fluent     |[0m 
+[36mapp-fluent     |[0m 
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [fluent bit] version=4.0.0, commit=, pid=23
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [storage] ver=1.5.2, type=memory+filesystem, sync=normal, checksum=off, max_chunks_up=128
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [storage] backlog input plugin: storage_backlog.3
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [simd    ] disabled
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [cmetrics] version=0.9.9
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [ctraces ] version=0.6.2
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] initializing
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] storage_strategy='filesystem' (memory + filesystem)
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] db: delete unmonitored stale inodes from the database: count=0
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] initializing
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] storage_strategy='filesystem' (memory + filesystem)
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] db: delete unmonitored stale inodes from the database: count=0
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] initializing
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] storage_strategy='filesystem' (memory + filesystem)
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] db: delete unmonitored stale inodes from the database: count=0
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] initializing
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] storage_strategy='memory' (memory only)
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] queue memory limit: 9.5M
+[36mapp-fluent     |[0m [out-redis] build:2025-07-10 05:25:56+00:00 version: redis connection to: hosts:[{redis 6379}] db:0 usetls:false tlsskipverify:true key:logs
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #0 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #1 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #2 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #3 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #0 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #2 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #1 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #3 started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [http_server] listen iface=0.0.0.0 tcp_port=2020
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [sp] stream processor started
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] inotify_fs_add(): inode=12877815 watch_fd=1 name=/demo-app/src/logs/app.log
+[36mapp-fluent     |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] inotify_fs_add(): inode=12876276 watch_fd=1 name=/demo-app/src/logs/stdout.log
+[33mapp-fluent2    |[0m Waiting for Postgres to be ready...
+[32mapp-fluent3    |[0m Waiting for Postgres to be ready...
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m postgres:5432 - no response
+[33mapp-fluent2    |[0m Postgres is unavailable - sleeping
+[33mapp-fluent2    |[0m postgres:5432 - accepting connections
+[33mapp-fluent2    |[0m Postgres is up!
+[33mapp-fluent2    |[0m Starting Node.js application...
+[33mapp-fluent2    |[0m 🚀 Writing 10 logs/sec to /demo-app/src/logs/app.log AND stdout for 1 seconds...
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #0","timestamp":"2025-07-10T05:36:18.780Z","log_type":"debug"}
+[33mapp-fluent2    |[0m DB connected
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #1","timestamp":"2025-07-10T05:36:18.847Z","log_type":"info"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #2","timestamp":"2025-07-10T05:36:18.850Z","log_type":"error"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #3","timestamp":"2025-07-10T05:36:18.852Z","log_type":"error"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #4","timestamp":"2025-07-10T05:36:18.855Z","log_type":"debug"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #5","timestamp":"2025-07-10T05:36:18.856Z","log_type":"error"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #6","timestamp":"2025-07-10T05:36:18.860Z","log_type":"error"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #7","timestamp":"2025-07-10T05:36:18.862Z","log_type":"debug"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #8","timestamp":"2025-07-10T05:36:18.864Z","log_type":"error"}
+[33mapp-fluent2    |[0m {"message":"Synthetic log entry #9","timestamp":"2025-07-10T05:36:18.869Z","log_type":"debug"}
+[33mapp-fluent2    |[0m Wrote batch #1
+[33mapp-fluent2    |[0m ✅ Finished writing logs. File stream closed.
+[33mapp-fluent2    |[0m App started
+[33mapp-fluent2    |[0m Starting Fluent Bit...
+[33mapp-fluent2    |[0m Fluent Bit v4.0.0
+[33mapp-fluent2    |[0m * Copyright (C) 2015-2025 The Fluent Bit Authors
+[33mapp-fluent2    |[0m * Fluent Bit is a CNCF sub-project under the umbrella of Fluentd
+[33mapp-fluent2    |[0m * https://fluentbit.io
+[33mapp-fluent2    |[0m 
+[33mapp-fluent2    |[0m ______ _                  _    ______ _ _             ___  _____ 
+[33mapp-fluent2    |[0m |  ___| |                | |   | ___ (_) |           /   ||  _  |
+[33mapp-fluent2    |[0m | |_  | |_   _  ___ _ __ | |_  | |_/ /_| |_  __   __/ /| || |/' |
+[33mapp-fluent2    |[0m |  _| | | | | |/ _ \ '_ \| __| | ___ \ | __| \ \ / / /_| ||  /| |
+[33mapp-fluent2    |[0m | |   | | |_| |  __/ | | | |_  | |_/ / | |_   \ V /\___  |\ |_/ /
+[33mapp-fluent2    |[0m \_|   |_|\__,_|\___|_| |_|\__| \____/|_|\__|   \_/     |_(_)___/ 
+[33mapp-fluent2    |[0m 
+[33mapp-fluent2    |[0m 
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [fluent bit] version=4.0.0, commit=, pid=23
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [storage] ver=1.5.2, type=memory+filesystem, sync=normal, checksum=off, max_chunks_up=128
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [storage] backlog input plugin: storage_backlog.3
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [simd    ] disabled
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [cmetrics] version=0.9.9
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [ctraces ] version=0.6.2
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] initializing
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] storage_strategy='filesystem' (memory + filesystem)
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] db: delete unmonitored stale inodes from the database: count=0
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] initializing
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] storage_strategy='filesystem' (memory + filesystem)
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] db: delete unmonitored stale inodes from the database: count=0
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] initializing
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] storage_strategy='filesystem' (memory + filesystem)
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] db: delete unmonitored stale inodes from the database: count=0
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] initializing
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] storage_strategy='memory' (memory only)
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] queue memory limit: 9.5M
+[33mapp-fluent2    |[0m [out-redis] build:2025-07-10 05:25:56+00:00 version: redis connection to: hosts:[{redis 6379}] db:0 usetls:false tlsskipverify:true key:logs
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #0 started
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #1 started
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #2 started
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #3 started
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #1 started
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #2 started
+[35mbackend        |[0m 
+[35mbackend        |[0m > backend@1.0.0 dev
+[35mbackend        |[0m > ts-node-dev src/server.ts
+[35mbackend        |[0m 
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[34mbridge         |[0m Starting log bridge...
+[35mbackend        |[0m [INFO] 05:36:18 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.8.3)
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #0 started
+[32mapp-fluent3    |[0m postgres:5432 - no response
+[34mbridge         |[0m Connecting to Redis at redis:6379...
+[32;1mpostgres-db    |[0m The files belonging to this database system will be owned by user "postgres".
+[32;1mpostgres-db    |[0m This user must also own the server process.
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m The database cluster will be initialized with locale "en_US.utf8".
+[32;1mpostgres-db    |[0m The default database encoding has accordingly been set to "UTF8".
+[32;1mpostgres-db    |[0m The default text search configuration will be set to "english".
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m Data page checksums are disabled.
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m fixing permissions on existing directory /var/lib/postgresql/data ... ok
+[33;1mpoller         |[0m Polling script started, writing to /demo-app/src/shared-logs/polled-logs.log
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m Postgres is unavailable - sleeping
+[32mapp-fluent3    |[0m postgres:5432 - accepting connections
+[32mapp-fluent3    |[0m Postgres is up!
+[32mapp-fluent3    |[0m Starting Node.js application...
+[34mbridge         |[0m Using Redis key: logs
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [http_server] listen iface=0.0.0.0 tcp_port=2020
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #3 started
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [sp] stream processor started
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[33;1mpoller         |[0m Wrote 30 new logs, lastReadId now 30
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] inotify_fs_add(): inode=12878334 watch_fd=1 name=/demo-app/src/logs/app.log
+[34;1mworker         |[0m [dotenv@17.0.0] injecting env (0) from .env – 🔐 encrypt with dotenvx: https://dotenvx.com
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m 🚀 Writing 10 logs/sec to /demo-app/src/logs/app.log AND stdout for 1 seconds...
+[32;1mpostgres-db    |[0m creating subdirectories ... ok
+[34mbridge         |[0m Using BullMQ queue: logQueue
+[35;1mredis-server   |[0m 1:C 10 Jul 2025 05:36:15.250 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+[35;1mredis-server   |[0m 1:C 10 Jul 2025 05:36:15.250 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+[35;1mredis-server   |[0m 1:C 10 Jul 2025 05:36:15.250 * Redis version=7.2.10, bits=64, commit=00000000, modified=0, pid=1, just started
+[35;1mredis-server   |[0m 1:C 10 Jul 2025 05:36:15.250 * Configuration loaded
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:36:15.251 * monotonic clock: POSIX clock_gettime
+[33mapp-fluent2    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] inotify_fs_add(): inode=12877195 watch_fd=1 name=/demo-app/src/logs/stdout.log
+[32;1mpostgres-db    |[0m selecting dynamic shared memory implementation ... posix
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #0","timestamp":"2025-07-10T05:36:18.434Z","log_type":"info"}
+[34;1mworker         |[0m Starting worker for queue "logQueue"...
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[34mbridge         |[0m Batch size: 500. Interval: 5 seconds.
+[34mbridge         |[0m Log bridge is running. Polling every 5 seconds...
+[36mapp-fluent     |[0m pushed 10 logs
+[36mapp-fluent     |[0m pushed 10 logs
+[34;1mworker         |[0m [2025-07-10T05:36:17.140Z] [INFO] [traceid] Connecting to MongoDB at mongodb+srv://GoLogsUser:RDaTT5lxj9g7mWXj@gologsdb.pvsqlbx.mongodb.net/gologs
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #1","timestamp":"2025-07-10T05:36:18.508Z","log_type":"error"}
+[34;1mworker         |[0m [2025-07-10T05:36:19.394Z] [INFO] [traceid] MongoDB connected
+[32;1mpostgres-db    |[0m selecting default max_connections ... 100
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #2","timestamp":"2025-07-10T05:36:18.514Z","log_type":"info"}
+[32mapp-fluent3    |[0m DB connected
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #3","timestamp":"2025-07-10T05:36:18.516Z","log_type":"warn"}
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[32;1mpostgres-db    |[0m selecting default shared_buffers ... 128MB
+[34mbridge         |[0m Processing batch of 60 logs...
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #4","timestamp":"2025-07-10T05:36:18.525Z","log_type":"warn"}
+[34;1mworker         |[0m Worker started with concurrency 500.
+[34mbridge         |[0m Added 60 jobs to the queue.
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:36:15.252 * Running mode=standalone, port=6379.
+[32;1mpostgres-db    |[0m selecting default time zone ... UTC
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:36:15.252 * Server initialized
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:36:15.265 * Creating AOF base file appendonly.aof.1.base.rdb on server start
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:36:15.283 * Creating AOF incr file appendonly.aof.1.incr.aof on server start
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:36:15.283 * Ready to accept connections tcp
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m [2025/07/10 05:36:21] [ info] [input:tail:tail.2] inotify_fs_add(): inode=12886285 watch_fd=1 name=/demo-app/src/shared-logs/polled-logs.log
+[32;1mpostgres-db    |[0m creating configuration files ... ok
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m given time is not in a known format, defaulting to now.
+[36mapp-fluent     |[0m pushed 30 logs
+[32;1mpostgres-db    |[0m running bootstrap script ... ok
+[32;1mpostgres-db    |[0m performing post-bootstrap initialization ... sh: locale: not found
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:16.433 UTC [35] WARNING:  no usable system locales were found
+[32;1mpostgres-db    |[0m ok
+[32;1mpostgres-db    |[0m syncing data to disk ... initdb: warning: enabling "trust" authentication for local connections
+[32;1mpostgres-db    |[0m initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+[32;1mpostgres-db    |[0m ok
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m Success. You can now start the database server using:
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m     pg_ctl -D /var/lib/postgresql/data -l logfile start
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m waiting for server to start....2025-07-10 05:36:17.433 UTC [41] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.434 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.448 UTC [44] LOG:  database system was shut down at 2025-07-10 05:36:17 UTC
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.456 UTC [41] LOG:  database system is ready to accept connections
+[32;1mpostgres-db    |[0m  done
+[32;1mpostgres-db    |[0m server started
+[32;1mpostgres-db    |[0m CREATE DATABASE
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/init-logs-table.sql
+[32;1mpostgres-db    |[0m CREATE TABLE
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m waiting for server to shut down...2025-07-10 05:36:17.616 UTC [41] LOG:  received fast shutdown request
+[32;1mpostgres-db    |[0m .2025-07-10 05:36:17.618 UTC [41] LOG:  aborting any active transactions
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.621 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.623 UTC [42] LOG:  shutting down
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.626 UTC [42] LOG:  checkpoint starting: shutdown immediate
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.712 UTC [42] LOG:  checkpoint complete: wrote 928 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.046 s, sync=0.028 s, total=0.090 s; sync files=306, longest=0.005 s, average=0.001 s; distance=4259 kB, estimate=4259 kB
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.729 UTC [41] LOG:  database system is shut down
+[32;1mpostgres-db    |[0m  done
+[32;1mpostgres-db    |[0m server stopped
+[32;1mpostgres-db    |[0m 
+[32;1mpostgres-db    |[0m PostgreSQL init process complete; ready for start up.
+[32;1mpostgres-db    |[0m 
+[33mapp-fluent2    |[0m pushed 10 logs
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #5","timestamp":"2025-07-10T05:36:18.527Z","log_type":"error"}
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #6","timestamp":"2025-07-10T05:36:18.533Z","log_type":"info"}
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #7","timestamp":"2025-07-10T05:36:18.535Z","log_type":"error"}
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #8","timestamp":"2025-07-10T05:36:18.538Z","log_type":"debug"}
+[32mapp-fluent3    |[0m {"message":"Synthetic log entry #9","timestamp":"2025-07-10T05:36:18.543Z","log_type":"debug"}
+[32mapp-fluent3    |[0m Wrote batch #1
+[32mapp-fluent3    |[0m ✅ Finished writing logs. File stream closed.
+[32mapp-fluent3    |[0m App started
+[32mapp-fluent3    |[0m Starting Fluent Bit...
+[32mapp-fluent3    |[0m Fluent Bit v4.0.0
+[32mapp-fluent3    |[0m * Copyright (C) 2015-2025 The Fluent Bit Authors
+[32mapp-fluent3    |[0m * Fluent Bit is a CNCF sub-project under the umbrella of Fluentd
+[32mapp-fluent3    |[0m * https://fluentbit.io
+[32mapp-fluent3    |[0m 
+[32mapp-fluent3    |[0m ______ _                  _    ______ _ _             ___  _____ 
+[32mapp-fluent3    |[0m |  ___| |                | |   | ___ (_) |           /   ||  _  |
+[32mapp-fluent3    |[0m | |_  | |_   _  ___ _ __ | |_  | |_/ /_| |_  __   __/ /| || |/' |
+[32mapp-fluent3    |[0m |  _| | | | | |/ _ \ '_ \| __| | ___ \ | __| \ \ / / /_| ||  /| |
+[32mapp-fluent3    |[0m | |   | | |_| |  __/ | | | |_  | |_/ / | |_   \ V /\___  |\ |_/ /
+[32mapp-fluent3    |[0m \_|   |_|\__,_|\___|_| |_|\__| \____/|_|\__|   \_/     |_(_)___/ 
+[32mapp-fluent3    |[0m 
+[32mapp-fluent3    |[0m 
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [fluent bit] version=4.0.0, commit=, pid=22
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [storage] ver=1.5.2, type=memory+filesystem, sync=normal, checksum=off, max_chunks_up=128
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [storage] backlog input plugin: storage_backlog.3
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [simd    ] disabled
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [cmetrics] version=0.9.9
+[34mbridge         |[0m Removed logs from Redis. OK
+[33mapp-fluent2    |[0m pushed 10 logs
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [ctraces ] version=0.6.2
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] initializing
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] storage_strategy='filesystem' (memory + filesystem)
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] db: delete unmonitored stale inodes from the database: count=0
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] initializing
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] storage_strategy='filesystem' (memory + filesystem)
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] db: delete unmonitored stale inodes from the database: count=0
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] initializing
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] storage_strategy='filesystem' (memory + filesystem)
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.2] db: delete unmonitored stale inodes from the database: count=0
+[32mapp-fluent3    |[0m [out-redis] build:2025-07-10 05:25:56+00:00 version: redis connection to: hosts:[{redis 6379}] db:0 usetls:false tlsskipverify:true key:logs
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] initializing
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] storage_strategy='memory' (memory only)
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:storage_backlog:storage_backlog.3] queue memory limit: 9.5M
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #0 started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #3 started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #0 started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #2 started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #1 started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #1 started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #2 started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [http_server] listen iface=0.0.0.0 tcp_port=2020
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [sp] stream processor started
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.0] inotify_fs_add(): inode=12876131 watch_fd=1 name=/demo-app/src/logs/app.log
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [input:tail:tail.1] inotify_fs_add(): inode=12875139 watch_fd=1 name=/demo-app/src/logs/stdout.log
+[32mapp-fluent3    |[0m [2025/07/10 05:36:19] [ info] [output:redis:redis.0] worker #3 started
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m pushed 10 logs
+[32mapp-fluent3    |[0m pushed 10 logs
+[32mapp-fluent3    |[0m [2025/07/10 05:36:22] [ info] [input:tail:tail.2] inotify_fs_add(): inode=12886285 watch_fd=1 name=/demo-app/src/shared-logs/polled-logs.log
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[32mapp-fluent3    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m [2025/07/10 05:36:21] [ info] [input:tail:tail.2] inotify_fs_add(): inode=12886285 watch_fd=1 name=/demo-app/src/shared-logs/polled-logs.log
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m given time is not in a known format, defaulting to now.
+[33mapp-fluent2    |[0m pushed 30 logs
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[32mapp-fluent3    |[0m pushed 30 logs
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.847 UTC [1] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.847 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.847 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.852 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.861 UTC [59] LOG:  database system was shut down at 2025-07-10 05:36:17 UTC
+[32;1mpostgres-db    |[0m 2025-07-10 05:36:17.869 UTC [1] LOG:  database system is ready to accept connections
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Job c656d184a29f9fbb81552ca8acdabc311518edb96c9fe1e7d6a9f3d4b923f60d completed
+[34;1mworker         |[0m Job 078e6773a79926a052cf1c46cd6570e36309a634e6369716c40e87086f68bab1 completed
+[34;1mworker         |[0m Job 48f9c0c0c35fc968240323bc47c4f1d80dc2c9cf4140ea74de6da38bb0e5d324 completed
+[34;1mworker         |[0m Job c5b99e31504160c382a95a88d63b813bf5e663dbe29bea3bc6e0a065d7ae2437 completed
+[34;1mworker         |[0m Job d6e9ed74139a15daa0fcb28e596e6fdc4111151ef6d84d5bf3fd999c4437af1d completed
+[34;1mworker         |[0m Job f0e6756945b1ebd1d8f0e4f4f5adc8403b1842ba7665f7a95880172c88465c8c completed
+[34;1mworker         |[0m Job ebeb439c97c0907d3f9fdad669102f027cfbb64b938314f01c6416d4e23be1ae completed
+[34;1mworker         |[0m Job 110f2874bd0c7b4c141d4618061669999d062351d96ae4496e6d9f7518d535a1 completed
+[34;1mworker         |[0m Job 2703743f9ee5fe50eeb13b37f16edb942296270bb8e1b560287aad1ac9a093a7 completed
+[34;1mworker         |[0m Job 00370bc36085086e9df16806b65d91c9e55e1a5a2ad02f55450b64df9cf928fc completed
+[34;1mworker         |[0m Job 66aa7563a86ef38f7e2b58335fc09a77bc906f774f56de96391ebec8f9ccc778 completed
+[34;1mworker         |[0m Job a089bee74fe036602319c45f7b789fed95101cb357bf1e7349e5b5c320661b42 completed
+[34;1mworker         |[0m Job 51eba7031f451dd252ea7e0bfc678612045b6f5c92044a58a2cf8531e50f2340 completed
+[34;1mworker         |[0m Job 4f051e356a18e72dd3b8ee19d4e75e2693ea4290e08427dc053e60b584c87358 completed
+[34;1mworker         |[0m Job c13862d704c94d3f36ef8653ce15f74e2e17bbf69935ca72c7358add399c287d completed
+[34;1mworker         |[0m Job 8a1316b62dec66ed1e8e6009a37f74d96818bf36b7e4e9175b6bfbc5621b465d completed
+[34;1mworker         |[0m Job efc707009892d7d80a96ec63b9071cd2f274d9140487250ccb8a51489115d2c2 completed
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Job 6aca270cf236f74430c8cc5d76777e939bca85da9329d014d857011321242540 completed
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Job 9609ee740d93e31f30b4cfdd0371757634ee27710a3ec900d627ae7ed586614c completed
+[34;1mworker         |[0m Job 914676515e0ede90a2eac39d7eb83647e09723f9efe33aff7a2259100d9ba174 completed
+[34;1mworker         |[0m Job 2d067be9038afbe0483ebcb577577f2e74e623c138f194657f228e2b62289923 completed
+[34;1mworker         |[0m Job bef95e5be07a27ac3d94121e9903806c5dd0452abd975a581be6aa4b3662b28d completed
+[34;1mworker         |[0m Job 240c89c62e8be463a4150b429336311a05a482d85cabe0d54db35aba7b138adf completed
+[34;1mworker         |[0m Job 5af0799428918c35e870e25884c6947c11f56f37247473d04aa6c0d9d5869db3 completed
+[34;1mworker         |[0m Job f6daa04d0116fc4f816601012fe65a4d923a1d76578d05915c8702e739733ee8 completed
+[34;1mworker         |[0m Job 637623b6e60487374b216f4e3a8fad2832e435ea2dac324adbd112bb5ae8ae37 completed
+[34;1mworker         |[0m Job 8e1ae2110aed5a5d53c08ee2819bf41ce8112e93de0a4b248514508bf2340df1 completed
+[34;1mworker         |[0m Job 230241816705742ce42d4ff6042298508671654983976eeaac6cebe46bcea293 completed
+[34;1mworker         |[0m Job 24e935dfdbd0cf992506fba22f9db6bd82397967921971cdfdfb69f907972340 completed
+[34;1mworker         |[0m Job 1e8fb2a855f040851425d3b10130da1838a8cf53f27c4b0765543ac8a1a61b0c completed
+[34;1mworker         |[0m Job b888bd4bd0936b8ab3a7ba4ef33c0726c8879f4d029a7cb5442a5a3b1d4fe9ed completed
+[34;1mworker         |[0m Job 0a8c9081fb31ac9f425e0f15ac061a5d5951195b32e900e6b34986bd5de5536a completed
+[34;1mworker         |[0m Job 1c6057511094676b89f8da1db99579f68cdf71c6c40a4cbc0af26307bef1a65b completed
+[34;1mworker         |[0m Job 33b8f0e9d712db8db515cc73fddf47fb89295fa7267de84d4cf579cd4a758d63 completed
+[34;1mworker         |[0m Job a61c8f8cedb484360f9b41b8a5a136684274e8de92428dec2eb8a307fe22ff53 completed
+[34;1mworker         |[0m Job e79802431593c8d917a337e655b7976e69788fcb2ce583eadc04d2a847686928 completed
+[34;1mworker         |[0m Job 00f17eaff55cabb706a7d697364fe732716a816cd0da2fc312c0455e59ee2fc1 completed
+[34;1mworker         |[0m Job 2984df1e2a6213e9f6e39a22d02ca7ad7ce9a10012d60b3e1a65cfb2758bb85e completed
+[34;1mworker         |[0m Job 9c917549f7074767ced9498ab4fcb6495306839f613ccbfb41f336bffb271fd4 completed
+[34;1mworker         |[0m Job cfa8ad12f91e99d536dc7929c1b58dbd6895e21613102178eb3c1cea5c96ccbf completed
+[34;1mworker         |[0m Job ece1b7ecee77ca83d0b47626145475452511dd2797a2e133ab0a775b3ec51927 completed
+[34;1mworker         |[0m Job 42a1d6dd9b5e78ad2a89c9b86abb38fb4e4f4e0a944a262d64764816ea912671 completed
+[34;1mworker         |[0m Job 637af4284a5298aaed170f447cc899100fa80758e7a5d8775fbecad10c1b8e90 completed
+[34;1mworker         |[0m Job 2ddb17f17644f4c5f2c7de937c30d48a6b3934d58d60d21837aa7105d676d32a completed
+[34;1mworker         |[0m Job c97c46d0a34164ec6bfefb4d14e162b23479d3c6cea468a318dc4ddd5ffee93c completed
+[34;1mworker         |[0m Job f80a4c4f2965a1b2470af40cdb82f208b052c160b69b779c71d2c93ded8535a2 completed
+[34;1mworker         |[0m Job 783090406ebef7d5776e637264eb8aaed11e05913204d9e0f9577b73dcb2b91c completed
+[34;1mworker         |[0m Job aa5d262e7428152d040b755ea7b3ee006e2f0a59bb628041f1f49c5469eef7fe completed
+[34;1mworker         |[0m Job 04af54a7d233454257587c969d603d39f9f22f70d351043388be7dc0a85599a8 completed
+[34;1mworker         |[0m Job c8675e3e5e9be11ff20b95644fd128fae86e7f0ab59607656631debb2d33f923 completed
+[34;1mworker         |[0m Job e9e44a46c6cbc24f03364759d80fb5e1c966dae3f6ab41e4eb1189bd32d38290 completed
+[34;1mworker         |[0m Job e9f9aaed17d4f960385c74a3b78427aefb454f0c9b29fcb9f38e044b0c134716 completed
+[34;1mworker         |[0m Job e3ff6c2d2fa4fa4cebe1101661b6d23b403574f8a32150cfabd846a68bcbdc18 completed
+[34;1mworker         |[0m Job a7bc8cf15ea0e4bd378dd2b0c8725a3d8b9457bdf2a70b01c17e16d55085242a completed
+[34;1mworker         |[0m Job 70597e8ae35c688d5b8c9136eb04ea5fb8b53e537788b5a9bd5cc555f2004f96 completed
+[34;1mworker         |[0m Job 5a05ec6d15248673f4fb658facedaae6c98266eecc75db347ae3417a884c1463 completed
+[34;1mworker         |[0m Job eb8bec8aae5841915cf2f36eced594ca1a107ceddcd5add6eb5768e853e980f1 completed
+[34;1mworker         |[0m Job 8d935b17dd85d44bd6578638acc6e31205757814d119eac1609b89a0be9107aa completed
+[36;1mfrontend       |[0m Serving with Webpack
+[34mbridge         |[0m Processing batch of 90 logs...
+[34mbridge         |[0m Added 90 jobs to the queue.
+[34mbridge         |[0m Removed logs from Redis. OK
+[34;1mworker         |[0m Job ffbdf1975b198096c01374eb82105a28387639e84ccc387dba39277277c6c119 completed
+[34;1mworker         |[0m Job 8a327dd28c6616566da39d2b19fc982cf0611b3ee05f5945b84716988a085b62 completed
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[36;1mfrontend       |[0m Running before_serve hook.
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ac8c7913f18ef13f39') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[36;1mfrontend       |[0m <i> [webpack-dev-server] Project is running at:
+[36;1mfrontend       |[0m <i> [webpack-dev-server] Loopback: http://localhost:8000/, http://[::1]:8000/
+[36;1mfrontend       |[0m <i> [webpack-dev-server] On Your Network (IPv4): http://172.18.0.11:8000/
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49ba8c7913f18ef13f46') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[36;1mfrontend       |[0m <i> [webpack-dev-server] Content not from webpack is served from 'web' directory
+[36;1mfrontend       |[0m <i> [webpack-dev-server] 404s will fallback to '/index.html'
+[36;1mfrontend       |[0m Running after_serve hook.
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Job 1d629785159e9f39d5e4eda048cfce0114e1c686c3125dc9954f15d480e4f37a completed
+[34;1mworker         |[0m Job a28f8dbb00c598f8b92d73f0583d04b71ca763d81abcbcaf74a6c6fd2d41d634 completed
+[34;1mworker         |[0m Job 880408cc618ea8f36c2e239473c1ded670d1ff87e4f762b1385d20681ec0b29e completed
+[34;1mworker         |[0m Job 9553f8472fd0e89d37a67b28268ec309ff5e81f3c3fb17c61e55acc1692673d0 completed
+[34;1mworker         |[0m Job 813f7070dabf41b95913e41f8353d3b72663c066c4de2a43f0de5765c2fc9d65 completed
+[34;1mworker         |[0m Job 01dfb4786ddabcbf542d3390f37c5ef065199d3c044b8463f8adf627af9421f0 completed
+[34;1mworker         |[0m Job 8bff3287157ce819bca27f02e3827909ee574e701c3c185f6d1ff4244997d36b completed
+[34;1mworker         |[0m Job 25af2d84ff4bc01b3487309de6a2647a98561ea2b8dea86cce9ab80b5c5fd0e5 completed
+[34;1mworker         |[0m Job 69599c68cdd819d6e03d6d40cf5417909a683534d766d56168a96de13ae39efa completed
+[34;1mworker         |[0m Job b018b023498b961fc6ce7313402335228b0a9a0f19d12eda4975e03f5b97f63c completed
+[34;1mworker         |[0m Job 6fec9d0594297084f5f59b973be8508912f054900413c535b0365d86b87fad54 completed
+[34;1mworker         |[0m Job 9f3e00c41cf28922cfaca64260e303408d04da7b1770f3c7b588c5dacc64d019 completed
+[34;1mworker         |[0m Job c2f0bd4fea39b7db3531434f4b1dc8f7b959fc412decaaf9263002467dcd3509 completed
+[34;1mworker         |[0m Job dc771185d56422aefb9bdf3e692dfb75a1d3130036bdbfdd060e5c2663409ef0 completed
+[34;1mworker         |[0m Job de63ca0e207043fd0768ca4c7919470f96ad7b18073cb71642dd3880e895fbc0 completed
+[34;1mworker         |[0m Job 7a5e851cdf50ac330a4c2523e33dbe081148f690177b1eea9aab22a5248970a7 completed
+[34;1mworker         |[0m Job e601eeb19c2c70cdb273fb03e3b2df817867939122404e7482b75047ee6bc421 completed
+[34;1mworker         |[0m Job b3876424ffcd8ea8cc855de107027d149baf3d7d1fe3fc76893f180084fd735b completed
+[34;1mworker         |[0m Job 818453bae50d25a3288956a8d19beb43f4351f92256fe1ac93f09553c82a7505 completed
+[34;1mworker         |[0m Job d87c75522970db0c8ab7869b256bb505c2240741fa849c4c2a5bb8e85e40a664 completed
+[34;1mworker         |[0m Job 37263c7fbec930464332bee4f02567631653fcbdb1f70afa576dc9b55238f005 completed
+[34;1mworker         |[0m Job e945f78fd902023f9a965b717c49cbd2908feff12d988bcad7db367420ec0737 completed
+[34;1mworker         |[0m Job 4e1b1cba37c1b0bc9cfb661fafdbc425bfaaa5edf91cbed30c93e123061a5a37 completed
+[34;1mworker         |[0m Job d03367d69ce649b1584028efa55e846b59589309f6de498279b241f2c01d463b completed
+[34;1mworker         |[0m Job 2c1cd6176d7ba02576d2118d77bbef8e173d7417ba181cec1e0f39c53f33141f completed
+[34;1mworker         |[0m Job a187fb04851e3b881703e7c22979622603b05e39c6974ca3f9a71650fcb10078 completed
+[34;1mworker         |[0m Job aef0cebdadce8861354b1c55012dfdadcb1c930eceba315d0ee8b98112ef9d71 completed
+[34;1mworker         |[0m Job 6dfde30a83af4066952996bec60f32e98d42568d4c718892304f372bc4a648e4 completed
+[34;1mworker         |[0m Job ec6a9fea2b6a0a238ed710eab700df391e2f35fd38a5a26bf1456feb714bc68a completed
+[34;1mworker         |[0m Job 946d92fcafab06809fbdc0a3dc7cc9e8829bee58a5a6933057882b9b10cc3e11 completed
+[34;1mworker         |[0m Job 04175d2b9fd9d7c4c39d81956ead71efffa1fa185c71780ac209feb1824b0ed8 completed
+[34;1mworker         |[0m Job a1509ff3dbdf0b05cee10c7926283145d59bc185a2c082b4a939ce1723177312 completed
+[34;1mworker         |[0m Job 1acd9d330640be1ec88fbfa1f3f644ba93e66d95899b4b194575c61163a11da5 completed
+[34;1mworker         |[0m Job 2c3e39e0824aec928f58300b1e4e881159257e8a7bb1d47da20add17d768e39f completed
+[34;1mworker         |[0m Job 651ecd7c9c6ac0cc7eab6f8ee93183bff69d99260a3c8c4dfd0f551cf58c7f07 completed
+[34;1mworker         |[0m Job 31166222897a93100bb6f2353f367acec82e7d542fde818a15e5c409a9b89089 completed
+[34;1mworker         |[0m Job bd04a3b03795e58fc8f0cd6ebf7b6952991ad9e8f18812bc7c264697d4905e29 completed
+[34;1mworker         |[0m Job 18b8f75219365e9c5e08e16b4e58f9328cee09b12690fbc723327075136a46cc completed
+[34;1mworker         |[0m Job 21cae148cc903c787339a90a26f7b79f01a726dcb6bfa39855f537f38a1a3644 completed
+[34;1mworker         |[0m Job edd43c53821414dda2deb6018693a539af867e5ef739e562c70ea1964909d8be completed
+[34;1mworker         |[0m Job b445d40e216607d1a9c01cdc942e5e22fa20ac5819aba02e4a5b49b375b43538 completed
+[34;1mworker         |[0m Job b7f50cb5759e319efb0e3c0a8993d7f5cc553092dec3834e93792aabc68423c2 completed
+[34;1mworker         |[0m Job ba19bffd385b3b655d67b9aeab099e38bf060a6caf5087e4c7f39acb376d32e5 completed
+[34;1mworker         |[0m Job faa42a8375daa93fd6d63c585a8e9208d9f3d2541a1b23a09069fa5d988adca1 completed
+[34;1mworker         |[0m Job da1f1793d6097baf13de06367a30960848bbc117ae7b29a1ced6a36525cbea61 completed
+[34;1mworker         |[0m Job 4b9f96f855f1e79b2795ce1a1a881d51c06f023c204058ff32e4b9b96c25c76a completed
+[34;1mworker         |[0m Job dc54366cd9a05c44da2784d323706a21ed2dab875299956373281a36032017ad completed
+[34;1mworker         |[0m Job a3ddd8d98145c3cc9e1532a4488e962da4d81d3bcdd67a5c9ad5fc78e8f405e1 completed
+[34;1mworker         |[0m Job 1c374c182e9f160f0cce11d003cafb5df2b53c3a23f2b3b073588242dd1904dc completed
+[34;1mworker         |[0m Job 1effe2b21a040d808b60914f645634060c41a97c0188e46fe13f26dd36a571c4 completed
+[34;1mworker         |[0m Job 1b3a4fa59180721dd241d68f1934e82c0a8801b8d272f78221db5e1b01fc730f completed
+[34;1mworker         |[0m Job 2b19ca6e42a4704f1cb3231392f7e099542e796fab6bd9caa4f00ced8c79bd7d completed
+[34;1mworker         |[0m Job 5cb7bd9d36da98aa6588c0d156322257601d154d6ddf77f7468548afba132863 completed
+[34;1mworker         |[0m Job fee4e1e079a53663027a9a3458b90753421b3e3443a2ae8285858c7d92be3141 completed
+[34;1mworker         |[0m Job a86ec291d1712a17a8979eb0a03901bfbee3b7b886d51b0b88cc623b16223cfe completed
+[34;1mworker         |[0m Job 62b7dc0cfd2cedbc928dc7cbcada4fcaa6141bd54488103bf21222b06257b764 completed
+[34;1mworker         |[0m Job 39ccf47fa53e7699961d4c43dbf2e37b2793b2f24a3bebf0b23454e51b045ada completed
+[34;1mworker         |[0m Job 8e2ca003dd55bbf1ae7862f864342aa93f42178f3bee48b0d8c5ba67113a58f9 completed
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Job 22e243522ec74eafce02b46c3f6e799bdb48e1a9d89e59426247431b2bac9fa4 completed
+[34;1mworker         |[0m Job df0d5cbcdf87f65ec8cf9f09f2d9bd3c48b5c5b83490f68d4ef1abe98c49e756 completed
+[34;1mworker         |[0m Job 591b30144719143229b5d9674566aa4f75f54a7a6b0822b2534be10bcafc025c completed
+[34;1mworker         |[0m Job 35a3e9f9b57570bcd646641230718d91e4a9bf778bbad31afdccae50b5303b90 completed
+[34;1mworker         |[0m Job e8e41aac745dd477eb4406284fd7925b32a833ce3b49b6d1efc72648a22eaaf6 completed
+[34;1mworker         |[0m Resolved app_id: new ObjectId('686f49c38c7913f18ef13f53') object
+[34;1mworker         |[0m Job 7333f682bbdc4e64b3dcdfd4d0a6150a5793f01942efe870646c5615bbcb9ba5 completed
+[34;1mworker         |[0m Job 813a56651614f3a12108a4a83ce256510588d7843eedb8c424ad2a8c3c7f7d18 completed
+[34;1mworker         |[0m Job f0026fd16bc760eee3208591dfb5ccf0214bb1660f982d4fbdcc43eb3af9cf5c completed
+[34;1mworker         |[0m Job 4546c54277a9d5a1767592174a34656a48a9e599da0fd5f044643f195c9c3c23 completed
+[34;1mworker         |[0m Job bee2f2338d109afb20853b24a4d1001c0a68df741302845a7858e90eaa0356f8 completed
+[34;1mworker         |[0m Job 59417f71f43cadedd1d4d70a581bbe8193d2b1a6b41cb5b507e2f34da11c39dd completed
+[34;1mworker         |[0m Job 6fcea26226a6b6a66cf08f2b4c57c82089e9e14108a21895f44a9f0b3b22e459 completed
+[34;1mworker         |[0m Job 731bd163457ca635573f8e904525d683639d79c6d9340607a86aa28f25ce5e8a completed
+[34;1mworker         |[0m Job b5f205d416c6f7b81c85dda92d80d8b592a00cb6a16958b8ea9a6881d9bf1b49 completed
+[34;1mworker         |[0m Job fcb32cb9705cafb8e4d80e000c3521cedfa66649801a5581bbcb42fb7e688fa7 completed
+[34;1mworker         |[0m Job 6067b5a30a3780e28c3503851e0e288d39166291b5d15f8b430395ab5923e63b completed
+[34;1mworker         |[0m Job d6c70646e9f721ff392e452cbf6d6eaeadb37308689f48545d555bf978a50768 completed
+[34;1mworker         |[0m Job 5e21269e6d54a03acffefe8afd13d93ae415914e40b3945821b1456534fb6d25 completed
+[34;1mworker         |[0m Job f7125fc048b2249394cc32c4abb366a0ce529afdb2c7dedd53e2aa3daa0f8222 completed
+[34;1mworker         |[0m Job a0c4dadc4cef5ec7ac8a00ed585e71726c0697ba2dd9e10075bd0d0c62d1e9cc completed
+[34;1mworker         |[0m Job 1df3d7d59820fca34753c69259a42a777f2fcd30f60ebd0ede040da57f76a06d completed
+[34;1mworker         |[0m Job 1d5dcce06eb317bd689477267a3cc5fd47b31751be494c72e0574e4243362253 completed
+[34;1mworker         |[0m Job 43289d80540073dfb48ab4e4737c37101020b1afaa9ed4aa64003892d7d46c4b completed
+[34;1mworker         |[0m Job 22ddb360ffc6ddb0168fe248d12c830a0be848b616e3864da1f0ee53c47a9be4 completed
+[34;1mworker         |[0m Job 9e1c370aa420172a32898e779f8618faab3d726900bef90a85996ce0d42811d4 completed
+[34;1mworker         |[0m Job aa980cf32bfb976293b8bd2fffd8a4e07feba05cbe8977c8abbd1649d77686a4 completed
+[34;1mworker         |[0m Job a2fbe3555680d0648be784341a36c00b60bc68fb9de6a20a2c0f5914bbc0c4a3 completed
+[34;1mworker         |[0m Job a0ebde9d848602b48b076a02e7305e04c6cae90ac137206d691439cc6d669d1a completed
+[34;1mworker         |[0m Job dcd5f3a60657a1bbc7d228a1ef7bd2f7514fd6a910e438143150ae9a800ce300 completed
+[34;1mworker         |[0m Job ae15ed1b7a24164c90c79085daee7cd2ca5e12bb9d0cd3013216f4a8f6aeb0dd completed
+[34;1mworker         |[0m Job b0dd56e2f68b13631e24c3fa9e5b806084b43494af2b1453eb8b9e741225d0a4 completed
+[34;1mworker         |[0m Job 08778723a0c988a72f466a6c929c73374f5bf1d7c4d8f543a1d93bf4ef65a9e5 completed
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[36;1mfrontend       |[0m <i> [webpack-dev-middleware] wait until bundle finished: /applications
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[35mbackend        |[0m [Cron] Starting log summary scheduler...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[35mbackend        |[0m [2025-07-10T05:36:52.352Z] [INFO] [traceid] MongoDB connected
+[36;1mfrontend       |[0m assets by path js/*.js 17 MiB
+[36;1mfrontend       |[0m   assets by chunk 892 KiB (id hint: vendors)
+[36;1mfrontend       |[0m     asset js/vendors-node_modules_oracle_oraclejet_dist_js_libs_oj_debug_ojvcomponent-template_js.bundle.js 78.8 KiB [emitted] (id hint: vendors)
+[36;1mfrontend       |[0m     + 52 assets
+[36;1mfrontend       |[0m   + 5 assets
+[36;1mfrontend       |[0m assets by path styles/ 4.89 MiB 49 assets
+[36;1mfrontend       |[0m assets by path ../src/ 15.7 KiB
+[36;1mfrontend       |[0m   assets by path ../src/views/ 7.82 KiB 18 assets
+[36;1mfrontend       |[0m   assets by path ../src/components/ 2.74 KiB 10 assets
+[36;1mfrontend       |[0m   assets by path ../src/services/*.ts 4.43 KiB 5 assets
+[36;1mfrontend       |[0m   + 3 assets
+[36;1mfrontend       |[0m asset index.html 2.46 KiB [emitted]
+[36;1mfrontend       |[0m Entrypoint main 16.5 MiB (218 KiB) = js/runtime.bundle.js 53.8 KiB styles/main.css 408 KiB js/main.bundle.js 16 MiB 11 auxiliary assets
+[36;1mfrontend       |[0m runtime modules 2.06 MiB 1461 modules
+[36;1mfrontend       |[0m orphan modules 342 KiB (javascript) 218 KiB (asset) [orphan] 159 modules
+[36;1mfrontend       |[0m cacheable modules 14.5 MiB (javascript) 272 KiB (css/mini-extract)
+[36;1mfrontend       |[0m   modules by path ./node_modules/@oracle/oraclejet-preact/es/ 2.5 MiB (javascript) 269 KiB (css/mini-extract) 771 modules
+[36;1mfrontend       |[0m   modules by path ./node_modules/@oracle/oraclejet/dist/js/libs/ 11 MiB 144 modules
+[36;1mfrontend       |[0m   modules by path ./node_modules/@oracle/oraclejet-core-pack/oj-c/ 247 KiB (javascript) 2.28 KiB (css/mini-extract) 89 modules
+[36;1mfrontend       |[0m   modules by path ./src/ 223 KiB (javascript) 817 bytes (css/mini-extract) 34 modules
+[36;1mfrontend       |[0m   modules by path ./node_modules/@prefresh/ 13.6 KiB 11 modules
+[36;1mfrontend       |[0m   modules by path ./node_modules/webpack-dev-server/client/ 84.8 KiB 8 modules
+[36;1mfrontend       |[0m   modules by path ./node_modules/webpack/hot/*.js 4.59 KiB 4 modules
+[36;1mfrontend       |[0m   modules by path ./node_modules/preact/ 26.4 KiB 4 modules
+[36;1mfrontend       |[0m   modules by path ./node_modules/mini-css-extract-plugin/dist/hmr/*.js 5.92 KiB
+[36;1mfrontend       |[0m     ./node_modules/mini-css-extract-plugin/dist/hmr/hotModuleReplacement.js 4.99 KiB [built] [code generated]
+[36;1mfrontend       |[0m     ./node_modules/mini-css-extract-plugin/dist/hmr/normalize-url.js 953 bytes [built] [code generated]
+[36;1mfrontend       |[0m   + 7 modules
+[36;1mfrontend       |[0m webpack 5.76.0 compiled successfully in 26427 ms
+[35mbackend        |[0m [2025-07-10T05:36:55.352Z] [DEBUG] [traceid] Server running on port 3001
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:41:16.076 * 100 changes in 300 seconds. Saving...
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:41:16.077 * Background saving started by pid 14
+[35;1mredis-server   |[0m 14:C 10 Jul 2025 05:41:16.092 * DB saved on disk
+[35;1mredis-server   |[0m 14:C 10 Jul 2025 05:41:16.094 * Fork CoW for RDB: current 1 MB, peak 1 MB, average 1 MB
+[35;1mredis-server   |[0m 1:M 10 Jul 2025 05:41:16.178 * Background saving terminated with success
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[32;1mpostgres-db    |[0m 2025-07-10 05:41:17.925 UTC [57] LOG:  checkpoint starting: time
+[32;1mpostgres-db    |[0m 2025-07-10 05:41:20.954 UTC [57] LOG:  checkpoint complete: wrote 33 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=3.014 s, sync=0.006 s, total=3.030 s; sync files=19, longest=0.004 s, average=0.001 s; distance=50 kB, estimate=50 kB
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+[34mbridge         |[0m No logs to process. Waiting for new logs...
+Gracefully stopping... (press Ctrl+C again to force)
