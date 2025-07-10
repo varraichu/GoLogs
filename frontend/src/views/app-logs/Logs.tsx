@@ -293,9 +293,6 @@ const Logs = (props: { path?: string }) => {
           isLoading={isExporting}
         />
 
-
-        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
-
       </div>
 
       <LogFilters onFilterChange={handleFilterChange} />

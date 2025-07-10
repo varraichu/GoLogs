@@ -33,12 +33,12 @@ export const getAllLogs = async (req: IAuthRequest, res: Response) => {
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-          const [field, direction] = item.split(':');
-          return {
-            field: field.trim(),
-            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-          } as SortCriteria;
-        })
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -85,12 +85,12 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-          const [field, direction] = item.split(':');
-          return {
-            field: field.trim(),
-            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-          } as SortCriteria;
-        })
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -202,7 +202,7 @@ export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
     const { userId } = req.params as UserIdParams;
 
     // Convert query params
-  const page = 1;
+    const page = 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const sort = req.query.sort as string | undefined;
 
@@ -214,12 +214,12 @@ export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-          const [field, direction] = item.split(':');
-          return {
-            field: field.trim(),
-            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-          } as SortCriteria;
-        })
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -246,11 +246,11 @@ export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
     res.header('Content-Type', 'text/csv');
     res.attachment('logs-export.csv');
     res.send(csv);
-    return 
+    return
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to export logs' });
-    return 
+    return
   }
 };
 export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
@@ -258,7 +258,7 @@ export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
     // const { userId } = req.params as UserIdParams;
 
     // Convert query params
-  const page = 1;
+    const page = 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const sort = req.query.sort as string | undefined;
 
@@ -270,12 +270,12 @@ export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
 
     const sortCriteria: SortCriteria[] = sort
       ? sort.split(',').map((item) => {
-          const [field, direction] = item.split(':');
-          return {
-            field: field.trim(),
-            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
-          } as SortCriteria;
-        })
+        const [field, direction] = item.split(':');
+        return {
+          field: field.trim(),
+          direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+        } as SortCriteria;
+      })
       : [{ field: 'timestamp', direction: 'desc' }];
 
     const filters = {
@@ -301,11 +301,13 @@ export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
     res.header('Content-Type', 'text/csv');
     res.attachment('logs-export.csv');
     res.send(csv);
-    return 
+    return
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to export logs' });
-    return 
+    return
+  }
+}
 
 export const getUserLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
