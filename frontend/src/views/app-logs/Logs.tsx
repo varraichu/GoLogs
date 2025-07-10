@@ -18,6 +18,9 @@ import LogDetailsModal from './components/LogDetailsModal';
 
 
 const Logs = (props: { path?: string }) => {
+  const params = new URLSearchParams(window.location.search);
+  const log_type: string | null = params.get('log-type');
+
   const [adminLogs, setAdminLogs] = useState<LogEntry[]>([]);
   const [dataProvider, setDataProvider] = useState<any>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -37,7 +40,7 @@ const Logs = (props: { path?: string }) => {
     search: string;
   }>({
     apps: [],
-    logTypes: [],
+    logTypes: log_type ? [log_type] : [],
     fromDate: undefined,
     toDate: undefined,
     search: '',
@@ -59,6 +62,8 @@ const Logs = (props: { path?: string }) => {
 
   const [showLogDialog, setShowLogDialog] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null);
+
+
 
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
@@ -229,7 +234,7 @@ const Logs = (props: { path?: string }) => {
       </div>
 
 
-      <LogFilters onFilterChange={handleFilterChange} />
+      <LogFilters filters={filters} onFilterChange={handleFilterChange} />
 
 
       <div
