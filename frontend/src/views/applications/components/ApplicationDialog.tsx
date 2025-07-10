@@ -87,6 +87,7 @@ export const ApplicationDialog = ({
       id="applicationDialog"
       dialogTitle={editingApplication ? 'Edit Application' : 'Create Application'}
       initialVisibility="show"
+      headerDecoration='off'
     >
       <div class="oj-dialog-body">
         <oj-c-form-layout>

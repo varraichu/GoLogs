@@ -69,48 +69,6 @@ class DashboardService {
         return data;
     }
 
-    // async fetchUserLogSummary(): Promise<SummaryResponse> {
-    //     const token = localStorage.getItem('jwt');
-    //     const user = this.parseJwt(token);
-    //     const userId = user?._id;
-
-    //     if (!userId) {
-    //         throw new Error('User not authenticated');
-    //     }
-
-    //     const endpoint = `${this.baseUrl}/logs/cached-summary/${userId}`;
-
-    //     const res = await fetch(endpoint, {
-    //         method: 'GET',
-    //         headers: this.getAuthHeaders(),
-    //     });
-
-    //     const data = await res.json();
-
-    //     if (!res.ok) {
-    //         throw new Error(data.message || 'Failed to fetch log summary');
-    //     }
-
-    //     return data;
-    // }
-
-    // async fetchAdminLogSummary(): Promise<SummaryResponse> {
-
-    //     const endpoint = `${this.baseUrl}/logs/admin-cached-summary/`;
-
-    //     const res = await fetch(endpoint, {
-    //         method: 'GET',
-    //         headers: this.getAuthHeaders(),
-    //     });
-
-    //     const data = await res.json();
-
-    //     if (!res.ok) {
-    //         throw new Error(data.message || 'Failed to fetch log summary');
-    //     }
-
-    //     return data;
-    // }
 }
 
 export const dashboardService = new DashboardService();

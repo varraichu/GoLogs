@@ -26,33 +26,35 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
   }
 
   if (search) {
-    const searchParts = search.split(' ').map(part => escapeRegex(part));
-    const flexibleSearchRegex = searchParts.join('.*'); 
+    const searchParts = search.split(' ').map((part) => escapeRegex(part));
+    const flexibleSearchRegex = searchParts.join('.*');
 
     matchStage.$or = [
       { name: { $regex: flexibleSearchRegex, $options: 'i' } },
       { description: { $regex: flexibleSearchRegex, $options: 'i' } },
     ];
   }
-  
+
   pipeline.push({ $match: matchStage });
- 
+
   if (groupIds && groupIds.length > 0) {
-    pipeline.push({
-      $lookup: {
-        from: 'usergroupapplications',
-        localField: '_id',
-        foreignField: 'app_id',
-        as: 'groupAssignments',
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'usergroupapplications',
+          localField: '_id',
+          foreignField: 'app_id',
+          as: 'groupAssignments',
+        },
       },
-    },
-    {
-      $match: {
-        'groupAssignments.group_id': { 
-          $in: groupIds.map(id => new mongoose.Types.ObjectId(id)) 
-        }
+      {
+        $match: {
+          'groupAssignments.group_id': {
+            $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)),
+          },
+        },
       }
-    });
+    );
   }
 
   // --- Data Aggregation and Pagination Stage ---
@@ -64,10 +66,44 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
       // Branch 2: Get the paginated and detailed data
       data: [
         // The same lookups and projections from your original getDetailedApplications function
-        { $lookup: { from: 'usergroupapplications', localField: '_id', foreignField: 'app_id', as: 'groups', pipeline: [{ $match: { is_active: true } }] }},
-        { $lookup: { from: 'usergroups', localField: 'groups.group_id', foreignField: '_id', as: 'groupDetails', pipeline: [{ $match: { is_deleted: false, is_active: true } }] }},
-        { $lookup: { from: 'logs', let: { appId: '$_id' }, pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] }}}, { $count: 'total' }], as: 'logStats' }},
-        { $project: { _id: 1, name: 1, description: 1, created_at: 1, is_active: 1, groupCount: { $size: '$groupDetails' }, groupNames: '$groupDetails.name', logCount: { $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0] }}},
+        {
+          $lookup: {
+            from: 'usergroupapplications',
+            localField: '_id',
+            foreignField: 'app_id',
+            as: 'groups',
+            pipeline: [{ $match: { is_active: true } }],
+          },
+        },
+        {
+          $lookup: {
+            from: 'usergroups',
+            localField: 'groups.group_id',
+            foreignField: '_id',
+            as: 'groupDetails',
+            pipeline: [{ $match: { is_deleted: false, is_active: true } }],
+          },
+        },
+        {
+          $lookup: {
+            from: 'logs',
+            let: { appId: '$_id' },
+            pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] } } }, { $count: 'total' }],
+            as: 'logStats',
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            description: 1,
+            created_at: 1,
+            is_active: 1,
+            groupCount: { $size: '$groupDetails' },
+            groupNames: '$groupDetails.name',
+            logCount: { $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0] },
+          },
+        },
         { $sort: { created_at: -1 } },
         { $skip: (page - 1) * limit },
         { $limit: limit },
@@ -80,7 +116,7 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
   const data = result[0];
   const applications = data.data;
   const totalDocs = data.metadata[0]?.total || 0;
-  
+
   return {
     applications,
     pagination: {
@@ -93,7 +129,6 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
     },
   };
 };
-
 
 export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[]) => {
   const detailedApplications = await Applications.aggregate([

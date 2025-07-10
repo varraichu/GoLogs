@@ -50,6 +50,21 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
   const thirtyDaysAgo = new Date(now.getTime() - retention * 24 * 60 * 60 * 1000);
   const minDateTime = thirtyDaysAgo.toISOString().slice(0, 16); // same format
 
+  const [filters, setFilters] = useState<{ search: string; groupIds: string[]; status: string }>({
+    search: '',
+    groupIds: [],
+    status: 'all',
+  });
+  
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 500,
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
+
   useEffect(() => {
     const token = localStorage.getItem('jwt');
     if (!token) return;
@@ -88,7 +103,9 @@ const LogFilters = ({ onFilterChange }: LogFiltersProps) => {
 
   const fetchApplications = async () => {
     try {
-      const data = await applicationsService.fetchUserApplications();
+      const data = await applicationsService.fetchApplicationsByRole(
+        filters, pagination
+      );
       const apps = data.applications || [];
       setApplications(apps);
 

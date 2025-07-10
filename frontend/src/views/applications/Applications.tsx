@@ -90,9 +90,9 @@ const Applications = (props: { path?: string }) => {
     setSelectedItem(newSelection)
   }
 
-  useEffect(() => {
-    fetchApplications()
-  }, [])
+  // useEffect(() => {
+  //   fetchApplications()
+  // }, [])
 
   useEffect(() => {
     fetchAllUserGroupsForFilter();

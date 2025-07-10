@@ -256,7 +256,7 @@ const UserGroups = (props: { path?: string }) => {
       )}
 
       {confirmCancelDialog && (
-        <oj-dialog id="confirmCancelDialog" dialogTitle="Cancel Changes" initialVisibility="show">
+        <oj-dialog id="confirmCancelDialog" dialogTitle="Cancel Changes" initialVisibility="show" headerDecoration='off'>
           <div class="oj-dialog-body">Are you sure you want to cancel your changes?</div>
           <div class="oj-dialog-footer">
             <oj-button onojAction={() => { setConfirmCancelDialog(false); handleCloseEditor(); }} chroming="danger">Confirm</oj-button>

@@ -160,40 +160,15 @@ const Logs = (props: { path?: string }) => {
     // Update the filters state immediately for UI feedback
     setFilters(prev => ({ ...prev, search: value }));
 
-    // Clear existing timeout
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
     }
 
-    // Debounce the API call and pagination reset
     debounceTimeout.current = setTimeout(() => {
       setPagination(prev => ({ ...prev, page: 1 }));
-      // The useEffect will automatically trigger fetchLogs when filters change
     }, 300); // 300ms delay - adjust as needed
   };
 
-  // const handleRowSelect = (event: CustomEvent) => {
-  //   const newSelection = event.detail.value;
-  //   setSelectedRows(newSelection); // 👈 this is now { row: KeySetImpl }
-
-  //   const selectedKey = [...(newSelection.row?.values?.() || [])][0]; // safely extract first selected
-  //   const log = adminLogs.find((log) => log._id === selectedKey);
-  //   setSelectedLog(log);
-
-  //   if (log) {
-  //     // Clear state first
-  //     setShowLogDialog(false);
-  //     setSelectedLog(null);
-  //     // Re-set after short delay
-  //     // setTimeout(() => {
-  //     // }, 0);
-
-  //     setSelectedLog(log);
-  //     setShowLogDialog(true);
-  //     console.log('Clicked row:', log, 'dialog stat: ', showLogDialog);
-
-  //   }
-  // };
 
   const handleRowSelect = (event: CustomEvent) => {
     const newSelection = event.detail.value;

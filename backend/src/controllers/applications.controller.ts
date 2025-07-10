@@ -16,7 +16,7 @@ import logger from '../config/logger';
 import { getDetailedApplications } from '../services/applications.service';
 import Logs from '../models/Logs';
 import Users from '../models/Users';
-import { getPaginatedFilteredApplications } from '../services/applications.service'; 
+import { getPaginatedFilteredApplications } from '../services/applications.service';
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {
