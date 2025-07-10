@@ -16,6 +16,7 @@ import logger from '../config/logger';
 import { getDetailedApplications } from '../services/applications.service';
 import Logs from '../models/Logs';
 import Users from '../models/Users';
+import { getPaginatedFilteredApplications } from '../services/applications.service'; 
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {
@@ -49,24 +50,30 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
 
 export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   try {
-    const apps = await Applications.find({ is_deleted: false }).select('_id');
-    const appIds = apps.map((g) => g._id as mongoose.Types.ObjectId);
+    // Extract query parameters for filtering, searching, and pagination
+    const search = req.query.search as string | undefined;
+    const groupIds = (req.query.groupIds as string)?.split(',') || [];
+    const status = req.query.status as 'active' | 'inactive' | undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
-    if (appIds.length === 0) {
-      res.status(200).json([]);
-      return;
-    }
+    // Pass parameters to the new service function
+    const { applications, pagination } = await getPaginatedFilteredApplications({
+      search,
+      groupIds,
+      status,
+      page,
+      limit,
+    });
 
-    const detailedApps = await getDetailedApplications(appIds);
-
-    res
-      .status(200)
-      .json({ message: 'Applications fetched successfully', applications: detailedApps });
-    return;
+    res.status(200).json({
+      message: 'Applications fetched successfully',
+      applications,
+      pagination,
+    });
   } catch (error) {
-    logger.error('Error fetching all user groups:', error);
+    logger.error('Error fetching all applications:', error);
     res.status(500).json({ message: 'Server error' });
-    return;
   }
 };
 

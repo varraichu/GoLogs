@@ -40,6 +40,21 @@ export interface UserGroupsResponse {
   message?: string
 }
 
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface ApplicationsResponse {
+  applications: Application[];
+  pagination?: Pagination; 
+  message?: string;
+}
+
 class ApplicationsService {
   private baseUrl = 'http://localhost:3001/api'
 
@@ -68,19 +83,40 @@ class ApplicationsService {
   /**
    * Fetch all applications
    */
-  async fetchApplications(): Promise<ApplicationsResponse> {
-    const response = await fetch(`${this.baseUrl}/applications/`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    })
+  async fetchApplications(
+    filters: { search?: string; groupIds?: string[]; status?: string },
+    pagination: { page: number; limit: number }
+  ): Promise<ApplicationsResponse> {
+    
+    const params = new URLSearchParams();
+    
+    // Pagination
+    params.append('page', String(pagination.page));
+    params.append('limit', String(pagination.limit));
 
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch applications')
+    // Filters
+    if (filters.search) {
+      params.append('search', filters.search);
+    }
+    if (filters.status && filters.status !== 'all') {
+      params.append('status', filters.status);
+    }
+    if (filters.groupIds && filters.groupIds.length > 0) {
+      params.append('groupIds', Array.from(filters.groupIds).join(','));
     }
 
-    return data
+    const response = await fetch(`${this.baseUrl}/applications/?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch applications');
+    }
+
+    return data;
   }
 
   async fetchUserApplications(): Promise<ApplicationsResponse> {
