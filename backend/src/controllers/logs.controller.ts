@@ -193,6 +193,121 @@ export const getLogTTL = async (req: IAuthRequest, res: Response): Promise<void>
   }
 };
 
+// File: controllers/logs.controller.ts
+import { Parser } from 'json2csv'; // for CSV conversion
+
+export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params as UserIdParams;
+
+    // Convert query params
+    const page = 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sort = req.query.sort as string | undefined;
+
+    const log_type = req.query.log_type as string | string[] | undefined;
+    const app_name = req.query.app_name as string | string[] | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const search = req.query.search as string | undefined;
+
+    const sortCriteria: SortCriteria[] = sort
+      ? sort.split(',').map((item) => {
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
+      : [{ field: 'timestamp', direction: 'desc' }];
+
+    const filters = {
+      log_type,
+      app_name,
+      startDate,
+      endDate,
+      search,
+    };
+
+    const { logs, total, pagination } = await fetchUserLogsWithAppInfo({
+      userId,
+      page,
+      limit,
+      sortCriteria,
+      filters,
+    });
+
+    // Convert logs to CSV
+    const fields = ['timestamp', 'log_type', 'message', 'app_name', 'ingested_at'];
+    const parser = new Parser({ fields });
+    const csv = parser.parse(logs);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('logs-export.csv');
+    res.send(csv);
+    return;
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to export logs' });
+    return;
+  }
+};
+export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
+  try {
+    // const { userId } = req.params as UserIdParams;
+
+    // Convert query params
+    const page = 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sort = req.query.sort as string | undefined;
+
+    const log_type = req.query.log_type as string | string[] | undefined;
+    const app_name = req.query.app_name as string | string[] | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const search = req.query.search as string | undefined;
+
+    const sortCriteria: SortCriteria[] = sort
+      ? sort.split(',').map((item) => {
+          const [field, direction] = item.split(':');
+          return {
+            field: field.trim(),
+            direction: direction?.trim() === 'asc' ? 'asc' : 'desc',
+          } as SortCriteria;
+        })
+      : [{ field: 'timestamp', direction: 'desc' }];
+
+    const filters = {
+      log_type,
+      app_name,
+      startDate,
+      endDate,
+      search,
+    };
+
+    const { logs, total, pagination } = await fetchPaginatedLogsWithAppInfo({
+      page,
+      limit,
+      sortCriteria,
+      filters,
+    });
+
+    // Convert logs to CSV
+    const fields = ['timestamp', 'log_type', 'message', 'app_name', 'ingested_at'];
+    const parser = new Parser({ fields });
+    const csv = parser.parse(logs);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('logs-export.csv');
+    res.send(csv);
+    return;
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to export logs' });
+    return;
+  }
+};
+
 export const getUserLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params as UserIdParams;

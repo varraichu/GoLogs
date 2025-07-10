@@ -1,5 +1,3 @@
-// File: src/services/dashboard.service.ts
-
 export interface AppLogSummary {
     _id: string;
     app_id: string;
@@ -16,6 +14,24 @@ export interface AppLogSummary {
 export interface SummaryResponse {
     message: string;
     data: AppLogSummary[];
+}
+
+
+export interface CriticalLogs {
+  totalLogs: number;
+  errorLogs: number;
+  warningLogs: number;
+}
+
+export interface Application {
+  _id: string;
+  name: string;
+  description: string;
+  isPinned: boolean;
+  is_active: boolean;
+  logCount: number;
+  created_at: string;
+  criticalLogs: CriticalLogs;
 }
 
 class DashboardService {
@@ -69,6 +85,63 @@ class DashboardService {
         return data;
     }
 
+
+    
+    public async fetchApplications(): Promise<{ applications: Application[], userId: string }> {
+        const token = localStorage.getItem('jwt');
+        const user = this.parseJwt(token);
+
+        if (!user?._id) {
+        throw new Error('User not authenticated');
+        }
+        const userId = user._id;
+
+        const res = await fetch(`${this.baseUrl}/applications/${userId}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+        throw new Error(data.message || 'Failed to fetch applications');
+        }
+
+        const applications = await this.fetchCriticalLogs(data.applications || []);
+        return { applications, userId };
+    }
+
+    private async fetchCriticalLogs(applications: Application[]): Promise<Application[]> {
+        const token = localStorage.getItem('jwt');
+        if (!token) return applications;
+
+        const updatedApps = await Promise.all(applications.map(async (app) => {
+        try {
+            const res = await fetch(`${this.baseUrl}/applications/logs/critical/${app._id}`, {
+            headers: this.getAuthHeaders(),
+            });
+
+            if (!res.ok) throw new Error(`Failed to fetch logs for app ${app._id}`);
+
+            const criticalLogs = await res.json();
+            return {
+            ...app,
+            criticalLogs: {
+                totalLogs: criticalLogs.totalLogs ?? 0,
+                errorLogs: criticalLogs.errorLogs ?? 0,
+                warningLogs: criticalLogs.warningLogs ?? 0,
+            },
+            };
+        } catch (error) {
+            console.error(`Error fetching logs for app ${app._id}:`, error);
+            return {
+            ...app,
+            criticalLogs: { totalLogs: 0, errorLogs: 0, warningLogs: 0 },
+            };
+        }
+        }));
+
+    return updatedApps;
+  }
 }
 
 export const dashboardService = new DashboardService();

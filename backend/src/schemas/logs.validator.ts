@@ -27,8 +27,8 @@ export const logsQuerySchema = object({
       .refine((val) => val > 0, { message: 'Page must be a positive number' }),
     limit: string()
       .optional()
-      .transform((val) => (val ? parseInt(val) : 20))
-      .refine((val) => val > 0 && val <= 100, { message: 'Limit must be between 1 and 100' }),
+      .transform((val) => (val ? parseInt(val) : 20)),
+    // .refine((val) => val > 0 && val <= 100, { message: 'Limit must be between 1 and 100' }),
     sort: string()
       .optional()
       .refine(

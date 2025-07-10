@@ -13,7 +13,7 @@ import 'oj-c/progress-circle';
 import { useToast } from '../../context/ToastContext';
 
 
-import { UserGroup, Application, User, fetchUserGroups, fetchDirectoryUsers, fetchApplications, fetchGroupUsers, saveUserGroup, updateGroupAppAccess, deleteUserGroup, toggleGroupStatus } from '../../services/usergroups.services';
+import { UserGroup, Application, fetchUserGroups, fetchDirectoryUsers, fetchApplications, fetchGroupUsers, saveUserGroup, updateGroupAppAccess, deleteUserGroup, toggleGroupStatus } from '../../services/usergroups.services';
 import { UserGroupCard } from './components/UserGroupCard';
 import { GroupEditorDialog } from './components/GroupEditorDialog';
 // --- TYPE DEFINITIONS ---
@@ -191,10 +191,6 @@ const UserGroups = (props: { path?: string }) => {
     }
   };
 
-  if (isLoadingPage) {
-    return <oj-c-progress-circle value={-1} size="lg" style={{ margin: '2rem auto' }} />;
-  }
-
   return (
     <div class="oj-flex oj-sm-padding-4x">
       <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
@@ -207,18 +203,26 @@ const UserGroups = (props: { path?: string }) => {
         </div>
       </div>
 
-      <div class="oj-flex oj-flex-wrap" style={{ gap: '24px' }}>
-        {groups.map((group) => (
-          <UserGroupCard
-            key={group._id}
-            group={group}
-            onEdit={handleOpenEditor}
-            onDelete={setConfirmDeleteDialogId}
-            onToggleStatus={handleToggleStatus}
-            onViewUsers={handleViewUsers}
-          />
-        ))}
-      </div>
+      {isLoadingPage ? (
+        <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 400px; width: 100%;">
+          <oj-c-progress-circle value={-1} size="lg"></oj-c-progress-circle>
+        </div>
+      ) : (
+        <div class="oj-flex oj-flex-wrap" style={{ gap: '24px' }}>
+          {groups.map((group) => (
+            <UserGroupCard
+              key={group._id}
+              group={group}
+              onEdit={handleOpenEditor}
+              onDelete={setConfirmDeleteDialogId}
+              onToggleStatus={handleToggleStatus}
+              onViewUsers={handleViewUsers}
+            />
+          ))}
+        </div>
+      )}
+
+
 
       {/* --- DIALOGS --- */}
       {showDialog && (

@@ -79,7 +79,7 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
                                 pattern: '^[a-zA-Z0-9 _.,:;()\\\[\\\]\'"-]+$',
                                 hint: 'Allowed values (a-z A-Z 0-9 spaces _ , . : ; ( ) [ ] \' ")',
                                 messageSummary: 'Invalid description format.',
-                                messageDetail: 'Allowed values (a-z A-Z 0-9 spaces _ , . : ; ( ) [ ] \' ")',
+                                messageDetail: 'Description has an invalid character(s).',
                             })
                         ]}
                     />
@@ -94,6 +94,7 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
                                 <oj-c-select-multiple
                                     id="user-select-multiple"
                                     data={allUsersDataProvider}
+                                    label-hint="Group Members"
                                     item-text="text"
                                     value={selectedUserEmails}
                                     onvalueChanged={(e: CustomEvent) => setSelectedUserEmails(e.detail.value || new Set())}

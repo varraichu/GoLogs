@@ -18,6 +18,17 @@ import Logs from '../models/Logs';
 import Users from '../models/Users';
 import { getPaginatedFilteredApplications } from '../services/applications.service';
 
+interface Application {
+  _id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  is_active: boolean;
+  groupCount: number;
+  groupNames: string[];
+  logCount: number;
+}
+
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   try {
     const { name, description } = req.body as CreateApplicationInput;
@@ -50,14 +61,12 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
 
 export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   try {
-    // Extract query parameters for filtering, searching, and pagination
     const search = req.query.search as string | undefined;
     const groupIds = (req.query.groupIds as string)?.split(',') || [];
     const status = req.query.status as 'active' | 'inactive' | undefined;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    // Pass parameters to the new service function
     const { applications, pagination } = await getPaginatedFilteredApplications({
       search,
       groupIds,
@@ -80,51 +89,39 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
 export const getUserApplications = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params as UserIdParams;
-    // console.log('Fetching applications for user ID:', userId);
-    const userGroups = await UserGroupMembers.find({
-      user_id: userId,
-      is_active: true,
-    }).select('group_id');
 
-    const groupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
+    const search = req.query.search as string | undefined;
+    const status = req.query.status as 'active' | 'inactive' | undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 8; // Default limit
 
-    if (groupIds.length === 0) {
-      res.status(404).json({ message: 'No user groups found', applications: [] });
-      return;
-    }
-
-    const userGroupApps = await UserGroupApplications.find({
-      group_id: { $in: groupIds },
-      is_active: true,
-    }).select('app_id');
-
-    const appIds = userGroupApps.map((g) => g.app_id as mongoose.Types.ObjectId);
-
-    if (appIds.length === 0) {
-      res.status(404).json({ message: 'No applications found', applications: [] });
-      return;
-    }
-
-    const detailedApps = await getDetailedApplications(appIds);
+    const { applications, pagination } = await getPaginatedFilteredApplications({
+      userId,
+      search,
+      status,
+      page,
+      limit,
+    });
 
     const user = await Users.findById(userId);
     if (!user) {
-      res.status(404).json({ message: 'User not found', applications: [] });
+      res.status(404).json({ message: 'User not found' });
       return;
     }
 
-    // Add isPinned status to each application
-    const applicationsWithPinStatus = detailedApps.map((app) => ({
+    const pinnedAppIds = new Set(user.pinned_apps.map((id) => id.toString()));
+    const applicationsWithPinStatus = applications.map((app: Application) => ({
       ...app,
-      isPinned: user.pinned_apps.includes(app._id),
+      isPinned: pinnedAppIds.has(app._id.toString()),
     }));
 
     res.status(200).json({
       message: 'Applications fetched successfully',
       applications: applicationsWithPinStatus,
+      pagination,
     });
   } catch (error) {
-    logger.error('Error fetching all user groups:', error);
+    logger.error('Error fetching user applications:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -244,17 +241,17 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return; // Early return on error
+      return;
     }
 
     if (user.pinned_apps.length >= 3) {
       res.status(400).json({ message: 'Cannot pin more than 3 apps' });
-      return; // Early return if user has too many pinned apps
+      return;
     }
 
     if (user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application already pinned' });
-      return; // Early return if the app is already pinned
+      return;
     }
 
     user.pinned_apps.push(new mongoose.Types.ObjectId(appId));
@@ -275,12 +272,12 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
-      return; // Early return on error
+      return;
     }
 
     if (!user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
       res.status(400).json({ message: 'Application is not pinned' });
-      return; // Early return if the app is not pinned
+      return;
     }
 
     user.pinned_apps = user.pinned_apps.filter((id) => id.toString() !== appId);

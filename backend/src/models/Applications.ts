@@ -10,7 +10,7 @@ export interface IApplication extends Document {
 
 const applicationSchema: Schema<IApplication> = new Schema({
   name: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String },
   created_at: { type: Date, default: Date.now },
   is_deleted: { type: Boolean, default: false },
   is_active: { type: Boolean, default: true },

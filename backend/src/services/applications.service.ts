@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import Applications from '../models/Applications';
+import UserGroupMembers from '../models/UserGroupMembers';
+import UserGroupApplications from '../models/UserGroupApplications';
 
 interface FilterOptions {
   page: number;
@@ -7,6 +9,7 @@ interface FilterOptions {
   search?: string;
   status?: 'active' | 'inactive';
   groupIds?: string[];
+  userId?: string;
 }
 
 const escapeRegex = (text: string) => {
@@ -14,12 +17,47 @@ const escapeRegex = (text: string) => {
 };
 
 export const getPaginatedFilteredApplications = async (options: FilterOptions) => {
-  const { page, limit, search, status, groupIds } = options;
+  const { page, limit, search, status, groupIds, userId } = options;
+
+  let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
+
+  if (userId) {
+    const userGroups = await UserGroupMembers.find({
+      user_id: userId,
+      is_active: true,
+    }).select('group_id');
+
+    if (userGroups.length > 0) {
+      const userGroupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
+      const userGroupApps = await UserGroupApplications.find({
+        group_id: { $in: userGroupIds },
+        is_active: true,
+      }).select('app_id');
+      accessibleAppIds = userGroupApps.map((a) => a.app_id as mongoose.Types.ObjectId);
+    } else {
+      accessibleAppIds = [];
+    }
+  }
 
   const pipeline: any[] = [];
-
-  // --- Start of Filtering Stage ---
   const matchStage: any = { is_deleted: false };
+
+  if (accessibleAppIds) {
+    if (accessibleAppIds.length === 0) {
+      return {
+        applications: [],
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      };
+    }
+    matchStage._id = { $in: accessibleAppIds };
+  }
 
   if (status) {
     matchStage.is_active = status === 'active';
@@ -57,15 +95,10 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
     );
   }
 
-  // --- Data Aggregation and Pagination Stage ---
-  // Use $facet to process two pipelines: one for getting the total count and one for getting the paginated data.
   pipeline.push({
     $facet: {
-      // Branch 1: Get the total count of documents that match the filters
       metadata: [{ $count: 'total' }],
-      // Branch 2: Get the paginated and detailed data
       data: [
-        // The same lookups and projections from your original getDetailedApplications function
         {
           $lookup: {
             from: 'usergroupapplications',
@@ -112,7 +145,6 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
   });
 
   const result = await Applications.aggregate(pipeline);
-
   const data = result[0];
   const applications = data.data;
   const totalDocs = data.metadata[0]?.total || 0;
