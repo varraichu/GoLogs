@@ -23,15 +23,29 @@ export interface CriticalLogs {
   warningLogs: number;
 }
 
+// export interface Application {
+//   _id: string;
+//   name: string;
+//   description: string;
+//   isPinned: boolean;
+//   is_active: boolean;
+//   logCount: number;
+//   created_at: string;
+//   criticalLogs: CriticalLogs;
+//   health_status: 'healthy' | 'warning' | 'critical'; 
+// }
 export interface Application {
   _id: string;
   name: string;
   description: string;
   isPinned: boolean;
-  is_active: boolean;
-  logCount: number;
   created_at: string;
+  is_active: boolean;
+  groupCount: number;
+  groupNames: string[];
+  logCount: number;
   criticalLogs: CriticalLogs;
+  health_status: 'healthy' | 'warning' | 'critical'; 
 }
 
 class DashboardService {
@@ -70,6 +84,30 @@ class DashboardService {
         const endpoint = user.isAdmin
             ? `${this.baseUrl}/logs/admin-cached-summary/`
             : `${this.baseUrl}/logs/cached-summary/${user._id}`;
+
+        const res = await fetch(endpoint, {
+            method: 'GET',
+            headers: this.getAuthHeaders(),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Failed to fetch log summary');
+        }
+
+        return data;
+    }
+
+    public async refreshLogSummary(): Promise<SummaryResponse> {
+        const token = localStorage.getItem('jwt');
+        const user = this.parseJwt(token);
+
+        if (!user?._id) {
+            throw new Error('User not authenticated');
+        }
+
+        const endpoint = `${this.baseUrl}/logs/refresh-graph/`
 
         const res = await fetch(endpoint, {
             method: 'GET',

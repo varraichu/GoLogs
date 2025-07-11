@@ -8,7 +8,7 @@ import ArrayDataProvider = require('ojs/ojarraydataprovider');
 import applicationsService, { UserGroup } from '../../../services/applications.services';
 
 interface AppFilters {
-  groupIds: string[]; 
+  groupIds: string[];
   status: string;
 }
 
@@ -56,7 +56,7 @@ export const ApplicationFilters = ({ onFilterChange }: ApplicationFiltersProps) 
   };
 
   const handleGroupChange = (e: CustomEvent) => {
-    const newGroups = e.detail.value || []; 
+    const newGroups = e.detail.value || [];
     setSelectedGroups(newGroups);
     applyFilters(newGroups, selectedStatus);
   };
@@ -66,7 +66,7 @@ export const ApplicationFilters = ({ onFilterChange }: ApplicationFiltersProps) 
     setSelectedStatus(newStatus);
     applyFilters(selectedGroups, newStatus);
   };
-  
+
   const handleClearFilters = () => {
     setSelectedGroups([]);
     setSelectedStatus('all');
@@ -76,44 +76,49 @@ export const ApplicationFilters = ({ onFilterChange }: ApplicationFiltersProps) 
     });
   };
 
-return (
+  return (
     // <Fragment>
-    <div>
-    <div class="oj-flex oj-sm-padding-2x oj-sm-margin-2x-start ">
+    <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-start oj-sm-padding-4x-start oj-sm-padding-4x-end">
 
-      {/* User Group Filter */}
-      <oj-select-many
-        class="oj-flex-item oj-sm-margin-4x-end"
-        style="width: 300px; flex-grow: 0; flex-wrap: wrap;"
-        labelHint="Filter by User Group"
-        options={groupFilterOptions}
-        onvalueChanged={handleGroupChange}
-        value={selectedGroups}
-        item-text="label"
-      ></oj-select-many>
+      <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom" >
+        {/* User Group Filter */}
+        <oj-select-many
+          class="oj-form-control-width-sm"
+          // style="width: 300px; flex-grow: 0; flex-wrap: wrap;"
+          labelHint="Filter by User Group"
+          options={groupFilterOptions}
+          onvalueChanged={handleGroupChange}
+          value={selectedGroups}
+          item-text="label"
+        ></oj-select-many>
+      </div>
 
       {/* Status Filter */}
-      <oj-c-select-single
-        class="oj-flex-item oj-sm-margin-4x-end oj-sm-margin-2x-top"
-        style="width: 200px; height: 2.375rem; flex-grow: 0;"
-        labelHint="Status"
-        data={statusOptions}
-        onvalueChanged={handleStatusChange}
-        value={selectedStatus}
-        item-text="label"
-      ></oj-c-select-single>
+      <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom" >
+        <oj-c-select-single
+          class="oj-form-control-width-sm"
+          // class="oj-flex-item oj-sm-margin-4x-end oj-sm-margin-2x-top"
+          // style="width: 200px; height: 2.375rem; flex-grow: 0;"
+          labelHint="Status"
+          data={statusOptions}
+          onvalueChanged={handleStatusChange}
+          value={selectedStatus}
+          item-text="label"
+        ></oj-c-select-single>
+      </div>
 
 
       {/* Clear Button */}
+      {/* <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom" > */}
       <oj-c-button
-        class="oj-sm-margin-3x-top"
+        class="oj-form-control-width-sm"
         onojAction={handleClearFilters}
         label="Clear Filters"
         chroming="outlined"
-        style="height: 2.375rem;"
+        // style="height: 2.375rem;"
       ></oj-c-button>
-    {/* </Fragment> */}
-    </div>
+        {/* </div> */}
+      {/* </Fragment> */}
     </div>
   );
 };

@@ -21,14 +21,15 @@ const SearchBar = ({ value, onChange,  placeholder = 'Search...' }: SearchBarPro
   };
 
   return (
-    <div class="oj-sm-padding-4x-start oj-sm-padding-4x-end oj-flex oj-sm-align-items-center">
+    <div class="oj-flex oj-sm-align-items-center" style="flex: 1 1 auto;">
       <oj-input-search
         value={value}
         placeholder={placeholder}
         onojValueAction={handleInput}
         onrawValueChanged={handleRawValueChange}
-        style="height: 2.375rem;" 
-        class="oj-form-control-max-width-md"
+        style="width: 100%;"
+        // style="height: 2.375rem;" 
+        // class="oj-form-control-max-width-md"
       ></oj-input-search>
     </div>
   );

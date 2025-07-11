@@ -25,7 +25,7 @@ const LogExports = ({setExportDialog,isLoading}:LogExportsProps) => {
 
   return (
     <oj-c-progress-button
-      class="oj-sm-padding-4x-end"
+      // class="oj-sm-padding-4x-end  "
       label="Export Logs"
       chroming="callToAction"
       onojAction={setExportDialog}

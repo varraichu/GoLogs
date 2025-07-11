@@ -38,6 +38,7 @@ import '../../styles/applications-page.css';
 const Applications = (props: { path?: string }) => {
   const [applications, setApplications] = useState<Application[]>([])
   const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [opened, setOpened] = useState(false);
   const { addNewToast } = useToast();
   const [showDialog, setShowDialog] = useState(false)
   const [editingApplication, setEditingApplication] = useState<Application | null>(null)
@@ -251,7 +252,7 @@ const Applications = (props: { path?: string }) => {
 
       const result = await applicationsService.deleteApplication(confirmDeleteDialogId);
       const data = await result.json().catch(() => ({}));
-      
+
       if (!result.ok) {
         addNewToast(
           'error',
@@ -265,7 +266,7 @@ const Applications = (props: { path?: string }) => {
           data.message || 'Application deleted successfully.'
         );
       }
-      
+
       fetchApplications();
       setConfirmDeleteDialogId(null);
     } catch (error) {
@@ -279,7 +280,7 @@ const Applications = (props: { path?: string }) => {
     try {
       const result = await applicationsService.toggleApplicationStatus(appId, isActive)
       if (result.ok) {
-        fetchApplications() 
+        fetchApplications()
       } else {
         addNewToast(
           'error',
@@ -374,78 +375,71 @@ const Applications = (props: { path?: string }) => {
     }
   };
 
+  const toggleDrawer = () => setOpened(!opened)
 
 
   return (
-    // 1. MAIN CONTAINER
-    <div class="oj-flex oj-sm-flex-direction-column applications-page">
-      {/* 2. PAGE TITLE */}
-      <div class="oj-flex oj-sm-12 oj-sm-padding-5x-start oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-padding-5x-end">
+    <div class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column oj-sm-padding-6x" style="height: 100%; min-height: 0; flex: 1 1 0;">
+      <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Applications</h1>
+      </div>
+
+      <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
+        <SearchBar value={searchTerm} onChange={handleSearchChange} placeholder="Search Applications" />
         <oj-button
-          class="oj-sm-margin-6x-top"
           onojAction={() => openDialog()}
           chroming="callToAction"
         >
-          + Create Application
+          <span slot="startIcon" class="oj-ux-ico-add-circle"></span>
+          Create Application
+        </oj-button>
+        <oj-button
+          onojAction={toggleDrawer}
+          label={opened ? "Close Filters" : "Apply Filters"}
+          chroming={opened ? "outlined" : "callToAction"}
+        >
+          {opened ? (<span slot="startIcon" class="oj-ux-ico-filter-alt-off"></span>) : (<span slot="startIcon" class="oj-ux-ico-filter-alt"></span>)}
         </oj-button>
       </div>
 
-      {/* 3. SEARCH BAR */}
-      <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-start oj-sm-padding-1x-bottom ">
-        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Applications" />
-      </div>
+      <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1" style="width: 100%; overflow-x: hidden;">
+        <div class="oj-flex oj-sm-flex-1 oj-sm-overflow-hidden" style="min-width: 0;">
+          <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style="width: 100%;">
+            {isLoadingPage ? (
+              <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
+            ) : (
+              <ApplicationsList
+                applications={applications}
+                onToggleStatus={handleToggleApplicationStatus}
+                onEdit={openDialog}
+                onDelete={confirmDeleteGroup}
+              />
+            )}
 
-      {/* 4. FILTERS */}
-      <ApplicationFilters onFilterChange={handleFilterChange} />
-
-      {/* 5. CONTENT (APP CARDS) */}
-      <div
-        id="applicationsListContainer"
-        class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-flex-start"
-        style="flex: 1; min-height: 0; gap: 16px; position: relative;"
-      >
-        {isLoadingPage ? (
-          <div class="oj-flex-item oj-flex oj-sm-flex-wrap oj-sm-margin-1x-top oj-sm-justify-content-center">
-            <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
-
+            {pagination.total > 0 && (
+              <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end" style="gap: 16px;">
+                <oj-button chroming="callToAction" onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))} disabled={!pagination.hasPrevPage}>
+                  <span slot="startIcon" class="oj-ux-ico-arrow-left"></span> Previous
+                </oj-button>
+                <span class="oj-typography-body-md oj-text-color-primary">Page {pagination.page} of {pagination.totalPages}</span>
+                <oj-button chroming="callToAction" onojAction={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))} disabled={!pagination.hasNextPage}>
+                  Next <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
+                </oj-button>
+              </div>
+            )}
           </div>
-        ) : (
-          <ApplicationsList
-            applications={applications}
-            onToggleStatus={handleToggleApplicationStatus}
-            onEdit={openDialog}
-            onDelete={confirmDeleteGroup}
-          />
-        )}
-      </div>
-
-      {/* --- PAGINATION --- */}
-      {pagination && pagination.total > 0 && (
-        <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end" style="gap: 16px; margin-top: 24px;">
-          <oj-button
-            chroming="callToAction"
-            onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-            disabled={!pagination.hasPrevPage}
-          >
-            <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
-            Previous
-          </oj-button>
-          <span class="oj-typography-body-md oj-text-color-primary">
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
-          <oj-button
-            chroming="callToAction"
-            onojAction={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-            disabled={!pagination.hasNextPage}
-          >
-            Next
-            <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
-          </oj-button>
         </div>
-      )}
 
-      {/* --- DIALOGS AND TOAST --- */}
+        <div slot="end" style="width: 280px; max-width: 100%; box-sizing: border-box;">
+          <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-padding-4x-start">
+            <h6>Filter Applications</h6>
+          </div>
+          <div class="oj-flex">
+            <ApplicationFilters onFilterChange={handleFilterChange} />
+          </div>
+        </div>
+      </oj-drawer-layout>
+
       {confirmDeleteDialogId && (
         <ConfirmDialog
           title="Confirm Deletion"
@@ -468,19 +462,11 @@ const Applications = (props: { path?: string }) => {
           onDescriptionChange={setDescription}
           onAssignedGroupsChange={handleAssignedGroupsChange}
           onSave={saveApplication}
-          onCancel={() => {
-            if (hasUnsavedChanges()) {
-              setShowDiscardDialog(true)
-            } else {
-              setShowDialog(false)
-              setErrors({})
-            }
-          }}
+          onCancel={() => hasUnsavedChanges() ? setShowDiscardDialog(true) : setShowDialog(false)}
           hasUnsavedChanges={hasUnsavedChanges()}
           onDiscardChanges={() => {
             setShowDialog(false)
             setShowDiscardDialog(false)
-            setErrors({})
           }}
         />
       )}
@@ -493,13 +479,12 @@ const Applications = (props: { path?: string }) => {
           onConfirm={() => {
             setShowDialog(false)
             setShowDiscardDialog(false)
-            setErrors({})
           }}
           onCancel={() => setShowDiscardDialog(false)}
         />
       )}
       <Toast />
     </div>
-  );
+  )
 };
 export default Applications

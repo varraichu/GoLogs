@@ -2,11 +2,7 @@
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import logger from '../config/logger';
-import {
-  fetchPaginatedLogsWithAppInfo,
-  fetchUserLogSummaryByApp,
-  fetchUserLogsWithAppInfo,
-} from '../services/logs.service';
+import { fetchPaginatedLogsWithAppInfo, fetchUserLogsWithAppInfo } from '../services/logs.service';
 import UserGroupMembers from '../models/UserGroupMembers';
 import mongoose from 'mongoose';
 import UserGroupApplications from '../models/UserGroupApplications';
@@ -14,6 +10,7 @@ import { UserIdParams } from '../schemas/application.validator';
 import { UpdateLogTTLInput, LogsQueryInput, logsQuerySchema } from '../schemas/logs.validator';
 import Logs from '../models/Logs';
 import LogsSummary from '../models/LogsSummary';
+import { updateLogSummary } from '../scripts/updateLogsSummary';
 
 interface SortCriteria {
   field: string;
@@ -308,28 +305,6 @@ export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
   }
 };
 
-export const getUserLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
-  try {
-    const { userId } = req.params as UserIdParams;
-
-    // Optional date range (default to last 24h)
-    const startDate = req.query.startDate
-      ? new Date(req.query.startDate as string)
-      : new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
-
-    const data = await fetchUserLogSummaryByApp({ userId, startDate, endDate });
-
-    res.status(200).json({
-      message: 'Log summary fetched successfully',
-      data,
-    });
-  } catch (error) {
-    logger.error('Error fetching log summary:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
 export const getCachedLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params as UserIdParams;
@@ -375,6 +350,16 @@ export const getAllCachedLogSummary = async (req: IAuthRequest, res: Response): 
     res.status(200).json({ message: 'Admin summaries fetched', data: summaries });
   } catch (error) {
     logger.error('Error fetching user log summary:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const refreshLogGraph = async (req: IAuthRequest, res: Response) => {
+  try {
+    await updateLogSummary();
+    res.status(200).json({ message: 'Log graph refresh' });
+  } catch (error) {
+    logger.error('Error refreshing log graph:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
