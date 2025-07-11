@@ -3,15 +3,14 @@ import { h } from 'preact';
 import 'ojs/ojdialog';
 import 'ojs/ojbutton';
 import 'ojs/ojformlayout';
+
 import LogGraph from "./components/LogGraph";
-
-import { Application } from "../../services/dashboard.services";
-import dashboardService from "../../services/dashboard.services";
-import { PinUnpinDialog, handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
 import AppsHealth from "./components/AppsHealth";
-import { PinnedAppsSection } from "./components/PinnedAppsSection";
 import DashboardRecentLogs from "./components/DashboardRecentLogs";
+import { PinnedAppsSection } from "./components/PinnedAppsSection";
+import { PinUnpinDialog, handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
 
+import dashboardService, { Application } from "../../services/dashboard.services";
 
 const Dashboard = (props: { path?: string; userId?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
@@ -29,7 +28,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                 setApplications(fetchedApplications);
                 setUserId(fetchedUserId);
             } catch (error) {
-                console.error("Failed to fetch applications", error);
+                console.error("Failed to fetch applications", error); //add toast here
             }
         };
         loadApplications();
@@ -40,63 +39,45 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
         setSelectedAppIds(pinnedAppIds);
     }, [applications]);
 
-    const pinnedApplications = applications.filter(app => app.isPinned);
-
-
     return (
-        <div class="oj-flex oj-sm-padding-4x">
-
-            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
-                style={{ marginBottom: "12px" }}>
-                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
-                    <h3 style={{
-                        margin: 0,
-                        fontWeight: "bold",
-                        fontSize: "1.3rem"
-                    }}>Application Health</h3>
+        <div class="oj-flex oj-sm-padding-4x oj-sm-flex-direction-column" style="gap: 32px;">
+            
+            {/* Application Health */}
+            <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
+                <div class="oj-flex oj-sm-align-items-center" style="gap: 4px;">
+                    <h3 style={{ margin: 0, fontWeight: "bold", fontSize: "1.3rem" }}>Application Health</h3>
                 </div>
             </div>
-            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
+            <div class="oj-flex-item oj-sm-margin-4x-bottom">
                 <AppsHealth userId={userId} />
             </div>
 
-            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
-                style={{ marginBottom: "12px" }}>
-                <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
-                    <h3 style={{
-                        margin: 0,
-                        fontWeight: "bold",
-                        fontSize: "1.3rem"
-                    }}>Logs in the past 24 hours</h3>
-                </div>
-            </div> */}
-
-            {/* Combined Graph + Pinned Apps Row */}
-            <div
-                class="oj-flex"
-                style={{
-                    width: '100%',
-                    gap: '24px',
-                    alignItems: 'stretch', // 🔑 makes children match tallest
-                }}
-            >
+            {/* Logs Graph & Pinned Apps */}
+            <div class="oj-flex oj-sm-flex-wrap-nowrap" style={{ width: '100%', gap: '24px', alignItems: 'stretch' }}>
                 {/* Graph Panel */}
                 <div class="oj-flex-item" style={{ flex: '1 1 68%' }}>
-                    <div
-                        class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x"
-                        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-                    >
+                    <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-margin-bottom-2x">
+                            <div class="oj-flex oj-sm-align-items-center" style={{ gap: '4px' }}>
+                                <h3 style={{ margin: 0, fontWeight: "bold", fontSize: "1.3rem" }}>
+                                    Logs in the past 24 hours
+                                </h3>
+                            </div>
+                        </div>
                         <LogGraph />
-            </div>
-            <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
-                <LogGraph></LogGraph>
+                    </div>
+                </div>
+
+                {/* Pinned Apps Section */}
+                <PinnedAppsSection
+                    applications={applications}
+                    userId={userId}
+                    setApplications={setApplications}
+                />
             </div>
 
-            <PinnedAppsSection 
-                applications={applications} 
-                userId={userId} 
-                setApplications={setApplications} 
-            />
+            {/* Recent Logs */}
+            <DashboardRecentLogs />
 
             {/* Error Dialog */}
             {showErrorDialog && (
@@ -120,9 +101,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                     </div>
                 </oj-dialog>
             )}
-            
-            <DashboardRecentLogs></DashboardRecentLogs>
-            </div>
+        </div>
     );
 };
 
