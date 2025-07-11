@@ -92,3 +92,77 @@ export const savePinnedApps = async (
     setShowErrorDialog(true);
   }
 };
+
+interface PinUnpinDialogProps {
+    opened: boolean;
+    onCancel: () => void;
+    onSave: () => void;
+    applications: Application[];
+    selectedAppIds: string[];
+    handleCheckboxChange: (appId: string) => void;
+    errorMessage?: string;
+}
+
+export const PinUnpinDialog = ({
+    opened,
+    onCancel,
+    onSave,
+    applications,
+    selectedAppIds,
+    handleCheckboxChange,
+    errorMessage
+}: PinUnpinDialogProps) => {
+    if (!opened) {
+        return null;
+    }
+
+    return (
+        <oj-dialog
+            id="pinDialog"
+            dialogTitle="Pin/Unpin Applications"
+            initialVisibility="show"
+            onojClose={onCancel}
+            style="--dialog-width: 400px;" 
+        >
+            <div class="oj-dialog-body" style="padding: 0.5rem 1rem; max-height: calc(100vh - 200px); overflow-y: auto;">
+                <oj-form-layout>
+                    {applications.map(app => (
+                        <div
+                            key={app._id}
+                            class="oj-flex oj-sm-align-items-center"
+                            style="padding: 0.25rem 0; min-height: 32px;"
+                        >
+                            <label class="oj-checkbox-wrapper" style="display: flex; align-items: center; width: 100%;">
+                                <input
+                                    type="checkbox"
+                                    class="oj-checkbox-input"
+                                    checked={selectedAppIds.includes(app._id)}
+                                    onChange={() => handleCheckboxChange(app._id)}
+                                    style="margin-right: 8px;"
+                                />
+                                <span class="oj-typography-body-md" style="flex-grow: 1;">
+                                    {app.name}
+                                </span>
+                                {app.isPinned && (
+                                    <span
+                                        class="oj-ux-ico-pin-filled"
+                                        style="color: #4CAF50; font-size: 0.875rem;"
+                                        title="Currently pinned"
+                                    ></span>
+                                )}
+                            </label>
+                        </div>
+                    ))}
+                </oj-form-layout>
+            </div>
+            <div class="oj-dialog-footer" style="padding: 0.75rem; border-top: 1px solid var(--oj-core-divider-color);">
+                <oj-button onojAction={onCancel} chroming="borderless">
+                    Cancel
+                </oj-button>
+                <oj-button onojAction={onSave} chroming="callToAction" style="margin-left: 0.5rem;">
+                    Pin Selected
+                </oj-button>
+            </div>
+        </oj-dialog>
+    );
+};

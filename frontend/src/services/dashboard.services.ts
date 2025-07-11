@@ -23,15 +23,29 @@ export interface CriticalLogs {
   warningLogs: number;
 }
 
+// export interface Application {
+//   _id: string;
+//   name: string;
+//   description: string;
+//   isPinned: boolean;
+//   is_active: boolean;
+//   logCount: number;
+//   created_at: string;
+//   criticalLogs: CriticalLogs;
+//   health_status: 'healthy' | 'warning' | 'critical'; 
+// }
 export interface Application {
   _id: string;
   name: string;
   description: string;
   isPinned: boolean;
-  is_active: boolean;
-  logCount: number;
   created_at: string;
+  is_active: boolean;
+  groupCount: number;
+  groupNames: string[];
+  logCount: number;
   criticalLogs: CriticalLogs;
+  health_status: 'healthy' | 'warning' | 'critical'; 
 }
 
 class DashboardService {
