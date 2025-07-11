@@ -8,10 +8,10 @@ import {
   getCachedLogSummary,
   getLogTTL,
   getUserLogs,
-  getUserLogSummary,
   updateLogTTL,
   exportUserLogs,
   exportAdminLogs,
+  refreshLogGraph,
 } from '../controllers/logs.controller';
 
 import { updateLogTTLSchema, logsQuerySchema } from '../schemas/logs.validator';
@@ -32,6 +32,7 @@ router.get('/admin-cached-summary/', protect, isAdmin, getAllCachedLogSummary);
 
 router.get('/cached-summary/:userId', validate(logsQuerySchema), getCachedLogSummary);
 router.get('/get/ttl', getLogTTL);
+router.get('/refresh-graph', refreshLogGraph);
 
 router.get('/export', protect, isAdmin, validate(logsQuerySchema), exportAdminLogs);
 router.get(
@@ -41,7 +42,6 @@ router.get(
   validate(logsQuerySchema),
   exportUserLogs
 );
-router.get('/summary/:userId', validate(logsQuerySchema), getUserLogSummary);
 router.get('/:userId', validate(logsQuerySchema), getUserLogs);
 
 // router.get('/cached-summary/:userId', validate(logsQuerySchema), getCachedLogSummary);

@@ -99,6 +99,30 @@ class DashboardService {
         return data;
     }
 
+    public async refreshLogSummary(): Promise<SummaryResponse> {
+        const token = localStorage.getItem('jwt');
+        const user = this.parseJwt(token);
+
+        if (!user?._id) {
+            throw new Error('User not authenticated');
+        }
+
+        const endpoint = `${this.baseUrl}/logs/refresh-graph/`
+
+        const res = await fetch(endpoint, {
+            method: 'GET',
+            headers: this.getAuthHeaders(),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Failed to fetch log summary');
+        }
+
+        return data;
+    }
+
 
     
     public async fetchApplications(): Promise<{ applications: Application[], userId: string }> {

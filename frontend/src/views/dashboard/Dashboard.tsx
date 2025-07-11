@@ -42,6 +42,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
 
     const pinnedApplications = applications.filter(app => app.isPinned);
 
+
     return (
         <div class="oj-flex oj-sm-padding-4x">
 
@@ -68,6 +69,24 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                         fontSize: "1.3rem"
                     }}>Logs in the past 24 hours</h3>
                 </div>
+            </div> */}
+
+            {/* Combined Graph + Pinned Apps Row */}
+            <div
+                class="oj-flex"
+                style={{
+                    width: '100%',
+                    gap: '24px',
+                    alignItems: 'stretch', // 🔑 makes children match tallest
+                }}
+            >
+                {/* Graph Panel */}
+                <div class="oj-flex-item" style={{ flex: '1 1 68%' }}>
+                    <div
+                        class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x"
+                        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                    >
+                        <LogGraph />
             </div>
             <div class={'oj-flex-item oj-sm-margin-4x-bottom'} >
                 <LogGraph></LogGraph>

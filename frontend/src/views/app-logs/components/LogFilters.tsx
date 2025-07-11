@@ -184,9 +184,9 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
   };
 
   return (
-    <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-space-around oj-sm-padding-4x-start oj-sm-padding-4x-end">
+    <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-start oj-sm-padding-4x-start oj-sm-padding-4x-end">
       {/* App Filter */}
-      <div class="oj-flex-item oj-sm-flex-1" >
+      <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom" >
         <oj-select-many
           options={appOptions}
           value={selectedApps}
@@ -199,7 +199,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
       </div>
 
       {/* Log Type Filter */}
-      <div class="oj-flex-item oj-sm-flex-1">
+      <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom">
         <oj-select-many
           options={logTypeOptions}
           value={selectedLogTypes}
@@ -212,7 +212,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
       </div>
 
       {/* From DateTime */}
-      <div class="oj-flex-item oj-sm-flex-1">
+      <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom">
         <oj-input-date-time
           value={fromDate}
           onvalueChanged={handleFromDateChange}
@@ -229,7 +229,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
       </div>
 
       {/* To DateTime */}
-      <div class="oj-flex-item oj-sm-flex-1">
+      <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom">
         <oj-input-date-time
           value={toDate}
           onvalueChanged={handleToDateChange}
@@ -249,8 +249,9 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
       <oj-button
         onojAction={handleClearFilters}
         chroming="outlined"
+        class="oj-form-control-width-sm"
       >
-        Clear
+        Clear Filters
       </oj-button>
 
       <Toast />
