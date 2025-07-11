@@ -41,10 +41,10 @@ const processJobs = async (job: Job) => {
         return;
     }
 
-    const isProcessed = await redisClient.sadd(processedJobSetKey, job.id);
-
-    if (isProcessed === 0) {
-        console.warn(`Skip Job ${job.id}. ALready processed.`);
+    // Check if already processed (but don't add to set yet)
+    const isAlreadyProcessed = await redisClient.sismember(processedJobSetKey, job.id);
+    if (isAlreadyProcessed) {
+        console.warn(`Skip Job ${job.id}. Already processed.`);
         return;
     }
 
@@ -79,7 +79,7 @@ const processJobs = async (job: Job) => {
     catch (error) {
         console.error(`Error processing Job ${job.id}:`, error);
         // Optionally, you can remove the job from the processed set if it fails
-        await redisClient.srem(processedJobSetKey, job.id);
+        // await redisClient.srem(processedJobSetKey, job.id);
         throw error; // Re-throw the error to let BullMQ handle it
     }
 };
