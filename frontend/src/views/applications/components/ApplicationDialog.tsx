@@ -70,6 +70,7 @@ export const ApplicationDialog = ({
       return
     }
 
+
     onSave()
   }
 
@@ -86,6 +87,7 @@ export const ApplicationDialog = ({
       id="applicationDialog"
       dialogTitle={editingApplication ? 'Edit Application' : 'Create Application'}
       initialVisibility="show"
+      headerDecoration='off'
     >
       <div class="oj-dialog-body">
         <oj-c-form-layout>
@@ -99,10 +101,10 @@ export const ApplicationDialog = ({
             validators={[
               new LengthValidator({ min: 5, max: 20 }),
               new RegExpValidator({
-                pattern: '^[a-zA-Z0-9_-]+$',
-                hint: 'Only letters, numbers, underscores (_), and hyphens (-) are allowed.',
+                pattern: '^[a-zA-Z0-9 _.-]+$',
+                hint: 'Only letters, numbers, spaces, periods (.), underscores (_), and hyphens (-) are allowed.',
                 messageSummary: 'Invalid name format.',
-                messageDetail: 'Use only letters, numbers, underscores (_), and hyphens (-).',
+                messageDetail: 'Use only letters, numbers, spaces, periods (.), underscores (_), and hyphens (-).',
               })
             ]}
           ></oj-c-input-text>
@@ -141,12 +143,23 @@ export const ApplicationDialog = ({
           }
         </oj-c-form-layout>
       </div>
-      <div class="oj-dialog-footer">
+     {
+      editingState ? (
+         <div class="oj-dialog-footer">
+        <oj-button onojAction={handleSave}>Save</oj-button>
+        <oj-button onojAction={handleCancel} chroming="borderless">
+          Cancel
+        </oj-button>
+      </div>
+      ) : (
+         <div class="oj-dialog-footer">
         <oj-button onojAction={handleSave}>Create</oj-button>
         <oj-button onojAction={handleCancel} chroming="borderless">
           Cancel
         </oj-button>
       </div>
+      )
+     }
     </oj-dialog>
   )
 }

@@ -19,7 +19,7 @@ interface ApplicationFiltersProps {
 export const ApplicationFilters = ({ onFilterChange }: ApplicationFiltersProps) => {
   const [allUserGroups, setAllUserGroups] = useState<UserGroup[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>('active');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   const statusOptions = useMemo(() => {
     return new ArrayDataProvider([

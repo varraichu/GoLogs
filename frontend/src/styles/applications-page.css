@@ -1,0 +1,47 @@
+/* Main container */
+.applications-page {
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+/* Title section */
+.applications-page-header {
+  padding-inline: 24px; /* equivalent to oj-sm-padding-5x-start/end */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Create button */
+.applications-create-button {
+  margin-top: 24px; /* oj-sm-margin-6x-top */
+}
+
+/* Search bar container */
+.applications-search-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-bottom: 8px; /* oj-sm-padding-1x-bottom */
+}
+
+/* Cards container */
+.applications-list-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8px; /* oj-sm-margin-1x-top */
+  gap: 16px;
+}
+
+/* Pagination container */
+.applications-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-inline-end: 32px; /* oj-sm-margin-4x-end */
+  gap: 16px;
+  margin-top: 24px;
+}

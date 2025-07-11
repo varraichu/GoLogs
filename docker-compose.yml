@@ -170,10 +170,10 @@ services:
     build: ./frontend
     container_name: frontend
     ports:
-      - "8000:8000"               # Vite dev server default
+      - "8000:8000"               
     volumes:
       - ./frontend:/app
-      - /app/node_modules         # Avoids overwriting container's node_modules
+      - /app/node_modules         
     # command: npm run dev -- --host
     depends_on:
       - backend
@@ -188,7 +188,7 @@ services:
       - ./backend/.env
     volumes:
       - ./backend:/app
-      - /app/node_modules     # Prevents overwrite of container's node_modules
+      - /app/node_modules     
     ports:
       - "3001:3001"
     # depends_on:

@@ -19,12 +19,9 @@ export const ApplicationsList = ({
 
   return (
     <div
-      class="oj-flex oj-flex-wrap"
+      class="oj-flex oj-flex-wrap oj-sm-padding-4x oj-sm-align-items-stretch oj-sm-justify-content-flex-start"
       style={{
         gap: '24px',
-        justifyContent: 'flex-start',
-        alignItems: 'stretch',
-        marginTop: '24px',
       }}
     >
       {applications.length === 0 ? (
