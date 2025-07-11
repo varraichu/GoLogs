@@ -41,7 +41,7 @@ const LogExportsDialog = ({  close, export:exp,opened,exportFormat,setExportForm
     <div>
       <oj-c-dialog
         opened={opened}
-        // headerDecoration='off'
+        headerDecoration='off'
         // cancelBehavior="icon"
         // onojCancel={onCancel}
         // style="--oj-dialog-width: 600px; --oj-dialog-max-height: 80vh;"

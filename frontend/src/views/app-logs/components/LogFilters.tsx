@@ -249,8 +249,9 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
       <oj-button
         onojAction={handleClearFilters}
         chroming="outlined"
+        class="oj-form-control-width-sm"
       >
-        Clear
+        Clear Filters
       </oj-button>
 
       <Toast />

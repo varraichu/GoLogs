@@ -259,6 +259,24 @@ const Logs = (props: { path?: string }) => {
     }
   }
 
+  // const isFilterActive =
+  //   filters.apps.length > 0 ||
+  //   filters.logTypes.length > 0 ||
+  //   filters.fromDate !== undefined ||
+  //   filters.toDate !== undefined;
+
+  // const clearAllFilters = () => {
+  //   setFilters({
+  //     apps: [],
+  //     logTypes: [],
+  //     fromDate: undefined,
+  //     toDate: undefined,
+  //     search: ''
+  //   });
+  //   setPagination((prev) => ({ ...prev, page: 1 }));
+  // };
+
+
   return (
 
     <div
@@ -269,20 +287,29 @@ const Logs = (props: { path?: string }) => {
       <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
-
-      <div class="oj-flex oj-flex-direction-col oj-sm-margin-2x-bottom oj-sm-align-items-center">
+      <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
         <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
+        <LogExports
+          setExportDialog={() => {
+            setExportDialog(!exportDialog)
+          }}
+          isLoading={isExporting}
+        />
         <oj-button
           onojAction={toggleDrawer}
-          label="Apply Filters"
-          chroming="callToAction"
-        ></oj-button>
+          label={opened ? "Close Filters" : "Apply Filters"}
+          chroming={opened ? "outlined" : "callToAction"}
+        >
+          {
+            opened ? (<span slot="startIcon" class="oj-ux-ico-filter-alt-off"></span>) : (<span slot="startIcon" class="oj-ux-ico-filter-alt"></span>)
+
+          }
+        </oj-button>
       </div>
 
-      <oj-drawer-layout endOpened={opened} class="">
-        {/* MAIN CONTENT */}
-        <div class="oj-flex oj-sm-flex-items-1">
-          <div class=" oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x">
+      <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1" style="width: 100%; overflow-x: hidden;">
+        <div class="oj-flex oj-sm-flex-1 oj-sm-overflow-hidden" style="min-width: 0;">
+          <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style="width: 100%;">
 
             <LogsTable
               isLoading={isLoading}
@@ -327,101 +354,33 @@ const Logs = (props: { path?: string }) => {
           </div>
         </div>
 
-        {/* FIXED: Drawer content placed as a sibling with `slot="end"` */}
-        <div slot="end"  class="oj-sm-padding-4x" style="width: 20vw; max-width: 300px;">
-          <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center">
-            <h6>FIlter and Export</h6>
-            <oj-button
+        <div slot="end" class="" style="width: 280px; max-width: 100%; box-sizing: border-box;">
+          <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-padding-4x-start">
+            <h6>Filter Logs</h6>
+            {/* <oj-button
               display="icons"
               chroming="borderless"
               onojAction={toggleDrawer}
             >
               <span slot="startIcon" class="oj-ux-ico-close"></span>
               Close
-            </oj-button>
+            </oj-button> */}
           </div>
 
-          <div class="oj-flex" style={{backgroundColor:'#8ace00'}}>
+          <div class="oj-flex">
             <LogFilters filters={filters} onFilterChange={handleFilterChange} />
 
-            <div class="oj-flex oj-flex-items-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom">
+            {/* <div class="oj-flex oj-flex-items-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom">
               <LogExports
                 setExportDialog={() => {
                   setExportDialog(!exportDialog)
                 }}
                 isLoading={isExporting}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </oj-drawer-layout>
-
-
-
-
-      {/* <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x">
-        <div class="oj-flex oj-flex-items-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom">
-
-
-          <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
-          <LogExports
-            setExportDialog={() => {
-              setExportDialog(!exportDialog)
-            }}
-            isLoading={isExporting}
-          />
-
-        </div>
-
-
-        <LogFilters filters={filters} onFilterChange={handleFilterChange} />
-      </div> */}
-
-
-
-      {/* <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x">
-
-        <LogsTable
-          isLoading={isLoading}
-          dataProvider={dataProvider}
-          sortCriteria={sortCriteria}
-          getDir={getDir}
-          handleSort={handleSort}
-          selectedRows={selectedRows}
-          handleRowSelect={handleRowSelect}
-        />
-
-
-
-        {pagination && (
-          <div
-            class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end"
-            style="gap: 16px;"
-          >
-            <oj-button
-              chroming="callToAction"
-              onojAction={goToPrevPage}
-              disabled={!pagination.hasPrevPage || isLoading}
-            >
-              <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
-              Previous
-            </oj-button>
-
-            <span class="oj-typography-body-md oj-text-color-primary">
-              Page {pagination.page} of {pagination.totalPages}
-            </span>
-
-            <oj-button
-              chroming="callToAction"
-              onojAction={goToNextPage}
-              disabled={!pagination.hasNextPage || isLoading}
-            >
-              Next
-              <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
-            </oj-button>
-          </div>
-        )}
-      </div> */}
 
       <LogExportsDialog
         opened={exportDialog}
