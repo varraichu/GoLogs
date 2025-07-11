@@ -15,6 +15,9 @@ type Props = {
   isAdmin?: boolean
   username?: string
   pictureUrl?: string
+  // path:string
+  activeItem: string
+  setActiveItem : (str:string)=>void
 }
 
 const pathnameMappings: { [key: string]: string } = {
@@ -32,9 +35,11 @@ export function SideBar({
   isAdmin,
   pictureUrl,
   username,
+  activeItem,
+  setActiveItem
 }: Props) {
   // isAdmin=false
-  const [activeItem, setActiveItem] = useState<string>('dashboard')
+  // const [activeItem, setActiveItem] = useState<string>('dashboard')
 
   useEffect(() => {
     const pathName = window.location.pathname

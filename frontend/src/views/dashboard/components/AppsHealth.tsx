@@ -6,7 +6,7 @@ import { SilentAppsCard } from './SilentAppsCard'
 import 'ojs/ojprogress-circle'
 
 
-export default function AppsHealth({ userId }: { userId: string }) {
+export default function AppsHealth({ userId,setActiveItem }: { userId: string, setActiveItem:(str:string)=>void }) {
     const [data, setData] = useState<AppsHealthResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -49,6 +49,7 @@ export default function AppsHealth({ userId }: { userId: string }) {
                     total={data!.critical_summary.total_errors}
                     apps={data!.critical_summary.appsExceedingErrorThreshold}
                     color="error"
+                    setActiveItem={setActiveItem}
                 />
                 <AppsHealthCard
                     title="Warnings"
@@ -56,6 +57,7 @@ export default function AppsHealth({ userId }: { userId: string }) {
                     total={data!.critical_summary.total_warnings}
                     apps={data!.critical_summary.appsExceedingWarningThreshold}
                     color="warning"
+                    setActiveItem={setActiveItem}
                 />
                 <SilentAppsCard apps={data!.silent_summary.silent_apps} />
             </div>

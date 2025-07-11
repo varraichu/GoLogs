@@ -32,6 +32,7 @@ export const App = registerCustomElement(
     const [loading, setLoading] = useState(true)
     const [startOpened, setStartOpened] = useState(true)
     const [userId, setUserId] = useState<string>("")
+    const [activeItem, setActiveItem] = useState<string>('dashboard')
     useEffect(() => {
       Context.getPageContext().getBusyContext().applicationBootstrapComplete()
 
@@ -83,6 +84,8 @@ export const App = registerCustomElement(
           <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={startOpened}>
             <SideBar
               // slot="start" 
+              setActiveItem={setActiveItem}
+              activeItem={activeItem}
               setIsAuthenticated={setIsAuthenticated}
               isAdmin={isAdmin}
               pictureUrl={profileUrl}
@@ -91,7 +94,7 @@ export const App = registerCustomElement(
             <div>
               <Router>
                 {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
-                <Dashboard path="/dashboard" userId={userId} />
+                <Dashboard path="/dashboard" userId={userId} setActiveItem={setActiveItem} />
                 <Settings path="/settings" isAdmin={isAdmin} userId={userId} />
                 {isAdmin ? (
                   <Applications path="/applications" />

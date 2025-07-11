@@ -6,7 +6,7 @@ import ArrayDataProvider = require('ojs/ojarraydataprovider')
 import { logsService, LogEntry } from "../../../services/logs.services"
 import { route } from 'preact-router'
 
-const DashboardRecentLogs = () => {
+const DashboardRecentLogs = (props:{setActiveItem:(str:string)=>void}) => {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [dataProvider, setDataProvider] = useState<any>(null)
 
@@ -26,13 +26,16 @@ const DashboardRecentLogs = () => {
 
   return (
     <div class="oj-panel oj-sm-12 oj-panel-padding oj-sm-padding-4x oj-flex-item">
-      <div class="oj-flex oj-panel oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center ">
+      <div class="oj-flex oj-panel-border-0 oj-sm-padding-4x oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center ">
           <div class="oj-flex-item ">
               <h5 class="">Recent Logs</h5>
-              <h6 class=" oj-text-color-secondary">Latest 5 logs across all applications</h6>
+              <span class="">Latest 5 logs across all applications</span>
           </div>
           
-          <oj-button class="oj-flex-item oj-sm-2" label="View All Logs" onojAction={() => { route(`/logs`) }}><span slot="startIcon" class="oj-ux-ico-external-link"></span></oj-button>
+          <oj-button class="oj-flex-item oj-sm-flex-initial" label="View All Logs" onojAction={() => { 
+            route(`/logs`)
+            props.setActiveItem("logs")
+             }}><span slot="startIcon" class="oj-ux-ico-external-link"></span></oj-button>
       </div>
       <oj-table
         data={dataProvider}

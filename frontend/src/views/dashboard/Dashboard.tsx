@@ -11,7 +11,7 @@ import { handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialo
 import AppsHealth from "./components/AppsHealth";
 import DashboardRecentLogs from "./components/DashboardRecentLogs";
 
-const Dashboard = (props: { path?: string; userId?: string }) => {
+const Dashboard = (props: { path?: string; userId?: string, setActiveItem:(str:string)=>void }) => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [userId, setUserId] = useState("");
     const [showPinDialog, setShowPinDialog] = useState(false);
@@ -51,7 +51,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                         fontSize: "1.3rem"
                     }}>Application Health</h3>
                 </div>
-                <AppsHealth userId={userId} />
+                <AppsHealth userId={userId} setActiveItem={props.setActiveItem} />
                 {/* <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x">
                 </div> */}
             </div>
@@ -325,7 +325,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                         )}
                     </div>
                 </div>
-                <DashboardRecentLogs></DashboardRecentLogs>
+                <DashboardRecentLogs setActiveItem={props.setActiveItem}></DashboardRecentLogs>
 
             </div>
 
