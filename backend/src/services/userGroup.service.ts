@@ -29,7 +29,7 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         localField: '_id',
         foreignField: 'group_id',
         as: 'members',
-        pipeline: [{ $match: { is_active: true } }],
+        pipeline: [{ $match: { is_active: true, is_removed: false } }],
       },
     },
     // 3. Perform a multi-stage lookup to get application names
@@ -41,6 +41,12 @@ export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[])
         as: 'assignedApplications',
         // This pipeline will run on the 'usergroupapplications' collection
         pipeline: [
+          // {
+          //   $match: {
+          //     is_active: true,
+          //     is_removed: false,
+          //   },
+          // },
           // First, join with the 'applications' collection to get details
           {
             $lookup: {

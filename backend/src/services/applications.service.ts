@@ -25,6 +25,7 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
     const userGroups = await UserGroupMembers.find({
       user_id: userId,
       is_active: true,
+      is_removed: false,
     }).select('group_id');
 
     if (userGroups.length > 0) {
@@ -32,6 +33,7 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
       const userGroupApps = await UserGroupApplications.find({
         group_id: { $in: userGroupIds },
         is_active: true,
+        is_removed: false,
       }).select('app_id');
       accessibleAppIds = userGroupApps.map((a) => a.app_id as mongoose.Types.ObjectId);
     } else {
@@ -105,16 +107,28 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
             localField: '_id',
             foreignField: 'app_id',
             as: 'groups',
-            pipeline: [{ $match: { is_active: true } }],
+            pipeline: [{ $match: { is_active: true, is_removed: false } }],
           },
         },
         {
           $lookup: {
             from: 'usergroups',
-            localField: 'groups.group_id',
-            foreignField: '_id',
+            let: { groupIds: '$groups.group_id', appActive: '$is_active' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $in: ['$_id', '$$groupIds'] },
+                      { $eq: ['$is_deleted', false] },
+                      { $eq: ['$is_active', true] },
+                      { $eq: ['$$appActive', true] }, // ✅ Only include groups if app is active
+                    ],
+                  },
+                },
+              },
+            ],
             as: 'groupDetails',
-            pipeline: [{ $match: { is_deleted: false, is_active: true } }],
           },
         },
         {
@@ -179,7 +193,7 @@ export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[])
         foreignField: 'app_id',
         as: 'groups',
         pipeline: [
-          { $match: { is_active: true } }, // Only count active groups
+          { $match: { is_active: true, is_removed: false } }, // Only count active groups
         ],
       },
     },
