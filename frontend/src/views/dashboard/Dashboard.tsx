@@ -39,6 +39,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
 
     const pinnedApplications = applications.filter(app => app.isPinned);
 
+
     return (
         <div class="oj-flex oj-sm-padding-6x">
 
@@ -99,28 +100,6 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                         class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x"
                         style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                     >
-                        <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-margin-1x-bottom">
-
-                            <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center" style={{ gap: '0.5rem' }}>
-                                <span class="oj-ux-ico-trending-up" style={{
-                                    color: "#000000",
-                                    fontSize: "1.5rem",
-                                    fontFamily: "ojuxIconFont !important"
-                                }}></span>
-                                <h3 style={{
-                                    margin: 0,
-                                    fontWeight: "bold",
-                                    fontSize: "1.3rem"
-                                }}>Logs in the past 24 hours</h3>
-                            </div>
-                            <oj-button
-                                onojAction={()=>{}}
-                                chroming="callToAction"
-                                class="oj-button-sm"
-                            >
-                                Refresh
-                            </oj-button>
-                        </div>
                         <LogGraph />
                     </div>
                 </div>
