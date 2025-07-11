@@ -25,8 +25,8 @@ const DashboardRecentLogs = () => {
   }, [])
 
   return (
-    <div class="oj-panel oj-sm-12">
-      <div class="oj-flex oj-panel oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center oj-panel-padding">
+    <div class="oj-panel oj-sm-12 oj-panel-padding oj-sm-padding-4x oj-flex-item">
+      <div class="oj-flex oj-panel oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center ">
           <div class="oj-flex-item ">
               <h5 class="">Recent Logs</h5>
               <h6 class=" oj-text-color-secondary">Latest 5 logs across all applications</h6>
