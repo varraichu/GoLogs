@@ -132,7 +132,7 @@ export const PinUnpinDialog = ({
                             class="oj-flex oj-sm-align-items-center"
                             style="padding: 0.25rem 0; min-height: 32px;"
                         >
-                            <label class="oj-checkbox-wrapper" style="display: flex; align-items: center; width: 100%;">
+                            <label class="oj-checkbox-wrapper" style="display: flex; align-items: center; width: 100%; margin-left: 1rem;">
                                 <input
                                     type="checkbox"
                                     class="oj-checkbox-input"
