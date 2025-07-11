@@ -10,6 +10,18 @@ import dashboardService from "../../services/dashboard.services";
 import { handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
 import AppsHealth from "./components/AppsHealth";
 
+const getHealthStatusColor = (status: string) => {
+    switch (status) {
+        case 'critical':
+            return { background: '#fde8e8', text: '#991b1b', border: '#fecaca' };
+        case 'warning':
+            return { background: '#fffbeb', text: '#b45309', border: '#fde68a' };
+        case 'healthy':
+        default:
+            return { background: '#eafaf1', text: '#065f46', border: '#a7f3d0' };
+    }
+};
+
 const Dashboard = (props: { path?: string; userId?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [userId, setUserId] = useState("");
@@ -70,7 +82,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                 <LogGraph></LogGraph>
             </div>
 
-            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center"
+            <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-margin-top-4x"
                 style={{ marginBottom: "12px" }}>
                 <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
                     <span class="oj-ux-ico-pin" style={{
@@ -175,7 +187,10 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                 }}
             >
                 {pinnedApplications.length > 0 ? (
-                    pinnedApplications.map((app) => (
+                    pinnedApplications.map((app) => {
+
+                        const healthColor = getHealthStatusColor(app.health_status);
+ return (
                         <div
                             key={app._id}
                             class="oj-panel oj-panel-shadow-md"
@@ -202,6 +217,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                                     marginBottom: "8px",
                                 }}
                             >
+                                <div class="oj-flex oj-sm-align-items-center" style="gap: 0.5rem;"> 
                                 <h3
                                     style={{
                                         margin: "0",
@@ -214,6 +230,12 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                                 >
                                     {app.name}
                                 </h3>
+
+                                <span class="oj-typography-body-xs" style={{ padding: '2px 8px', borderRadius: '12px', fontWeight: 500, marginTop: '1.2px', backgroundColor: healthColor.background, color: healthColor.text, border: `1px solid ${healthColor.border}`, textTransform: 'capitalize', alignSelf: 'flex-start' }}>
+                                            {app.health_status}
+                                </span>
+                                </div>
+                                
                                 <span
                                     class="oj-typography-body-xs"
                                     style={{
@@ -292,7 +314,8 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                                 </div>
                             </div>
                         </div>
-                    ))
+                    );
+                })
                 ) : (
                     <div class="oj-typography-body-md oj-sm-margin-4x">No applications pinned yet.</div>
                 )}
