@@ -12,6 +12,18 @@ import 'oj-c/select-single';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
 import SearchBar from '../../components/SearchBar'; 
 
+const getHealthStatusColor = (status: string) => {
+    switch (status) {
+        case 'critical':
+            return { background: '#fde8e8', text: '#991b1b', border: '#fecaca' };
+        case 'warning':
+            return { background: '#fffbeb', text: '#b45309', border: '#fde68a' };
+        case 'healthy':
+        default:
+            return { background: '#eafaf1', text: '#065f46', border: '#a7f3d0' };
+    }
+};
+
 interface Application {
     _id: string;
     name: string;
@@ -22,7 +34,9 @@ interface Application {
     groupNames: string[];
     logCount: number;
     isPinned: boolean;
+    health_status: 'healthy' | 'warning' | 'critical';
 }
+
 const UserApplications = (props: { path?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [userId, setUserId] = useState("");
@@ -156,7 +170,11 @@ return (
             {/* Application Cards */}
             <div class="oj-flex oj-flex-wrap" style={"gap: 24px;"}>
                 {applications.length > 0 ? (
-                    applications.map((app) => (
+                    applications.map((app) => {
+                        // Define healthColor for each app inside the loop
+                        const healthColor = getHealthStatusColor(app.health_status);
+                        
+                        return (
                         <div 
                             key={app._id} 
                             class="oj-panel oj-panel-shadow-md" 
@@ -164,17 +182,24 @@ return (
                         >
                             {/* Card content */}
                             <div>
-                                <div class="oj-flex" style="align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                    <div style="flex: 1; display: flex; align-items: center;">
+                                <div class="oj-flex" style="align-items: flex-start; justify-content: space-between; margin-bottom: 8px;">
+    {/* This new div will align the name and badge horizontally */}
+    <div class="oj-flex oj-sm-align-items-center" style="gap: 0.5rem;">
+                                        
                                         <h3 class="oj-typography-heading-sm" style="margin: 0; flex: 1; word-break: break-word;">
                                             {app.name}
                                             {app.isPinned && (<span class="oj-ux-ico-pin-filled" style="color: #4CAF50; margin-left: 8px;" title="Pinned application"></span>)}
                                         </h3>
-                                        <span class="oj-typography-body-xs" style={`margin-left: 12px; padding: 2px 10px; font-weight: 500; color: ${app.is_active ? '#065f46' : '#991b1b'}; font-size: 0.85em;`}>
+                                        {/* 3. Add the Health Status badge */}
+                                            <span class="oj-typography-body-xs" style={{ padding: '2px 8px', borderRadius: '12px', fontWeight: 500, backgroundColor: healthColor.background, color: healthColor.text, border: `1px solid ${healthColor.border}`, textTransform: 'capitalize', alignSelf: 'flex-start', marginTop: '8px' }}>
+                                                {app.health_status}
+                                            </span>
+                                        </div>
+
+                                        <span class="oj-typography-body-xs" style={`margin-left: 12px; padding: 2px 10px; font-weight: 500; marginTop: '10px'; color: ${app.is_active ? '#065f46' : '#991b1b'}; font-size: 0.85em;`}>
                                             {app.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </div>
-                                </div>
                                 <p class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x" style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
                                     {app.description}
                                 </p>
@@ -191,7 +216,8 @@ return (
                                 </div>
                             </div>
                         </div>
-                    ))
+                        );
+                    })
                 ) : (
                     <div class="oj-typography-body-md oj-sm-margin-4x">
                         No applications found with the current filters.
