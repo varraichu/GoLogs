@@ -9,6 +9,7 @@ import { Application } from "../../services/dashboard.services";
 import dashboardService from "../../services/dashboard.services";
 import { handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
 import AppsHealth from "./components/AppsHealth";
+import DashboardRecentLogs from "./components/DashboardRecentLogs";
 
 const Dashboard = (props: { path?: string; userId?: string }) => {
     const [applications, setApplications] = useState<Application[]>([]);
@@ -224,6 +225,30 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                             </div>
                         </div>
 
+                    ))
+                ) : (
+                    <div class="oj-typography-body-md oj-sm-margin-4x">No applications pinned yet.</div>
+                )}
+                <DashboardRecentLogs></DashboardRecentLogs>
+                {showErrorDialog && (
+                    <oj-dialog
+                        id="errorDialog"
+                        dialogTitle={
+                            errorDialogMessage.startsWith("App(s)") || errorDialogMessage.startsWith("Pinned")
+                                ? "Success"
+                                : "Error"
+                        }
+                        initialVisibility="show"
+                        onojClose={() => setShowErrorDialog(false)}
+                    >
+                        <div class="oj-dialog-body">
+                            <p>{errorDialogMessage}</p>
+                        </div>
+                        <div class="oj-dialog-footer">
+                            <oj-button onojAction={() => setShowErrorDialog(false)} chroming="callToAction">
+                                OK
+
+
                         {/* Bottom Button */}
                         <div class="oj-flex oj-sm-justify-content-flex-end oj-sm-margin-top-4x">
                             <oj-button
@@ -232,6 +257,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                                 class="oj-button-sm"
                             >
                                 + Pin Apps
+
                             </oj-button>
                         </div>
                         {showPinDialog && (
