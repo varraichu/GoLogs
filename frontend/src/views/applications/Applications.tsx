@@ -377,14 +377,13 @@ const Applications = (props: { path?: string }) => {
 
   const toggleDrawer = () => setOpened(!opened)
 
-
   return (
     <div class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column oj-sm-padding-6x" style="height: 100%; min-height: 0; flex: 1 1 0;">
       <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Applications</h1>
       </div>
 
-      <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
+      <div class="oj-flex oj-sm-margin-4x-bottom  oj-sm-align-items-center" style="width: 100%; gap: 12px;">
         <SearchBar value={searchTerm} onChange={handleSearchChange} placeholder="Search Applications" />
         <oj-button
           onojAction={() => openDialog()}
@@ -404,7 +403,7 @@ const Applications = (props: { path?: string }) => {
 
       <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1" style="width: 100%; overflow-x: hidden;">
         <div class="oj-flex oj-sm-flex-1 oj-sm-overflow-hidden" style="min-width: 0;">
-          <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style="width: 100%;">
+          <div class="oj-flex-item" style="width: 100%;">
             {isLoadingPage ? (
               <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
             ) : (
@@ -485,6 +484,6 @@ const Applications = (props: { path?: string }) => {
       )}
       <Toast />
     </div>
-  )
+  );
 };
 export default Applications

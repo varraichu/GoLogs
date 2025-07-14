@@ -19,7 +19,7 @@ export const ApplicationsList = ({
 
   return (
     <div
-      class="oj-flex oj-flex-wrap oj-sm-padding-4x oj-sm-align-items-stretch oj-sm-justify-content-flex-start"
+      class="oj-flex oj-flex-wrap oj-sm-padding-4x-bottom oj-sm-align-items-stretch oj-sm-justify-content-flex-start"
       style={{
         gap: '24px',
       }}
