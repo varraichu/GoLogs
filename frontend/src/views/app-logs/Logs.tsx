@@ -80,21 +80,6 @@ const Logs = (props: { path?: string }) => {
   const [selectedLog, setSelectedLog] = useState<any>(null)
 
 
-  // useEffect(() => {
-  //   console.log('sort criteria: ', sortCriteria)
-  //   console.log('filtera: ', filters)
-  //   logsService.fetchLogs(1, pagination.total, sortCriteria, filters).then((data) =>
-  //     setLogs(
-  //       (data.logs || []).map((log: LogEntry, idx) => ({
-  //         rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,
-  //         ...log,
-  //         timestamp: new Date(log.timestamp).toLocaleString(),
-  //         ingested_at: new Date(log.ingested_at).toLocaleString(),
-  //       }))
-  //     )
-  //   )
-  // }, [exportDialog])
-
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
     fetchLogs(pagination.page)
@@ -152,6 +137,7 @@ const Logs = (props: { path?: string }) => {
       const formattedLogs = (data.logs || []).map((log: LogEntry, idx) => ({
         rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,
         ...log,
+        app_name: log.app_name.replace(/\./g, ' '),
         timestamp: new Date(log.timestamp).toLocaleString(),
         ingested_at: new Date(log.ingested_at).toLocaleString(),
       }))
@@ -259,24 +245,6 @@ const Logs = (props: { path?: string }) => {
     }
   }
 
-  // const isFilterActive =
-  //   filters.apps.length > 0 ||
-  //   filters.logTypes.length > 0 ||
-  //   filters.fromDate !== undefined ||
-  //   filters.toDate !== undefined;
-
-  // const clearAllFilters = () => {
-  //   setFilters({
-  //     apps: [],
-  //     logTypes: [],
-  //     fromDate: undefined,
-  //     toDate: undefined,
-  //     search: ''
-  //   });
-  //   setPagination((prev) => ({ ...prev, page: 1 }));
-  // };
-
-
   return (
 
     <div
@@ -288,7 +256,7 @@ const Logs = (props: { path?: string }) => {
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
       <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
-        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search logs" />
         <LogExports
           setExportDialog={() => {
             setExportDialog(!exportDialog)
@@ -357,27 +325,11 @@ const Logs = (props: { path?: string }) => {
         <div slot="end" class="" style="width: 280px; max-width: 100%; box-sizing: border-box;">
           <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-padding-4x-start">
             <h6>Filter Logs</h6>
-            {/* <oj-button
-              display="icons"
-              chroming="borderless"
-              onojAction={toggleDrawer}
-            >
-              <span slot="startIcon" class="oj-ux-ico-close"></span>
-              Close
-            </oj-button> */}
           </div>
 
           <div class="oj-flex">
             <LogFilters filters={filters} onFilterChange={handleFilterChange} />
 
-            {/* <div class="oj-flex oj-flex-items-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom">
-              <LogExports
-                setExportDialog={() => {
-                  setExportDialog(!exportDialog)
-                }}
-                isLoading={isExporting}
-              />
-            </div> */}
           </div>
         </div>
       </oj-drawer-layout>

@@ -88,7 +88,14 @@ const Dashboard = (props: { path?: string; userId?: string, setActiveItem:(str:s
 
 
             {/* Recent Logs */}
-            <DashboardRecentLogs setActiveItem={props.setActiveItem}></DashboardRecentLogs>
+
+            <div
+                class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x"
+                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
+
+                <DashboardRecentLogs />
+            </div>
 
             {/* Error Dialog */}
             {showErrorDialog && (

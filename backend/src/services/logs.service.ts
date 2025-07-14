@@ -64,129 +64,117 @@ export const fetchPaginatedLogsWithAppInfo = async ({
   const skip = (page - 1) * limit;
   const sortObj = buildSortObject(sortCriteria);
 
-  const match: any = {};
+  // Base filters before join
+  const preLookupMatch: any = {};
 
   if (filters.log_type) {
-    match.log_type = Array.isArray(filters.log_type) ? { $in: filters.log_type } : filters.log_type;
+    preLookupMatch.log_type = Array.isArray(filters.log_type)
+      ? { $in: filters.log_type }
+      : filters.log_type;
   }
+
   if (filters.startDate || filters.endDate) {
-    match.timestamp = {};
-    if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
-    if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
+    preLookupMatch.timestamp = {};
+    if (filters.startDate) preLookupMatch.timestamp.$gte = new Date(filters.startDate);
+    if (filters.endDate) preLookupMatch.timestamp.$lte = new Date(filters.endDate);
   }
 
-  if (filters.search) {
-    const trimmedSearch = filters.search.trim();
+  // Post-lookup match: after application is joined
+  const postLookupMatch: any = {
+    'application.is_active': true,
+  };
 
-    if (trimmedSearch) {
-      const keywords = trimmedSearch.split(/\s+/).filter((k) => !!k);
-
-      if (keywords.length === 1) {
-        const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = { $regex: escaped, $options: 'i' };
-
-        match.$or = [{ message: regex }, { log_type: regex }];
-      } else {
-        // Multi-keyword AND across all fields
-        const regexConditions = keywords.map((kw) => {
-          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = { $regex: escaped, $options: 'i' };
-
-          return {
-            $or: [{ message: regex }, { log_type: regex }],
-          };
-        });
-
-        match.$and = regexConditions;
-      }
-    }
-  }
-
-  // if (filters.search) {
-  //   // Trim trailing and leading spaces
-  //   const trimmedSearch = filters.search.trim();
-
-  //   // Only proceed if there's something to search after trimming
-  //   if (trimmedSearch) {
-  //     // Split by spaces and filter out empty strings
-  //     const keywords = trimmedSearch.split(/\s+/).filter((keyword) => keyword.length > 0);
-
-  //     if (keywords.length === 1) {
-  //       // Single keyword - use simple regex
-  //       const escapedSearch = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  //       match.message = { $regex: escapedSearch, $options: 'i' };
-  //     } else if (keywords.length > 1) {
-  //       // Multiple keywords - all must be present (AND logic)
-  //       const regexConditions = keywords.map((keyword) => {
-  //         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  //         return { message: { $regex: escapedKeyword, $options: 'i' } };
-  //       });
-
-  //       match.$and = regexConditions;
-  //     }
-  //   }
-  // }
-
-  // const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
-
-  // if (filters.search) {
-  //   if (hasSpecialChars) {
-  //     match.message = { $regex: filters.search, $options: 'i' };
-  //   } else {
-  //     match.$text = { $search: filters.search };
-  //   }
-  // }
-
-  const appMatch: any = { 'application.is_active': true };
   if (filters.app_name) {
-    appMatch['application.name'] = Array.isArray(filters.app_name)
+    postLookupMatch['application.name'] = Array.isArray(filters.app_name)
       ? { $in: filters.app_name }
       : filters.app_name;
   }
 
-  const [logs, total] = await Promise.all([
-    Log.aggregate([
-      { $match: match },
-      {
-        $lookup: {
-          from: 'applications',
-          localField: 'app_id',
-          foreignField: '_id',
-          as: 'application',
-        },
+  // Search filters – must come after `$lookup` and `$unwind` so `application.name` is accessible
+  const searchConditions: any[] = [];
+  if (filters.search?.trim()) {
+    const keywords = filters.search.trim().split(/\s+/).filter(Boolean);
+
+    if (keywords.length === 1) {
+      const escaped = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = { $regex: escaped, $options: 'i' };
+
+      searchConditions.push({
+        $or: [
+          { message: regex },
+          { log_type: regex },
+          { 'application.name': regex }, // ✅ App name search
+        ],
+      });
+    } else {
+      const keywordRegexConditions = keywords.map((kw) => {
+        const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = { $regex: escaped, $options: 'i' };
+
+        return {
+          $or: [
+            { message: regex },
+            { log_type: regex },
+            { 'application.name': regex }, // ✅ App name search
+          ],
+        };
+      });
+
+      searchConditions.push(...keywordRegexConditions);
+    }
+  }
+
+  const pipeline = [
+    { $match: preLookupMatch },
+    {
+      $lookup: {
+        from: 'applications',
+        localField: 'app_id',
+        foreignField: '_id',
+        as: 'application',
       },
-      { $unwind: '$application' },
-      { $match: appMatch },
-      { $sort: sortObj },
-      { $skip: skip },
-      { $limit: limit },
-      {
-        $project: {
-          _id: 1,
-          message: 1,
-          timestamp: 1,
-          log_type: 1,
-          ingested_at: 1,
-          app_id: 1,
-          app_name: '$application.name',
-        },
+    },
+    { $unwind: '$application' },
+    { $match: postLookupMatch },
+    ...(searchConditions.length > 0 ? [{ $match: { $and: searchConditions } }] : []),
+    { $sort: sortObj },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        message: 1,
+        timestamp: 1,
+        log_type: 1,
+        ingested_at: 1,
+        app_id: 1,
+        app_name: '$application.name',
       },
-    ]),
-    Log.aggregate([
-      { $match: match },
-      {
-        $lookup: {
-          from: 'applications',
-          localField: 'app_id',
-          foreignField: '_id',
-          as: 'application',
-        },
+    },
+  ];
+
+  const countPipeline = [
+    { $match: preLookupMatch },
+    {
+      $lookup: {
+        from: 'applications',
+        localField: 'app_id',
+        foreignField: '_id',
+        as: 'application',
       },
-      { $unwind: '$application' },
-      { $match: appMatch },
-      { $count: 'total' },
-    ]).then((result) => result[0]?.total || 0),
+    },
+    { $unwind: '$application' },
+    { $match: postLookupMatch },
+    ...(searchConditions.length > 0 ? [{ $match: { $and: searchConditions } }] : []),
+    { $count: 'total' },
+  ];
+
+  const [logs, totalResult] = await Promise.all([
+    Log.aggregate(pipeline),
+    Log.aggregate(countPipeline),
   ]);
+
+  const total = totalResult[0]?.total || 0;
 
   return {
     logs,

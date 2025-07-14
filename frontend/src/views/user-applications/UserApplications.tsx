@@ -39,10 +39,10 @@ const UserApplications = (props: { path?: string }) => {
         search: '',
         status: 'all',
     });
-    
+
     const [pagination, setPagination] = useState({
         page: 1,
-        limit: 6, 
+        limit: 6,
         total: 0,
         totalPages: 1,
         hasNextPage: false,
@@ -114,7 +114,7 @@ const UserApplications = (props: { path?: string }) => {
     };
 
 
-   const handleFilterChange = (newFilters: { status: string; }) => {
+    const handleFilterChange = (newFilters: { status: string; }) => {
         setFilters(prev => ({ ...prev, ...newFilters }));
         setPagination(prev => ({ ...prev, page: 1 }));
     };
@@ -128,7 +128,7 @@ const UserApplications = (props: { path?: string }) => {
             setPagination(prev => ({ ...prev, page: 1 }));
         }, 300);
     };
-    
+
     const toggleDrawer = () => setOpened(!opened);
 
     return (
@@ -137,7 +137,7 @@ const UserApplications = (props: { path?: string }) => {
                 <h1 class="oj-typography-heading-md">Applications</h1>
             </div>
 
-            <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
+            <div class="oj-flex oj-sm-margin-4x-bottom  oj-sm-align-items-center" style="width: 100%; gap: 12px;">
                 <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Applications" />
                 <oj-button
                     onojAction={toggleDrawer}
@@ -150,15 +150,17 @@ const UserApplications = (props: { path?: string }) => {
 
             <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1" style="width: 100%; overflow-x: hidden;">
                 <div class="oj-flex oj-sm-flex-1 oj-sm-overflow-hidden" style="min-width: 0;">
-                    <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style="width: 100%;">
+                    <div class="oj-flex-item" style="width: 100%;">
                         {isLoadingPage ? (
-                            <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
+                            <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 400px; width: 100%;">
+                                <oj-c-progress-circle value={-1} size="lg" style="margin-top: 40px;" />
+                            </div>
                         ) : (
                             <UserApplicationsList applications={applications} />
                         )}
 
                         {pagination.total > 0 && (
-                            <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-top oj-sm-margin-4x-end" style="gap: 16px;">
+                            <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end" style="gap: 16px;">
                                 <oj-button chroming="callToAction" onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))} disabled={!pagination.hasPrevPage}>
                                     <span slot="startIcon" class="oj-ux-ico-arrow-left"></span> Previous
                                 </oj-button>

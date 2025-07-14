@@ -3,6 +3,7 @@
 export interface LogEntry {
   _id: string;
   app_id: string;
+  app_name: string;
   message: string;
   timestamp: string;
   log_type: string;
