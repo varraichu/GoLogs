@@ -49,7 +49,7 @@ export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen }:
 
   return (
     <header role="banner" class="oj-web-applayout-header" style="padding: 0; margin: 0;">
-      <div class="oj-web-applayout-max-width oj-flex-bar oj-sm-align-items-center" style="padding-left: 0; margin-left: 0;">
+      <div class="oj-web-applayout-max-width oj-flex-bar oj-sm-align-items-center oj-lg-12" style="padding-left: 0; margin-left: 0;">
         <div class="oj-flex-bar-middle oj-sm-align-items-baseline oj-sm-justify-content-start" style="padding-left: 0; margin-left: 0;">
           <oj-c-button
             id="buttonOpener"
