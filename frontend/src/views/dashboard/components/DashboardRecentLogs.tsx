@@ -27,6 +27,7 @@ const DashboardRecentLogs = (props:{setActiveItem:(str:string)=>void}) => {
   return (
     <div class="oj-panel oj-sm-12 oj-panel-padding oj-sm-padding-4x oj-flex-item">
       <div class="oj-flex oj-panel-border-0 oj-sm-padding-4x oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center ">
+
           <div class="oj-flex-item ">
               <h5 class="">Recent Logs</h5>
               <span class="">Latest 5 logs across all applications</span>

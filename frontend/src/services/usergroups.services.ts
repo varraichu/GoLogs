@@ -43,11 +43,19 @@ const handleResponse = async (response: Response) => {
 
 // --- API Functions ---
 
-export const fetchUserGroups = async (): Promise<UserGroup[]> => {
-    const response = await fetch('http://localhost:3001/api/userGroup/', {
-        method: 'GET',
-        headers: getAuthHeaders(),
+export const fetchUserGroups = async (filters: { search: string; status: string; appIds: string[] }, pagination: { page: number; limit: number }) => {
+    const params = new URLSearchParams({
+        search: filters.search,
+        status: filters.status,
+        page: String(pagination.page),
+        limit: String(pagination.limit),
     });
+    // Append appIds as a comma-separated string if the array is not empty
+    if (filters.appIds.length > 0) {
+        params.append('appIds', filters.appIds.join(','));
+    }
+    const response = await fetch(`http://localhost:3001/api/userGroup/info?${params.toString()}`, { headers: getAuthHeaders() });
+
     return handleResponse(response);
 };
 

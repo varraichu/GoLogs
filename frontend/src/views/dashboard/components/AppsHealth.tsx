@@ -31,7 +31,7 @@ export default function AppsHealth({ userId,setActiveItem }: { userId: string, s
     if (loading) {
         return (
             <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 260px; width: 100%;">
-                <oj-c-progress-circle value={-1} size="lg"></oj-c-progress-circle>
+                <oj-c-progress-circle value={-1} size="md"></oj-c-progress-circle>
             </div>
         );
     }

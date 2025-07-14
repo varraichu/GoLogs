@@ -15,6 +15,7 @@ import {
   deleteUserGroup,
   updateUserGroupAppAccess,
   toggleGroupStatus,
+  getAllUserGroupInfo,
 } from '../controllers/userGroup.controller';
 import UserGroupMembers from '../models/UserGroupMembers';
 
@@ -24,6 +25,7 @@ router.use(protect, isAdmin);
 
 router.get('/', getAllUserGroups);
 router.post('/', validate(createUserGroupSchema), createUserGroup);
+router.get('/info', getAllUserGroupInfo);
 
 router.get('/:groupId', validate(userGroupParamsSchema), getUserGroupById);
 router.patch('/:groupId', validate(updateUserGroupSchema), updateUserGroup);
