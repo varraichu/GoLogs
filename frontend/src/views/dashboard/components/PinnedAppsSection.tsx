@@ -79,6 +79,7 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
           onojAction={() => setShowPinDialog(true)}
           chroming="callToAction"
           class="oj-button-sm"
+          style={{ padding: "2px 6px" }}
         >
           + Pin Apps
         </oj-button>
