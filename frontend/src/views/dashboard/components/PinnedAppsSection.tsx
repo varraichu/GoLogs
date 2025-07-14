@@ -34,7 +34,7 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
       selectedAppIds,
       setSelectedAppIds,
       setApplications,
-      setErrorDialogMessage,  
+      setErrorDialogMessage,
       setShowErrorDialog
     );
   };
@@ -59,12 +59,12 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
 
   return (
     <div class="oj-flex-item oj-sm-12">
-      <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-margin-top-4x"
-        style={{ marginBottom: "12px" }}>
-        <div class="oj-flex oj-sm-align-items-center" style={{ gap: "4px" }}>
+      <div class="oj-flex oj-sm-12 oj-sm-margin-bottom-2x oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-margin-top-4x"
+        style={{ marginBottom: "12px"}}>
+        <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center" style={{ gap: "8px"}}>
           <span class="oj-ux-ico-pin" style={{
-            color: "#808080",
-            fontSize: "1rem",
+            color: "#000000",
+            fontSize: "1.5rem",
             fontFamily: "ojuxIconFont !important"
           }}></span>
           <h3 style={{
@@ -78,11 +78,33 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
           onojAction={() => setShowPinDialog(true)}
           chroming="callToAction"
           class="oj-button-sm"
-          style={{ marginRight: '20px' }}
         >
           + Pin Apps
         </oj-button>
+
       </div>
+
+
+      {/* Pinned Applications Cards */}
+      <div class="oj-flex oj-flex-direction-col" style={{ gap: "16px" }}>
+        {pinnedApplications.length > 0 ? (
+          pinnedApplications.map((app) => (
+            <PinnedAppCard key={app._id} app={app} />
+          ))
+        ) : (
+          <div class="oj-typography-body-md oj-sm-margin-4x">No applications pinned yet.</div>
+        )}
+      </div>
+
+      {/* <div class="oj-flex oj-sm-justify-content-flex-end oj-sm-margin-top-4x">
+        <oj-button
+          onojAction={() => setShowPinDialog(true)}
+          chroming="callToAction"
+          class="oj-button-sm"
+        >
+          + Pin Apps
+        </oj-button>
+      </div> */}
 
       {/* Pin Apps Dialog */}
       <PinUnpinDialog
@@ -93,24 +115,6 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
         onSave={handleSavePinnedApps}
         handleCheckboxChange={handleDialogCheckboxChange}
       />
-
-      {/* Pinned Applications Cards */}
-      <div
-        class="oj-flex oj-flex-wrap"
-        style={{
-          gap: "16px",
-          width: "100%",
-        }}
-      >
-        {pinnedApplications.length > 0 ? (
-          pinnedApplications.map((app) => (
-            <PinnedAppCard key={app._id} app={app} />
-          ))
-        ) : (
-          <div class="oj-typography-body-md oj-sm-margin-4x">No applications pinned yet.</div>
-        )}
-      </div>
-
       {/* Error Dialog */}
       {showErrorDialog && (
         <oj-dialog

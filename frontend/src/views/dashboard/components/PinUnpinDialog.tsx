@@ -123,6 +123,7 @@ export const PinUnpinDialog = ({
             initialVisibility="show"
             onojClose={onCancel}
             style="--dialog-width: 400px;" 
+            headerDecoration='off'
         >
             <div class="oj-dialog-body" style="padding: 0.5rem 1rem; max-height: calc(100vh - 200px); overflow-y: auto;">
                 <oj-form-layout>
