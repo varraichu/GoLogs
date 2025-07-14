@@ -32,6 +32,8 @@ export const App = registerCustomElement(
     const [loading, setLoading] = useState(true)
     const [startOpened, setStartOpened] = useState(true)
     const [userId, setUserId] = useState<string>("")
+    const [activeItem, setActiveItem] = useState<string>('dashboard')
+    const [collapsed, setCollapsed] = useState(true)
     useEffect(() => {
       Context.getPageContext().getBusyContext().applicationBootstrapComplete()
 
@@ -75,14 +77,19 @@ export const App = registerCustomElement(
     if (!isAuthenticated) {
       return <Login />
     }
-    const setStartOpen = () => setStartOpened(!startOpened);
+    // const setStartOpen = () => setStartOpened(!startOpened);
+    const setStartOpen = () => setCollapsed(!collapsed);
     return (
       <ToastProvider>
         <div>
           <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
-          <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={startOpened}>
+          <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened
+        startDisplay="reflow">
             <SideBar
+              collapsed={collapsed}
               // slot="start" 
+              setActiveItem={setActiveItem}
+              activeItem={activeItem}
               setIsAuthenticated={setIsAuthenticated}
               isAdmin={isAdmin}
               pictureUrl={profileUrl}
@@ -91,7 +98,7 @@ export const App = registerCustomElement(
             <div>
               <Router>
                 {/* <Nav isAdmin={isAdmin} setIsAuthenticated={setIsAuthenticated} /> */}
-                <Dashboard path="/dashboard" userId={userId} />
+                <Dashboard path="/dashboard" userId={userId} setActiveItem={setActiveItem} />
                 <Settings path="/settings" isAdmin={isAdmin} userId={userId} />
                 {isAdmin ? (
                   <Applications path="/applications" />

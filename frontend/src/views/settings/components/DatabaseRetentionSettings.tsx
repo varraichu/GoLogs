@@ -248,7 +248,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
       {
         <div class="oj-panel-border-0 oj-panel-padding  oj-flex">
           <oj-c-button
-            class="oj-flex-item oj-sm-2"
+            class="oj-flex-item oj-sm-flex-initial"
             label="Save Configuration"
             chroming="danger"
             onojAction={handleSaveClick}
