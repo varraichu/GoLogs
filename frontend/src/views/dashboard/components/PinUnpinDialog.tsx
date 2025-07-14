@@ -15,12 +15,18 @@ export const handleCheckboxChange = async (
   setSelectedAppIds: (ids: (prev: string[]) => string[]) => void,
   setApplications: (apps: (prev: Application[]) => Application[]) => void,
   setErrorDialogMessage: (message: string) => void,
-  setShowErrorDialog: (show: boolean) => void
-) => {
+  setShowErrorDialog: (show: boolean) => void,
+  applications: Application[] 
+  ) => {
   const wasSelected = selectedAppIds.includes(appId);
+  const wasOriginallyPinned = applications.find(app => app._id === appId)?.isPinned;
 
   if (wasSelected) {
+    
     setSelectedAppIds(prev => prev.filter(id => id !== appId));
+    
+    if (wasOriginallyPinned) {
+
     try {
       const response = await fetch(`http://localhost:3001/api/applications/unpin/${userId}/${appId}`, {
         method: 'POST',
@@ -34,6 +40,7 @@ export const handleCheckboxChange = async (
       setErrorDialogMessage('Failed to unpin application');
       setShowErrorDialog(true);
     }
+  }
   } else {
     if (selectedAppIds.length >= 3) {
       setErrorDialogMessage('You can pin a maximum of 3 applications.');
