@@ -98,13 +98,7 @@ export const getAllUserGroups = async (req: IAuthRequest, res: Response) => {
 
 export const getAllUserGroupInfo = async (req: IAuthRequest, res: Response) => {
   try {
-    const {
-      search = '',
-      status = 'all',
-      page = '1',
-      limit = '6',
-      appIds = '',
-    } = req.query;
+    const { search = '', status = 'all', page = '1', limit = '6', appIds = '' } = req.query;
 
     const options = {
       search: search as string,
@@ -121,7 +115,6 @@ export const getAllUserGroupInfo = async (req: IAuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
   try {

@@ -145,7 +145,7 @@ export const getPaginatedUserGroups = async (options: {
   // New logic to filter by application IDs
   if (appIds && appIds.length > 0) {
     // Convert string IDs to Mongoose ObjectIds for matching
-    const appObjectIds = appIds.map(id => new mongoose.Types.ObjectId(id));
+    const appObjectIds = appIds.map((id) => new mongoose.Types.ObjectId(id));
     matchStage['assignedApplications.app_id'] = { $in: appObjectIds };
   }
 
@@ -158,8 +158,8 @@ export const getPaginatedUserGroups = async (options: {
         from: 'usergroupapplications',
         localField: '_id',
         foreignField: 'group_id',
-        as: 'assignedApplications'
-      }
+        as: 'assignedApplications',
+      },
     },
     // 2. Apply all filters (including the new app filter)
     { $match: matchStage },

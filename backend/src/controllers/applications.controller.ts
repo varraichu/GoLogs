@@ -27,7 +27,7 @@ interface Application {
   groupCount: number;
   groupNames: string[];
   logCount: number;
-  health_status: 'healthy' | 'warning' | 'critical'; 
+  health_status: 'healthy' | 'warning' | 'critical';
 }
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {

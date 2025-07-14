@@ -62,6 +62,8 @@ const UserGroups = (props: { path?: string }) => {
   const [selectedAppIds, setSelectedAppIds] = useState<Set<string>>(new Set());
   const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
 
+  const [opened, setOpened] = useState(false);
+
   // --- Data Loading ---
   const loadGroups = async () => {
     setIsLoadingPage(true);
@@ -217,74 +219,106 @@ const UserGroups = (props: { path?: string }) => {
     }
   };
 
-  return (
-    <div class="oj-flex oj-sm-flex-direction-column">
+  const toggleDrawer = () => setOpened(!opened)
 
-      <div class="oj-flex oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-margin-bottom-4x  oj-sm-padding-5x-start oj-sm-padding-5x-end">
-        <div>
-          <h1 class="oj-typography-heading-lg">User Groups</h1>
-          <p class="oj-typography-body-md">Manage your user groups and their applications</p>
+  return (
+    <div class="oj-flex oj-sm-flex-direction-column oj-sm-padding-6x "
+      style={{ overflow: "hidden" }}>
+
+      <div class="oj-flex oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-margin-bottom-4x ">
+        <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
+          <h1 class="oj-typography-heading-md">User Groups</h1>
         </div>
-        <div>
+        {/* <div>
           <oj-button onojAction={() => handleOpenEditor()} chroming="callToAction">+ Create Group</oj-button>
-        </div>
+        </div> */}
       </div>
 
-      <div class="oj-flex oj-sm-flex-direction-column oj-sm-margin-4x-bottom" style="gap: 16px;">
+      <div class="oj-flex oj-sm-margin-8x-end oj-sm-align-items-center" style="width: 100%; gap: 12px;">
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search by name or description" />
+
+        <oj-button onojAction={() => handleOpenEditor()} chroming="callToAction">+ Create Group</oj-button>
+
+        <oj-button
+          onojAction={toggleDrawer}
+          label={opened ? "Close Filters" : "Apply Filters"}
+          chroming={opened ? "outlined" : "callToAction"}
+        >
+          {opened ? (<span slot="startIcon" class="oj-ux-ico-filter-alt-off"></span>) : (<span slot="startIcon" class="oj-ux-ico-filter-alt"></span>)}
+        </oj-button>
+      </div>
+
+      {/* <div class="oj-flex oj-sm-flex-direction-column oj-sm-margin-4x-bottom" style="gap: 16px;">
         <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search by name or description" />
         <UserGroupFilters onFilterChange={handleFilterChange} />
-      </div>
+      </div> */}
 
-      {isLoadingPage ? (
-        <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 400px; width: 100%;">
-          <oj-c-progress-circle value={-1} size="lg"></oj-c-progress-circle>
-        </div>
-      ) : (
-        <div class="oj-flex oj-sm-flex-direction-column oj-sm-padding-4x-start oj-sm-padding-5x-end" style="gap: 24px;">
-          <div class="oj-flex oj-flex-wrap" style={{ gap: '24px' }}>
-            {groups.length > 0 ? (
-              groups.map((group) => (
-                <UserGroupCard
-                  key={group._id}
-                  group={group}
-                  onEdit={handleOpenEditor}
-                  onDelete={setConfirmDeleteDialogId}
-                  onToggleStatus={handleToggleStatus}
-                  onViewUsers={handleViewUsers}
-                />
-              ))
-            ) : (
-              <div class="oj-flex oj-sm-justify-content-center oj-sm-align-items-center" style="width: 100%; height: 200px;">
-                <p class="oj-typography-body-lg">No user groups found.</p>
+      <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1 oj-sm-margin-4x-top " style="width: 100%; overflow-x: hidden;">
+
+        <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x " style="width: 100%;">
+          {isLoadingPage ? (
+            <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 400px; width: 100%;">
+              <oj-c-progress-circle value={-1} size="md"></oj-c-progress-circle>
+            </div>
+          ) : (
+            <div class="oj-flex oj-sm-flex-direction-column oj-sm-padding-4x-start oj-sm-padding-5x-end " style="gap: 24px;">
+              <div class="oj-flex oj-flex-wrap" style={{ gap: '24px' }}>
+                {groups.length > 0 ? (
+                  groups.map((group) => (
+                    <UserGroupCard
+                      key={group._id}
+                      group={group}
+                      onEdit={handleOpenEditor}
+                      onDelete={setConfirmDeleteDialogId}
+                      onToggleStatus={handleToggleStatus}
+                      onViewUsers={handleViewUsers}
+                    />
+                  ))
+                ) : (
+                  <div class="oj-flex oj-sm-justify-content-center oj-sm-align-items-center" style="width: 100%; height: 200px;">
+                    <p class="oj-typography-body-lg">No user groups found.</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {pagination && (
-            <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end" style="gap: 16px;">
-              <oj-button
-                chroming="callToAction"
-                onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                disabled={!pagination.hasPrevPage}
-              >
-                <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
-                Previous
-              </oj-button>
-              <span class="oj-typography-body-md oj-text-color-primary">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-              <oj-button
-                chroming="callToAction"
-                onojAction={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                disabled={!pagination.hasNextPage}
-              >
-                Next
-                <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
-              </oj-button>
+              {pagination && (
+                <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end" style="gap: 16px;">
+                  <oj-button
+                    chroming="callToAction"
+                    onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                    disabled={!pagination.hasPrevPage}
+                  >
+                    <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
+                    Previous
+                  </oj-button>
+                  <span class="oj-typography-body-md oj-text-color-primary">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                  <oj-button
+                    chroming="callToAction"
+                    onojAction={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                    disabled={!pagination.hasNextPage}
+                  >
+                    Next
+                    <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
+                  </oj-button>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+
+        <div slot="end" style="width: 280px; max-width: 100%; box-sizing: border-box;">
+          <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-padding-4x-start">
+            <h6>Filter Applications</h6>
+          </div>
+          <div class="oj-flex">
+            <UserGroupFilters onFilterChange={handleFilterChange} />
+          </div>
+        </div>
+      </oj-drawer-layout>
+
+
 
 
       {/* --- DIALOGS --- */}

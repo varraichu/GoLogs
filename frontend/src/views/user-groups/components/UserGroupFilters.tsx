@@ -61,33 +61,50 @@ export const UserGroupFilters = ({ onFilterChange }: Props) => {
     };
 
     return (
-        <div class="oj-flex oj-sm-align-items-center oj-flex-wrap oj-sm-padding-4x-start oj-sm-padding-5x-end" style="gap: 16px;">
 
-            <oj-select-many
-                class="oj-flex-item"
-                style="width: 300px; flex-grow: 0;"
-                labelHint="Filter by Application"
-                options={appOptions}
-                onvalueChanged={handleAppChange}
-                value={selectedApps}
-                item-text="label"
-            ></oj-select-many>
 
-            <oj-c-select-single
-                class="oj-flex-item"
-                style="width: 200px; flex-grow: 0;"
-                labelHint="Status"
-                data={statusOptions}
-                onvalueChanged={handleStatusChange}
-                value={selectedStatus}
-                item-text="label"
-            ></oj-c-select-single>
+        <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-start oj-sm-padding-4x-start oj-sm-padding-4x-end">
 
+            <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom" >
+                {/* User Group Filter */}
+
+                <oj-select-many
+                    class="oj-form-control-width-sm"
+                    labelHint="Filter by Application"
+                    options={appOptions}
+                    onvalueChanged={handleAppChange}
+                    value={selectedApps}
+                    item-text="label"
+                ></oj-select-many>
+            </div>
+
+            {/* Status Filter */}
+            <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom" >
+                <oj-c-select-single
+                    class="oj-form-control-width-sm"
+                    // class="oj-flex-item oj-sm-margin-4x-end oj-sm-margin-2x-top"
+                    // style="width: 200px; height: 2.375rem; flex-grow: 0;"
+                    labelHint="Status"
+                    data={statusOptions}
+                    onvalueChanged={handleStatusChange}
+                    value={selectedStatus}
+                    item-text="label"
+                ></oj-c-select-single>
+            </div>
+
+
+            {/* Clear Button */}
+            {/* <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom" > */}
             <oj-c-button
+                class="oj-form-control-width-sm"
                 onojAction={handleClearFilters}
                 label="Clear Filters"
                 chroming="outlined"
+            // style="height: 2.375rem;"
             ></oj-c-button>
+
         </div>
     );
+
+
 };

@@ -18,9 +18,9 @@ export interface SummaryResponse {
 
 
 export interface CriticalLogs {
-  totalLogs: number;
-  errorLogs: number;
-  warningLogs: number;
+    totalLogs: number;
+    errorLogs: number;
+    warningLogs: number;
 }
 
 // export interface Application {
@@ -35,17 +35,17 @@ export interface CriticalLogs {
 //   health_status: 'healthy' | 'warning' | 'critical'; 
 // }
 export interface Application {
-  _id: string;
-  name: string;
-  description: string;
-  isPinned: boolean;
-  created_at: string;
-  is_active: boolean;
-  groupCount: number;
-  groupNames: string[];
-  logCount: number;
-  criticalLogs: CriticalLogs;
-  health_status: 'healthy' | 'warning' | 'critical'; 
+    _id: string;
+    name: string;
+    description: string;
+    isPinned: boolean;
+    created_at: string;
+    is_active: boolean;
+    groupCount: number;
+    groupNames: string[];
+    logCount: number;
+    criticalLogs: CriticalLogs;
+    health_status: 'healthy' | 'warning' | 'critical';
 }
 
 class DashboardService {
@@ -124,24 +124,24 @@ class DashboardService {
     }
 
 
-    
+
     public async fetchApplications(): Promise<{ applications: Application[], userId: string }> {
         const token = localStorage.getItem('jwt');
         const user = this.parseJwt(token);
 
         if (!user?._id) {
-        throw new Error('User not authenticated');
+            throw new Error('User not authenticated');
         }
         const userId = user._id;
 
         const res = await fetch(`${this.baseUrl}/applications/${userId}`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
+            method: 'GET',
+            headers: this.getAuthHeaders(),
         });
 
         const data = await res.json();
         if (!res.ok) {
-        throw new Error(data.message || 'Failed to fetch applications');
+            throw new Error(data.message || 'Failed to fetch applications');
         }
 
         const applications = await this.fetchCriticalLogs(data.applications || []);
@@ -153,33 +153,33 @@ class DashboardService {
         if (!token) return applications;
 
         const updatedApps = await Promise.all(applications.map(async (app) => {
-        try {
-            const res = await fetch(`${this.baseUrl}/applications/logs/critical/${app._id}`, {
-            headers: this.getAuthHeaders(),
-            });
+            try {
+                const res = await fetch(`${this.baseUrl}/applications/logs/critical/${app._id}`, {
+                    headers: this.getAuthHeaders(),
+                });
 
-            if (!res.ok) throw new Error(`Failed to fetch logs for app ${app._id}`);
+                if (!res.ok) throw new Error(`Failed to fetch logs for app ${app._id}`);
 
-            const criticalLogs = await res.json();
-            return {
-            ...app,
-            criticalLogs: {
-                totalLogs: criticalLogs.totalLogs ?? 0,
-                errorLogs: criticalLogs.errorLogs ?? 0,
-                warningLogs: criticalLogs.warningLogs ?? 0,
-            },
-            };
-        } catch (error) {
-            console.error(`Error fetching logs for app ${app._id}:`, error);
-            return {
-            ...app,
-            criticalLogs: { totalLogs: 0, errorLogs: 0, warningLogs: 0 },
-            };
-        }
+                const criticalLogs = await res.json();
+                return {
+                    ...app,
+                    criticalLogs: {
+                        totalLogs: criticalLogs.totalLogs ?? 0,
+                        errorLogs: criticalLogs.errorLogs ?? 0,
+                        warningLogs: criticalLogs.warningLogs ?? 0,
+                    },
+                };
+            } catch (error) {
+                console.error(`Error fetching logs for app ${app._id}:`, error);
+                return {
+                    ...app,
+                    criticalLogs: { totalLogs: 0, errorLogs: 0, warningLogs: 0 },
+                };
+            }
         }));
 
-    return updatedApps;
-  }
+        return updatedApps;
+    }
 }
 
 export const dashboardService = new DashboardService();
