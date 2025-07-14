@@ -35,7 +35,8 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
       setSelectedAppIds,
       setApplications,
       setErrorDialogMessage,
-      setShowErrorDialog
+      setShowErrorDialog,
+      applications
     );
   };
 

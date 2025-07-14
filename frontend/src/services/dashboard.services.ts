@@ -23,17 +23,6 @@ export interface CriticalLogs {
     warningLogs: number;
 }
 
-// export interface Application {
-//   _id: string;
-//   name: string;
-//   description: string;
-//   isPinned: boolean;
-//   is_active: boolean;
-//   logCount: number;
-//   created_at: string;
-//   criticalLogs: CriticalLogs;
-//   health_status: 'healthy' | 'warning' | 'critical'; 
-// }
 export interface Application {
     _id: string;
     name: string;
@@ -122,9 +111,7 @@ class DashboardService {
 
         return data;
     }
-
-
-
+    
     public async fetchApplications(): Promise<{ applications: Application[], userId: string }> {
         const token = localStorage.getItem('jwt');
         const user = this.parseJwt(token);
@@ -132,21 +119,59 @@ class DashboardService {
         if (!user?._id) {
             throw new Error('User not authenticated');
         }
-        const userId = user._id;
 
-        const res = await fetch(`${this.baseUrl}/applications/${userId}`, {
+        const { _id: userId, isAdmin } = user;
+
+        let rawApplications: Application[] = [];
+        let userPinnedApps: string[] = [];
+
+        if (isAdmin) {
+            const [appsRes, userRes] = await Promise.all([
+            fetch(`${this.baseUrl}/applications`, {
+                method: 'GET',
+                headers: this.getAuthHeaders(),
+            }),
+            fetch(`${this.baseUrl}/applications/user/${userId}`, {
+                method: 'GET',
+                headers: this.getAuthHeaders(),
+            }),
+            ]);
+
+            if (!appsRes.ok || !userRes.ok) {
+            throw new Error('Failed to fetch admin data');
+            }
+
+            const appsData = await appsRes.json();
+            rawApplications = appsData.applications || [];
+
+            const userData = await userRes.json();
+            userPinnedApps = userData.pinned_apps.map((id: any) => id.toString());
+
+        } else {
+            const res = await fetch(`${this.baseUrl}/applications/${userId}`, {
             method: 'GET',
             headers: this.getAuthHeaders(),
-        });
+            });
 
-        const data = await res.json();
-        if (!res.ok) {
+            const data = await res.json();
+            if (!res.ok) {
             throw new Error(data.message || 'Failed to fetch applications');
+            }
+
+            rawApplications = data.applications || [];
+            userPinnedApps = data.applications
+            .filter((app: any) => app.isPinned)
+            .map((app: any) => app._id.toString());
         }
 
-        const applications = await this.fetchCriticalLogs(data.applications || []);
+        const applicationsWithPinFlag = rawApplications.map(app => ({
+            ...app,
+            isPinned: userPinnedApps.includes(app._id.toString()),
+        }));
+
+        const applications = await this.fetchCriticalLogs(applicationsWithPinFlag);
         return { applications, userId };
-    }
+        }
 
     private async fetchCriticalLogs(applications: Application[]): Promise<Application[]> {
         const token = localStorage.getItem('jwt');

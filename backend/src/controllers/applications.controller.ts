@@ -248,15 +248,24 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
       return;
     }
 
+    const alreadyPinned = user.pinned_apps.some(
+      (id) => id.toString() === appId
+    );
+
+    if (alreadyPinned) {
+      res.status(400).json({ message: 'Application already pinned' });
+      return;
+    }
+
     if (user.pinned_apps.length >= 3) {
       res.status(400).json({ message: 'Cannot pin more than 3 apps' });
       return;
     }
 
-    if (user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
-      res.status(400).json({ message: 'Application already pinned' });
-      return;
-    }
+    // if (user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
+    //   res.status(400).json({ message: 'Application already pinned' });
+    //   return;
+    // }
 
     user.pinned_apps.push(new mongoose.Types.ObjectId(appId));
     await user.save();
@@ -290,6 +299,23 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
     res.status(200).json({ message: 'Application unpinned successfully' });
   } catch (error) {
     logger.error('Error unpinning application:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getUserPinnedApps = async (req: IAuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id;
+    const user = await Users.findById(userId).select('pinned_apps');
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({ pinned_apps: user.pinned_apps });
+  } catch (error) {
+    logger.error('Error fetching pinned apps:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
