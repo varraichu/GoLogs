@@ -12,7 +12,7 @@ import { PinUnpinDialog, handleCheckboxChange, savePinnedApps } from "./componen
 
 import dashboardService, { Application } from "../../services/dashboard.services";
 
-const Dashboard = (props: { path?: string; userId?: string }) => {
+const Dashboard = (props: { path?: string; userId?: string, setActiveItem:(str:string)=>void }) => {
     const [applications, setApplications] = useState<Application[]>([]);
     const [userId, setUserId] = useState("");
     const [showPinDialog, setShowPinDialog] = useState(false);
@@ -49,7 +49,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
                 </div>
             </div>
             <div class="oj-flex-item oj-sm-margin-4x-bottom">
-                <AppsHealth userId={userId} />
+                <AppsHealth userId={userId} setActiveItem={props.setActiveItem}/>
             </div>
 
             {/* Logs Graph & Pinned Apps */}
@@ -88,6 +88,7 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
 
 
             {/* Recent Logs */}
+
             <div
                 class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x"
                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}

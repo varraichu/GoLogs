@@ -1,40 +1,17 @@
-Custom sidebar nav styling
-list-item {
-  border-radius: 8px;
-  margin-bottom: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+.selected-red .oj-selected {
+  background-color: var(--oj-core-danger-secondary-2); /* light red background */
+  border-left: 4px solid var(--oj-core-danger-3); /* strong red border */
+  color: var(--oj-core-text-color-danger); /* ensures readable text */
 }
 
-/* Hover effect */
-.list-item:hover {
-  background-color: #fef2f2; /* light red-ish hover */
+/* Optional: If you want smooth transition */
+.selected-red .oj-selected {
+  /* transition: background-color 0.3s, border-left 0.3s; */
+  transition: var(--oj-animation-ease-in);
 }
-
-/* Active (selected) effect */
-.list-item.active {
-  background-color: #fef2f2; /* same as hover */
-  border-left: 4px solid #dc2626; /* red left border */
-  padding-left: 12px; /* adjust padding for border */
-}
-
-.sidebar-container {
-  padding: 16px 10px 8px 10px !important;
-}
-
-.sidebar-logo {
-  margin-bottom: 24px !important;
-  margin-top: 8px;
-}
-
-.sidebar-profile {
-  margin-bottom: 20px !important;
-  margin-top: 12px;
-}
-
-.sidebar-active {
-  background: #fee2e2 !important;
-  color: #dc2626 !important;
-  border-left: 4px solid #dc2626 !important;
-  font-weight: 600;
+.sidebar-avatar-collapsed {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--oj-spacing-4x) var(--oj-spacing-3x);
 }

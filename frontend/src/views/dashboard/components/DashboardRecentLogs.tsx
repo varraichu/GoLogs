@@ -6,7 +6,7 @@ import ArrayDataProvider = require('ojs/ojarraydataprovider')
 import { logsService, LogEntry } from "../../../services/logs.services"
 import { route } from 'preact-router'
 
-const DashboardRecentLogs = () => {
+const DashboardRecentLogs = (props:{setActiveItem:(str:string)=>void}) => {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [dataProvider, setDataProvider] = useState<any>(null)
 
@@ -26,6 +26,7 @@ const DashboardRecentLogs = () => {
   }, [])
 
   return (
+
     <div style={{ width: '100%' }}>
       <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-margin-1x-bottom">
         <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center" style={{ gap: '0.5rem' }}>
