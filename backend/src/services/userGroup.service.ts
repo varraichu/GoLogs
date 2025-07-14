@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { PipelineStage } from 'mongoose';
 import UserGroup from '../models/UserGroups'; // Assuming paths are correct
 import UserGroupApplications from '../models/UserGroupApplications';
 import UserGroups from '../models/UserGroups';
@@ -113,4 +113,149 @@ export const assignApplicationsToGroup = async (groupId: string, appIds: string[
   if (bulkInsert.length > 0) {
     await UserGroupApplications.insertMany(bulkInsert);
   }
+};
+
+export const getPaginatedUserGroups = async (options: {
+  search: string;
+  status: string;
+  page: number;
+  limit: number;
+  appIds: string[]; // Add appIds to options type
+}) => {
+  const { search, status, page, limit, appIds } = options;
+  const skip = (page - 1) * limit;
+
+  const matchStage: any = { is_deleted: false };
+  if (search) {
+    const searchRegex = new RegExp(search, 'i');
+    matchStage.$or = [{ name: searchRegex }, { description: searchRegex }];
+  }
+  if (status === 'active') {
+    matchStage.is_active = true;
+  } else if (status === 'inactive') {
+    matchStage.is_active = false;
+  }
+
+  // New logic to filter by application IDs
+  if (appIds && appIds.length > 0) {
+    // Convert string IDs to Mongoose ObjectIds for matching
+    const appObjectIds = appIds.map(id => new mongoose.Types.ObjectId(id));
+    matchStage['assignedApplications.app_id'] = { $in: appObjectIds };
+  }
+
+  // We need to perform the application lookup BEFORE the main $match stage
+  // if we want to filter by application.
+  const aggregationPipeline: PipelineStage[] = [
+    // 1. Lookup applications first
+    {
+      $lookup: {
+        from: 'usergroupapplications',
+        localField: '_id',
+        foreignField: 'group_id',
+        as: 'assignedApplications'
+      }
+    },
+    // 2. Apply all filters (including the new app filter)
+    { $match: matchStage },
+    // 3. Facet for pagination and detailed lookups
+    {
+      $facet: {
+        paginatedResults: [
+          { $sort: { created_at: 1 } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: 'usergroupmembers',
+              localField: '_id',
+              foreignField: 'group_id',
+              as: 'members',
+              pipeline: [{ $match: { is_active: true } }],
+            },
+          },
+          // The application lookup is already done, but we need to refine it to get names
+          {
+            $lookup: {
+              from: 'usergroupapplications',
+              localField: '_id',
+              foreignField: 'group_id',
+              as: 'applicationsWithName', // Use a different name to avoid conflicts
+              pipeline: [
+                {
+                  $lookup: {
+                    from: 'applications',
+                    localField: 'app_id',
+                    foreignField: '_id',
+                    as: 'applicationDetails',
+                  },
+                },
+                {
+                  $match: {
+                    'applicationDetails.is_active': true,
+                    'applicationDetails.is_deleted': false,
+                  },
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    name: { $arrayElemAt: ['$applicationDetails.name', 0] },
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              description: 1,
+              created_at: 1,
+              is_active: 1,
+              userCount: { $size: '$members' },
+              applicationCount: {
+                $cond: {
+                  if: { $eq: ['$is_active', true] },
+                  then: { $size: '$applicationsWithName' },
+                  else: 0,
+                },
+              },
+              applicationNames: {
+                $cond: {
+                  if: { $eq: ['$is_active', true] },
+                  then: '$applicationsWithName.name',
+                  else: [],
+                },
+              },
+            },
+          },
+        ],
+        totalCount: [{ $count: 'total' }],
+      },
+    },
+  ];
+
+  const results = await UserGroup.aggregate(aggregationPipeline);
+
+  if (!results[0] || results[0].paginatedResults.length === 0) {
+    return {
+      groups: [],
+      pagination: { total: 0, page, limit, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+    };
+  }
+
+  const groups = results[0].paginatedResults;
+  const totalGroups = results[0].totalCount.length > 0 ? results[0].totalCount[0].total : 0;
+  const totalPages = Math.ceil(totalGroups / limit);
+
+  return {
+    groups,
+    pagination: {
+      total: totalGroups,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
+  };
 };

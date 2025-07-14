@@ -1,7 +1,6 @@
 import LengthValidator = require('ojs/ojvalidator-length');
 import RegExpValidator = require('ojs/ojvalidator-regexp');
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
-
 import { UserGroup, Application } from '../../../services/usergroups.services';
 import { useMemo } from 'preact/hooks';
 
@@ -33,6 +32,7 @@ interface GroupEditorDialogProps {
 export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, onCancel, editingGroup, name, setName, description, setDescription, nameInputRef, descriptionInputRef, allUsers, selectedUserEmails, setSelectedUserEmails, availableApps, stagedAppIds, setStagedAppIds }: GroupEditorDialogProps) => {
     if (!isOpen) return null;
 
+    const isAdminGroup = editingGroup?.name === 'Admin Group';
     const allUsersDataProvider = new ArrayDataProvider(allUsers, { keyAttributes: 'value' });
     const appDataProvider = useMemo(() => {
         const appOptions: AppOption[] = availableApps.filter(app => app.is_active).map(app => ({
@@ -44,9 +44,7 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
     }, [availableApps]);
 
     return (
-        <oj-dialog id="groupDialog" dialogTitle={editingGroup ? 'Edit Group' : 'Create Group'} initialVisibility="show" onojClose={onClose}
-        headerDecoration='off' 
-        >
+        <oj-dialog id="groupDialog" dialogTitle={editingGroup ? 'Edit Group' : 'Create Group'} initialVisibility="show" onojClose={onClose} headerDecoration='off'>
             <div class="oj-dialog-body">
                 <oj-c-form-layout>
                     <oj-c-input-text
@@ -65,6 +63,7 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
                                 messageDetail: 'Use only letters, numbers, spaces, hyphens (-), and underscores (_).',
                             }),
                         ]}
+                        disabled={isAdminGroup}
                     />
                     <oj-c-input-text
                         id="description-input"
@@ -112,6 +111,7 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
                         value={stagedAppIds}
                         onvalueChanged={(e: CustomEvent) => setStagedAppIds(e.detail.value || new Set())}
                         class="oj-form-control-full-width"
+                        disabled={isAdminGroup}
                     />
                 </oj-c-form-layout>
             </div>
