@@ -13,7 +13,7 @@ export interface Application {
   groupCount: number;
   groupNames: string[];
   logCount: number;
-  health_status: 'healthy' | 'warning' | 'critical'; 
+  health_status: 'healthy' | 'warning' | 'critical';
 }
 
 interface FilterOptions {
@@ -22,7 +22,7 @@ interface FilterOptions {
   search?: string;
   status?: 'active' | 'inactive';
   groupIds?: string[];
-  userId?: string; 
+  userId?: string;
 }
 
 const escapeRegex = (text: string) => {
@@ -34,13 +34,13 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
 
   const userSettings = userId ? await Settings.findOne({ user_id: userId }) : null;
 
-  const warning_rate_threshold = userSettings?.warning_rate_threshold ?? 10; 
+  const warning_rate_threshold = userSettings?.warning_rate_threshold ?? 10;
   // console.log('Warning Rate Threshold:', warning_rate_threshold);
   // console.log('Error Rate Threshold:', userSettings?.error_rate_threshold);
-  const error_rate_threshold = userSettings?.error_rate_threshold ?? 20; 
+  const error_rate_threshold = userSettings?.error_rate_threshold ?? 20;
   const oneMinuteAgo = new Date(Date.now() - 60000);
-  
-let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
+
+  let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
 
   if (userId) {
     const userGroups = await UserGroupMembers.find({
@@ -68,7 +68,7 @@ let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
       pagination: { total: 0, page, limit, totalPages: 0, hasNextPage: false, hasPrevPage: false },
     };
   }
-  
+
   const pipeline: any[] = [];
   const matchStage: any = { is_deleted: false };
 
@@ -93,8 +93,21 @@ let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
 
   if (groupIds && groupIds.length > 0) {
     pipeline.push(
-      { $lookup: { from: 'usergroupapplications', localField: '_id', foreignField: 'app_id', as: 'groupAssignments' }},
-      { $match: { 'groupAssignments.group_id': { $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)) } } }
+      {
+        $lookup: {
+          from: 'usergroupapplications',
+          localField: '_id',
+          foreignField: 'app_id',
+          as: 'groupAssignments',
+        },
+      },
+      {
+        $match: {
+          'groupAssignments.group_id': {
+            $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)),
+          },
+        },
+      }
     );
   }
 
@@ -102,7 +115,6 @@ let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
     $facet: {
       metadata: [{ $count: 'total' }],
       data: [
-
         {
           $lookup: {
             from: 'usergroupapplications',
@@ -142,14 +154,50 @@ let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
           },
         },
 
-        { $sort: { created_at: -1 } }, 
-        { $lookup: { from: 'usergroupapplications', localField: '_id', foreignField: 'app_id', as: 'groups', pipeline: [{ $match: { is_active: true } }] }},
-        { $lookup: { from: 'usergroups', localField: 'groups.group_id', foreignField: '_id', as: 'groupDetails', pipeline: [{ $match: { is_deleted: false, is_active: true } }] }},
-        { $lookup: { from: 'logs', let: { appId: '$_id' }, pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] } } }, { $count: 'total' }], as: 'logStats' }},
-        { $lookup: { from: 'logs', let: { appId: '$_id' }, pipeline: [
-            { $match: { $expr: { $and: [ { $eq: ['$app_id', '$$appId'] }, { $gte: ['$timestamp', oneMinuteAgo] }]}}},
-            { $count: 'recentLogs' }
-        ], as: 'recentLogStats'}},
+        { $sort: { created_at: -1 } },
+        {
+          $lookup: {
+            from: 'usergroupapplications',
+            localField: '_id',
+            foreignField: 'app_id',
+            as: 'groups',
+            pipeline: [{ $match: { is_active: true } }],
+          },
+        },
+        {
+          $lookup: {
+            from: 'usergroups',
+            localField: 'groups.group_id',
+            foreignField: '_id',
+            as: 'groupDetails',
+            pipeline: [{ $match: { is_deleted: false, is_active: true } }],
+          },
+        },
+        {
+          $lookup: {
+            from: 'logs',
+            let: { appId: '$_id' },
+            pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] } } }, { $count: 'total' }],
+            as: 'logStats',
+          },
+        },
+        {
+          $lookup: {
+            from: 'logs',
+            let: { appId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [{ $eq: ['$app_id', '$$appId'] }, { $gte: ['$timestamp', oneMinuteAgo] }],
+                  },
+                },
+              },
+              { $count: 'recentLogs' },
+            ],
+            as: 'recentLogStats',
+          },
+        },
 
         {
           $project: {
@@ -163,19 +211,26 @@ let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
             logCount: { $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0] },
             health_status: {
               $let: {
-                vars: { recent_logs: { $ifNull: [{ $arrayElemAt: ['$recentLogStats.recentLogs', 0] }, 0] } },
+                vars: {
+                  recent_logs: {
+                    $ifNull: [{ $arrayElemAt: ['$recentLogStats.recentLogs', 0] }, 0],
+                  },
+                },
                 in: {
                   $switch: {
                     branches: [
                       { case: { $gte: ['$$recent_logs', error_rate_threshold] }, then: 'critical' },
-                      { case: { $gte: ['$$recent_logs', warning_rate_threshold] }, then: 'warning' }
+                      {
+                        case: { $gte: ['$$recent_logs', warning_rate_threshold] },
+                        then: 'warning',
+                      },
                     ],
-                    default: 'healthy'
-                  }
-                }
-              }
-            }
-          }
+                    default: 'healthy',
+                  },
+                },
+              },
+            },
+          },
         },
         { $skip: (page - 1) * limit },
         { $limit: limit },

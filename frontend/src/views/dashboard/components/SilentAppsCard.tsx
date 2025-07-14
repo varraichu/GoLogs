@@ -46,7 +46,7 @@ export function SilentAppsCard({ apps }: { apps: SilentAppSummary[] }) {
                                         <span class="oj-text-color-primary">{app.app_name}</span>
                                     </div>
                                     <div class="oj-text-color-secondary oj-typography-body-xs" style="text-align: right;">
-                                        {app.minutes_ago === 'Never' ? 'Never' : `${app.minutes_ago} min ago`}
+                                        {app.minutes_ago === 'Never' ? 'Never' : app.minutes_ago < 60 ? `${app.minutes_ago} min ago` : app.minutes_ago < 1440 ? `${Math.floor(app.minutes_ago / 60)} hours ago` : `${Math.floor(app.minutes_ago / 1440)} days ago`}
                                     </div>
                                 </div>
 

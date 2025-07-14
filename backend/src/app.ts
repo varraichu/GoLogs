@@ -22,8 +22,6 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!');
 });
 
-app.use('/api/user-groups', userGroupRoutes);
-
 app.use('/api/assignGroup', assignGroupRoutes);
 app.use('/api/oauth', authRoutes);
 
