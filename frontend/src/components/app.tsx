@@ -33,6 +33,7 @@ export const App = registerCustomElement(
     const [startOpened, setStartOpened] = useState(true)
     const [userId, setUserId] = useState<string>("")
     const [activeItem, setActiveItem] = useState<string>('dashboard')
+    const [collapsed, setCollapsed] = useState(true)
     useEffect(() => {
       Context.getPageContext().getBusyContext().applicationBootstrapComplete()
 
@@ -76,13 +77,16 @@ export const App = registerCustomElement(
     if (!isAuthenticated) {
       return <Login />
     }
-    const setStartOpen = () => setStartOpened(!startOpened);
+    // const setStartOpen = () => setStartOpened(!startOpened);
+    const setStartOpen = () => setCollapsed(!collapsed);
     return (
       <ToastProvider>
         <div>
           <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
-          <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened={startOpened}>
+          <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened
+        startDisplay="reflow">
             <SideBar
+              collapsed={collapsed}
               // slot="start" 
               setActiveItem={setActiveItem}
               activeItem={activeItem}
