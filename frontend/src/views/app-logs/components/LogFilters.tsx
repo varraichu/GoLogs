@@ -114,7 +114,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
       // Create app data provider - use app name instead of ID for the value
       const options = apps.map(app => ({
         value: app.name,
-        label: app.name,
+        label: app.name.replace(/\./g, ' '),
       }));
       setAppOptions(options);;
     } catch (error) {

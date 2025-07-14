@@ -17,6 +17,7 @@ const DashboardRecentLogs = () => {
         const formatted = (data.logs || []).map((log: LogEntry, idx: number) => ({
           rowNumber: idx + 1,
           ...log,
+          app_name: log.app_name.replace(/\./g, ' '),
           timestamp: new Date(log.timestamp).toLocaleString(),
         }))
         setLogs(formatted)

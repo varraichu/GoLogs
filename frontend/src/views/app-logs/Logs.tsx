@@ -152,6 +152,7 @@ const Logs = (props: { path?: string }) => {
       const formattedLogs = (data.logs || []).map((log: LogEntry, idx) => ({
         rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,
         ...log,
+        app_name: log.app_name.replace(/\./g, ' '),
         timestamp: new Date(log.timestamp).toLocaleString(),
         ingested_at: new Date(log.ingested_at).toLocaleString(),
       }))

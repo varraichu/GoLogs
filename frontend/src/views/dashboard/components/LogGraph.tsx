@@ -22,9 +22,10 @@ const LogGraph = () => {
             const rawData: AppLogSummary[] = res.data;
 
             const chartData = rawData.flatMap((app: AppLogSummary) => {
+                const appNameFormatted = app.app_name?.replace(/\./g, ' ') || '';
                 return ['info', 'warn', 'error', 'debug'].map(level => ({
                     id: `${app._id}-${level}`,
-                    group: app.app_name,
+                    group: appNameFormatted,
                     series: level,
                     value: app[level as keyof AppLogSummary] ?? 0,
                 }));

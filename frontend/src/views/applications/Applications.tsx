@@ -161,7 +161,7 @@ const Applications = (props: { path?: string }) => {
     if (application) {
       setEditingState(true)
       setEditingApplication(application)
-      setName(application.name || '')
+      setName((application.name || '').replace(/\./g, ' '))
       setDescription(application.description || '')
       await fetchAllUserGroups()
       await fetchAppUserGroups(application._id || '')
@@ -418,7 +418,7 @@ const Applications = (props: { path?: string }) => {
             )}
 
             {pagination.total > 0 && (
-              <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end" style="gap: 16px;">
+              <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end" style="gap: 16px;">
                 <oj-button chroming="callToAction" onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))} disabled={!pagination.hasPrevPage}>
                   <span slot="startIcon" class="oj-ux-ico-arrow-left"></span> Previous
                 </oj-button>

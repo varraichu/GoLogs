@@ -14,7 +14,7 @@ export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewU
   const isAdminGroup = group.name === 'Admin Group';
 
   return (
-    <div class="oj-panel oj-panel-shadow-md user-group-card"
+    <div class="oj-panel user-group-card"
       style={{ maxWidth: "50%" }}>
       <div>
         <div class="user-group-header">
@@ -54,7 +54,7 @@ export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewU
           <p class="oj-typography-body-sm oj-text-color-secondary" style={{ marginBottom: '4px' }}>Assigned Apps</p>
           <div class="group-chips">
             {group.applicationNames.slice(0, 2).map((appName, index) => (
-              <span key={index} class="group-chip">{appName}</span>
+              <span key={index} class="group-chip">{appName.replace(/\./g, ' ')}</span>
             ))}
             {group.applicationNames.length > 2 && (
               <span class="more-chip">+{group.applicationNames.length - 2}</span>
