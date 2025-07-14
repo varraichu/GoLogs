@@ -53,28 +53,39 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
             </div>
 
             {/* Logs Graph & Pinned Apps */}
-            <div class="oj-flex oj-sm-flex-wrap-nowrap" style={{ width: '100%', gap: '24px', alignItems: 'stretch' }}>
-                {/* Graph Panel */}
-                <div class="oj-flex-item" style={{ flex: '1 1 68%' }}>
-                    <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-margin-bottom-2x">
-                            <div class="oj-flex oj-sm-align-items-center" style={{ gap: '4px' }}>
-                                <h3 style={{ margin: 0, fontWeight: "bold", fontSize: "1.3rem" }}>
-                                    Logs in the past 24 hours
-                                </h3>
-                            </div>
-                        </div>
+            <div
+                class="oj-flex"
+                style={{
+                    width: '100%',
+                    gap: '24px',
+                    alignItems: 'stretch',
+                }}
+            >
+
+                <div class="oj-flex-item" style={{ flex: '1 1 58%' }}>
+                    <div
+                        class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x"
+                        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                    >
                         <LogGraph />
                     </div>
                 </div>
 
-                {/* Pinned Apps Section */}
-                <PinnedAppsSection
-                    applications={applications}
-                    userId={userId}
-                    setApplications={setApplications}
-                />
+                <div class="oj-flex-item" style={{ flex: '1 1 28%' }}>
+
+
+                    <div class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <PinnedAppsSection
+                            applications={applications}
+                            userId={userId}
+                            setApplications={setApplications}
+                        />
+                    </div>
+                </div>
+
+
             </div>
+
 
             {/* Recent Logs */}
             <DashboardRecentLogs />
