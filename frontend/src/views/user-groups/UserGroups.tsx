@@ -12,11 +12,12 @@ import 'oj-c/message-toast';
 import 'oj-c/progress-circle';
 import { useToast } from '../../context/ToastContext';
 
-
 import { UserGroup, Application, fetchUserGroups, fetchDirectoryUsers, fetchApplications, fetchGroupUsers, saveUserGroup, updateGroupAppAccess, deleteUserGroup, toggleGroupStatus } from '../../services/usergroups.services';
 import { UserGroupCard } from './components/UserGroupCard';
 import { GroupEditorDialog } from './components/GroupEditorDialog';
-// --- TYPE DEFINITIONS ---
+import { UserGroupFilters } from './components/UserGroupFilters';
+import SearchBar from '../../components/SearchBar';
+
 type UserOption = { value: string; text: string; };
 
 const UserGroups = (props: { path?: string }) => {
@@ -24,6 +25,18 @@ const UserGroups = (props: { path?: string }) => {
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const { addNewToast, messageDataProvider, removeToast } = useToast();
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Updated filters state to include appIds
+  const [filters, setFilters] = useState({ search: '', status: 'all', appIds: [] as string[] });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 6,
+    total: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
   // Dialogs State
   const [showDialog, setShowDialog] = useState(false);
@@ -33,7 +46,7 @@ const UserGroups = (props: { path?: string }) => {
   const [selectedGroupForUsers, setSelectedGroupForUsers] = useState<UserGroup | null>(null);
   const [confirmCancelDialog, setConfirmCancelDialog] = useState(false);
 
-  // Form State (managed here to be passed to dialog)
+  // Form State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<{ name?: string; description?: string; memberEmails?: string }>({});
@@ -49,12 +62,17 @@ const UserGroups = (props: { path?: string }) => {
   const [selectedAppIds, setSelectedAppIds] = useState<Set<string>>(new Set());
   const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
 
+  const [opened, setOpened] = useState(false);
+
   // --- Data Loading ---
   const loadGroups = async () => {
     setIsLoadingPage(true);
     try {
-      const userGroups = await fetchUserGroups();
-      setGroups(userGroups);
+      const data = await fetchUserGroups(filters, { page: pagination.page, limit: pagination.limit });
+      setGroups(data.groups || []);
+      if (data.pagination) {
+        setPagination(data.pagination);
+      }
     } catch (error: any) {
       addNewToast('error', 'Error', 'Failed to fetch user groups');
     } finally {
@@ -64,9 +82,25 @@ const UserGroups = (props: { path?: string }) => {
 
   useEffect(() => {
     loadGroups();
-  }, []);
+  }, [filters, pagination.page]);
 
   // --- Handlers ---
+  const handleFilterChange = (newFilters: { status: string; appIds: string[] }) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleSearchChange = (newSearchTerm: string) => {
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    const trimmedSearchTerm = newSearchTerm.trim();
+    debounceTimeout.current = setTimeout(() => {
+      if (trimmedSearchTerm !== filters.search) {
+        setFilters(prev => ({ ...prev, search: trimmedSearchTerm }));
+        setPagination(prev => ({ ...prev, page: 1 }));
+      }
+    }, 300);
+  };
+
   const handleOpenEditor = async (group?: UserGroup) => {
     setErrors({});
     setName(group?.name || '');
@@ -81,18 +115,14 @@ const UserGroups = (props: { path?: string }) => {
         directoryData = await fetchDirectoryUsers();
         setAllDirectoryUsers(directoryData);
       }
-
       const appData = await fetchApplications();
       setAvailableApps(appData);
-
       if (group) {
         const usersInGroup = await fetchGroupUsers(group._id);
         const emailMap = new Map(directoryData.map(u => [u.value.toLowerCase(), u.value]));
         const groupEmails = new Set(usersInGroup.map(u => emailMap.get(u.email.toLowerCase())).filter(Boolean) as string[]);
-
         setOriginalUserEmails(groupEmails);
         setSelectedUserEmails(groupEmails);
-
         const matchedAppIds = new Set(appData.filter(app => group.applicationNames.includes(app.name)).map(app => app._id));
         setSelectedAppIds(matchedAppIds);
         setStagedAppIds(matchedAppIds);
@@ -129,7 +159,6 @@ const UserGroups = (props: { path?: string }) => {
 
   const handleSave = async () => {
     if (!(await validateForm())) return;
-
     const groupData = {
       name,
       description,
@@ -144,7 +173,6 @@ const UserGroups = (props: { path?: string }) => {
       // @ts-ignore
       delete groupData.removeMemberEmails;
     }
-
     try {
       const savedGroup = await saveUserGroup(groupData, editingGroup);
       const appsChanged = JSON.stringify([...stagedAppIds].sort()) !== JSON.stringify([...selectedAppIds].sort());
@@ -191,36 +219,105 @@ const UserGroups = (props: { path?: string }) => {
     }
   };
 
+  const toggleDrawer = () => setOpened(!opened)
+
   return (
-    <div class="oj-flex oj-sm-padding-4x">
-      <div class="oj-flex oj-sm-12 oj-sm-margin-4x oj-sm-justify-content-space-between oj-sm-align-items-center">
-        <div>
-          <h1 class="oj-typography-heading-lg">User Groups</h1>
-          <p class="oj-typography-body-md">Manage your user groups and their applications</p>
+    <div class="oj-flex oj-sm-flex-direction-column oj-sm-padding-6x "
+      style={{ overflow: "hidden" }}>
+
+      <div class="oj-flex oj-sm-justify-content-space-between oj-sm-align-items-center oj-sm-margin-bottom-4x ">
+        <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
+          <h1 class="oj-typography-heading-md">User Groups</h1>
         </div>
-        <div>
+        {/* <div>
           <oj-button onojAction={() => handleOpenEditor()} chroming="callToAction">+ Create Group</oj-button>
-        </div>
+        </div> */}
       </div>
 
-      {isLoadingPage ? (
-        <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 400px; width: 100%;">
-          <oj-c-progress-circle value={-1} size="lg"></oj-c-progress-circle>
+      <div class="oj-flex oj-sm-margin-8x-end oj-sm-align-items-center" style="width: 100%; gap: 12px;">
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search by name or description" />
+
+        <oj-button onojAction={() => handleOpenEditor()} chroming="callToAction">+ Create Group</oj-button>
+
+        <oj-button
+          onojAction={toggleDrawer}
+          label={opened ? "Close Filters" : "Apply Filters"}
+          chroming={opened ? "outlined" : "callToAction"}
+        >
+          {opened ? (<span slot="startIcon" class="oj-ux-ico-filter-alt-off"></span>) : (<span slot="startIcon" class="oj-ux-ico-filter-alt"></span>)}
+        </oj-button>
+      </div>
+
+      {/* <div class="oj-flex oj-sm-flex-direction-column oj-sm-margin-4x-bottom" style="gap: 16px;">
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search by name or description" />
+        <UserGroupFilters onFilterChange={handleFilterChange} />
+      </div> */}
+
+      <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1 oj-sm-margin-4x-top " style="width: 100%; overflow-x: hidden;">
+
+        <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x " style="width: 100%;">
+          {isLoadingPage ? (
+            <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 400px; width: 100%;">
+              <oj-c-progress-circle value={-1} size="md"></oj-c-progress-circle>
+            </div>
+          ) : (
+            <div class="oj-flex oj-sm-flex-direction-column oj-sm-padding-4x-start oj-sm-padding-5x-end " style="gap: 24px;">
+              <div class="oj-flex oj-flex-wrap" style={{ gap: '24px' }}>
+                {groups.length > 0 ? (
+                  groups.map((group) => (
+                    <UserGroupCard
+                      key={group._id}
+                      group={group}
+                      onEdit={handleOpenEditor}
+                      onDelete={setConfirmDeleteDialogId}
+                      onToggleStatus={handleToggleStatus}
+                      onViewUsers={handleViewUsers}
+                    />
+                  ))
+                ) : (
+                  <div class="oj-flex oj-sm-justify-content-center oj-sm-align-items-center" style="width: 100%; height: 200px;">
+                    <p class="oj-typography-body-lg">No user groups found.</p>
+                  </div>
+                )}
+              </div>
+
+              {pagination && (
+                <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end" style="gap: 16px;">
+                  <oj-button
+                    chroming="callToAction"
+                    onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                    disabled={!pagination.hasPrevPage}
+                  >
+                    <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
+                    Previous
+                  </oj-button>
+                  <span class="oj-typography-body-md oj-text-color-primary">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                  <oj-button
+                    chroming="callToAction"
+                    onojAction={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                    disabled={!pagination.hasNextPage}
+                  >
+                    Next
+                    <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
+                  </oj-button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      ) : (
-        <div class="oj-flex oj-flex-wrap" style={{ gap: '24px' }}>
-          {groups.map((group) => (
-            <UserGroupCard
-              key={group._id}
-              group={group}
-              onEdit={handleOpenEditor}
-              onDelete={setConfirmDeleteDialogId}
-              onToggleStatus={handleToggleStatus}
-              onViewUsers={handleViewUsers}
-            />
-          ))}
+
+        <div slot="end" style="width: 280px; max-width: 100%; box-sizing: border-box;">
+          <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-padding-4x-start">
+            <h6>Filter Applications</h6>
+          </div>
+          <div class="oj-flex">
+            <UserGroupFilters onFilterChange={handleFilterChange} />
+          </div>
         </div>
-      )}
+      </oj-drawer-layout>
+
 
 
 
@@ -248,7 +345,6 @@ const UserGroups = (props: { path?: string }) => {
           setStagedAppIds={setStagedAppIds}
         />
       )}
-
       {confirmDeleteDialogId && (
         <oj-dialog id="confirmDeleteDialog" dialogTitle="Confirm Deletion" initialVisibility="show">
           <div class="oj-dialog-body">Are you sure you want to delete this group?</div>
@@ -258,7 +354,6 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
       {confirmCancelDialog && (
         <oj-dialog id="confirmCancelDialog" dialogTitle="Cancel Changes" initialVisibility="show" headerDecoration='off'>
           <div class="oj-dialog-body">Are you sure you want to cancel your changes?</div>
@@ -268,7 +363,6 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
       {showUsersDialog && selectedGroupForUsers && (
         <oj-dialog dialogTitle={`Users in ${selectedGroupForUsers.name}`} initialVisibility="show" onojClose={() => setShowUsersDialog(false)}>
           <div class="oj-dialog-body">
@@ -281,7 +375,6 @@ const UserGroups = (props: { path?: string }) => {
           </div>
         </oj-dialog>
       )}
-
       <oj-c-message-toast
         data={messageDataProvider}
         onojClose={(e: CustomEvent) => removeToast(e.detail.key)}

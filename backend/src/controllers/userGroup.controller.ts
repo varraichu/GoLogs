@@ -5,7 +5,7 @@ import UserGroupMember from '../models/UserGroupMembers';
 import UserGroupApplication from '../models/UserGroupApplications';
 import User from '../models/Users';
 import { findOrCreateUsersByEmail } from '../services/createUsers.service';
-import { getDetailedUserGroups } from '../services/userGroup.service';
+import { getDetailedUserGroups, getPaginatedUserGroups } from '../services/userGroup.service';
 import {
   CreateUserGroupInput,
   UpdateUserGroupInput,
@@ -93,6 +93,26 @@ export const getAllUserGroups = async (req: IAuthRequest, res: Response) => {
     logger.error('Error fetching all user groups:', error);
     res.status(500).json({ message: 'Server error' });
     return;
+  }
+};
+
+export const getAllUserGroupInfo = async (req: IAuthRequest, res: Response) => {
+  try {
+    const { search = '', status = 'all', page = '1', limit = '6', appIds = '' } = req.query;
+
+    const options = {
+      search: search as string,
+      status: status as string,
+      page: parseInt(page as string, 10),
+      limit: parseInt(limit as string, 10),
+      appIds: (appIds as string) ? (appIds as string).split(',') : [],
+    };
+
+    const result = await getPaginatedUserGroups(options);
+    res.status(200).json(result);
+  } catch (error) {
+    logger.error('Error fetching all user groups:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
