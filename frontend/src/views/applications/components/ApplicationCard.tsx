@@ -3,6 +3,18 @@ import { h } from 'preact';
 import { Application } from '../../../services/applications.services';
 import '../../../styles/application-cards.css';
 
+const getHealthStatusColor = (status: string) => {
+    switch (status) {
+        case 'critical':
+            return { background: '#fde8e8', text: '#991b1b', border: '#fecaca' };
+        case 'warning':
+            return { background: '#fffbeb', text: '#b45309', border: '#fde68a' };
+        case 'healthy':
+        default:
+            return { background: '#eafaf1', text: '#065f46', border: '#a7f3d0' };
+    }
+};
+
 interface ApplicationCardProps {
   app: Application;
   onToggleStatus: (appId: string, isActive: boolean) => void;
@@ -11,24 +23,60 @@ interface ApplicationCardProps {
 }
 
 export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: ApplicationCardProps) => {
+  const healthColor = getHealthStatusColor(app.health_status);
   return (
-    <div class="oj-panel oj-panel-shadow-md application-card">
-      <div class="application-header">
-        <div class="application-title-container">
-          <h3 class="oj-typography-heading-sm application-title">
-            {app.name.replace(/\./g, ' ')}
-          </h3>
-          <span
-            class={`oj-typography-body-xs status-badge ${app.is_active ? 'status-active' : 'status-inactive'}`}
-          >
-            {app.is_active ? 'Active' : 'Inactive'}
-          </span>
-        </div>
-        <oj-switch
-          value={app.is_active}
-          onvalueChanged={(e) => onToggleStatus(app._id, e.detail.value as boolean)}
-        />
-      </div>
+    <div
+      key={app._id}
+      class="oj-panel oj-panel-shadow-md"
+      style={{
+        border: '1px solid #e5e7eb',
+        borderRadius: '12px',
+        padding: '20px 20px 16px 20px',
+        maxWidth: '400px',
+        minWidth: '400px',
+        flex: '1 1 400px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+    >
+      <div class="oj-flex" style={{ alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
+                {/* Left side with title and new health status */}
+                <div class="oj-flex oj-sm-flex-direction-column">
+                    <h3 class="oj-typography-heading-sm" style={{ margin: 0, wordBreak: 'break-word' }}>
+                        {app.name}
+                    </h3>
+                    <span
+                        class="oj-typography-body-xs"
+                        style={{
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontWeight: 500,
+                            marginTop: '4px',
+                            backgroundColor: healthColor.background,
+                            color: healthColor.text,
+                            border: `1px solid ${healthColor.border}`,
+                            textTransform: 'capitalize',
+                            alignSelf: 'flex-start'
+                        }}
+                    >
+                        {app.health_status}
+                    </span>
+                </div>
+                {/* Right side with Active toggle */}
+                <div style={{ flexShrink: 0 }}>
+                    <span
+                        class="oj-typography-body-xs"
+                        style={{ color: app.is_active ? '#065f46' : '#991b1b', fontSize: '0.85em', marginRight: '8px' }}
+                    >
+                        {app.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    <oj-switch
+                        value={app.is_active}
+                        onvalueChanged={(e) => onToggleStatus(app._id, e.detail.value as boolean)}
+                    />
+                </div>
+            </div>
 
       <p class="oj-typography-body-sm oj-text-color-secondary oj-sm-margin-b-2x application-description">
         {app.description}

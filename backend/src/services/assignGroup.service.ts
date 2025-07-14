@@ -29,7 +29,7 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
         group_id: groupId,
       },
       update: {
-        $set: { is_active: true },
+        $set: { is_active: true, is_removed: false },
         $setOnInsert: {
           app_id: appId,
           group_id: groupId,
@@ -56,7 +56,7 @@ export const unassignAppFromGroup = async (appId: string, groupId: string) => {
 
   const result = await UserGroupApplications.updateMany(
     { app_id: appId, group_id: groupId, is_active: true },
-    { $set: { is_active: false } }
+    { $set: { is_active: false, is_removed: true } }
   );
 
   if (result.modifiedCount === 0) {
@@ -70,5 +70,9 @@ export const getAppAssignedGroups = async (appId: string) => {
     throw { status: 404, message: `Application with ID ${appId} not found` };
   }
 
-  return await UserGroupApplications.find({ app_id: appId, is_active: true }).distinct('group_id');
+  return await UserGroupApplications.find({
+    app_id: appId,
+    is_active: true,
+    is_removed: false,
+  }).distinct('group_id');
 };

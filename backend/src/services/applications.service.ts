@@ -2,6 +2,19 @@ import mongoose from 'mongoose';
 import Applications from '../models/Applications';
 import UserGroupMembers from '../models/UserGroupMembers';
 import UserGroupApplications from '../models/UserGroupApplications';
+import Settings from '../models/Settings';
+
+export interface Application {
+  _id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  is_active: boolean;
+  groupCount: number;
+  groupNames: string[];
+  logCount: number;
+  health_status: 'healthy' | 'warning' | 'critical'; 
+}
 
 interface FilterOptions {
   page: number;
@@ -9,7 +22,7 @@ interface FilterOptions {
   search?: string;
   status?: 'active' | 'inactive';
   groupIds?: string[];
-  userId?: string;
+  userId?: string; 
 }
 
 const escapeRegex = (text: string) => {
@@ -19,12 +32,21 @@ const escapeRegex = (text: string) => {
 export const getPaginatedFilteredApplications = async (options: FilterOptions) => {
   const { page, limit, search, status, groupIds, userId } = options;
 
-  let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
+  const userSettings = userId ? await Settings.findOne({ user_id: userId }) : null;
+
+  const warning_rate_threshold = userSettings?.warning_rate_threshold ?? 10; 
+  // console.log('Warning Rate Threshold:', warning_rate_threshold);
+  // console.log('Error Rate Threshold:', userSettings?.error_rate_threshold);
+  const error_rate_threshold = userSettings?.error_rate_threshold ?? 20; 
+  const oneMinuteAgo = new Date(Date.now() - 60000);
+  
+let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
 
   if (userId) {
     const userGroups = await UserGroupMembers.find({
       user_id: userId,
       is_active: true,
+      is_removed: false,
     }).select('group_id');
 
     if (userGroups.length > 0) {
@@ -32,6 +54,7 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
       const userGroupApps = await UserGroupApplications.find({
         group_id: { $in: userGroupIds },
         is_active: true,
+        is_removed: false,
       }).select('app_id');
       accessibleAppIds = userGroupApps.map((a) => a.app_id as mongoose.Types.ObjectId);
     } else {
@@ -39,23 +62,17 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
     }
   }
 
+  if (accessibleAppIds && accessibleAppIds.length === 0) {
+    return {
+      applications: [],
+      pagination: { total: 0, page, limit, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+    };
+  }
+  
   const pipeline: any[] = [];
   const matchStage: any = { is_deleted: false };
 
   if (accessibleAppIds) {
-    if (accessibleAppIds.length === 0) {
-      return {
-        applications: [],
-        pagination: {
-          total: 0,
-          page,
-          limit,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPrevPage: false,
-        },
-      };
-    }
     matchStage._id = { $in: accessibleAppIds };
   }
 
@@ -66,7 +83,6 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
   if (search) {
     const searchParts = search.split(' ').map((part) => escapeRegex(part));
     const flexibleSearchRegex = searchParts.join('.*');
-
     matchStage.$or = [
       { name: { $regex: flexibleSearchRegex, $options: 'i' } },
       { description: { $regex: flexibleSearchRegex, $options: 'i' } },
@@ -77,21 +93,8 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
 
   if (groupIds && groupIds.length > 0) {
     pipeline.push(
-      {
-        $lookup: {
-          from: 'usergroupapplications',
-          localField: '_id',
-          foreignField: 'app_id',
-          as: 'groupAssignments',
-        },
-      },
-      {
-        $match: {
-          'groupAssignments.group_id': {
-            $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)),
-          },
-        },
-      }
+      { $lookup: { from: 'usergroupapplications', localField: '_id', foreignField: 'app_id', as: 'groupAssignments' }},
+      { $match: { 'groupAssignments.group_id': { $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)) } } }
     );
   }
 
@@ -99,22 +102,35 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
     $facet: {
       metadata: [{ $count: 'total' }],
       data: [
+
         {
           $lookup: {
             from: 'usergroupapplications',
             localField: '_id',
             foreignField: 'app_id',
             as: 'groups',
-            pipeline: [{ $match: { is_active: true } }],
+            pipeline: [{ $match: { is_active: true, is_removed: false } }],
           },
         },
         {
           $lookup: {
             from: 'usergroups',
-            localField: 'groups.group_id',
-            foreignField: '_id',
+            let: { groupIds: '$groups.group_id', appActive: '$is_active' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $in: ['$_id', '$$groupIds'] },
+                      { $eq: ['$is_deleted', false] },
+                      { $eq: ['$is_active', true] },
+                      { $eq: ['$$appActive', true] }, // ✅ Only include groups if app is active
+                    ],
+                  },
+                },
+              },
+            ],
             as: 'groupDetails',
-            pipeline: [{ $match: { is_deleted: false, is_active: true } }],
           },
         },
         {
@@ -125,6 +141,16 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
             as: 'logStats',
           },
         },
+
+        { $sort: { created_at: -1 } }, 
+        { $lookup: { from: 'usergroupapplications', localField: '_id', foreignField: 'app_id', as: 'groups', pipeline: [{ $match: { is_active: true } }] }},
+        { $lookup: { from: 'usergroups', localField: 'groups.group_id', foreignField: '_id', as: 'groupDetails', pipeline: [{ $match: { is_deleted: false, is_active: true } }] }},
+        { $lookup: { from: 'logs', let: { appId: '$_id' }, pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] } } }, { $count: 'total' }], as: 'logStats' }},
+        { $lookup: { from: 'logs', let: { appId: '$_id' }, pipeline: [
+            { $match: { $expr: { $and: [ { $eq: ['$app_id', '$$appId'] }, { $gte: ['$timestamp', oneMinuteAgo] }]}}},
+            { $count: 'recentLogs' }
+        ], as: 'recentLogStats'}},
+
         {
           $project: {
             _id: 1,
@@ -135,9 +161,22 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
             groupCount: { $size: '$groupDetails' },
             groupNames: '$groupDetails.name',
             logCount: { $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0] },
-          },
+            health_status: {
+              $let: {
+                vars: { recent_logs: { $ifNull: [{ $arrayElemAt: ['$recentLogStats.recentLogs', 0] }, 0] } },
+                in: {
+                  $switch: {
+                    branches: [
+                      { case: { $gte: ['$$recent_logs', error_rate_threshold] }, then: 'critical' },
+                      { case: { $gte: ['$$recent_logs', warning_rate_threshold] }, then: 'warning' }
+                    ],
+                    default: 'healthy'
+                  }
+                }
+              }
+            }
+          }
         },
-        { $sort: { created_at: -1 } },
         { $skip: (page - 1) * limit },
         { $limit: limit },
       ],
@@ -179,7 +218,7 @@ export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[])
         foreignField: 'app_id',
         as: 'groups',
         pipeline: [
-          { $match: { is_active: true } }, // Only count active groups
+          { $match: { is_active: true, is_removed: false } }, // Only count active groups
         ],
       },
     },

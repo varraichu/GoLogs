@@ -27,6 +27,7 @@ interface Application {
   groupCount: number;
   groupNames: string[];
   logCount: number;
+  health_status: 'healthy' | 'warning' | 'critical'; 
 }
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
@@ -192,7 +193,10 @@ export const toggleApplicationStatus = async (req: IAuthRequest, res: Response) 
 
     app.is_active = is_active;
     await app.save();
-    await UserGroupApplications.updateMany({ app_id: appId }, { is_active: is_active });
+    await UserGroupApplications.updateMany(
+      { app_id: appId, is_removed: false },
+      { is_active: is_active }
+    );
 
     res.status(200).json({ message: 'Application successfully set to ', is_active });
     return;

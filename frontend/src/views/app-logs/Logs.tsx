@@ -16,10 +16,12 @@ import SearchBar from '../../components/SearchBar'
 import LogDetailsModal from './components/LogDetailsModal'
 import LogExports from './components/LogExports'
 import LogExportsDialog from './components/LogExportsDialog'
+import LogsTable from './components/LogsTable'
 import 'oj-c/progress-circle'
 import 'oj-c/dialog'
 import { downloadCSV } from '../../services/downloadCSV'
 import { log } from 'console'
+import "ojs/ojdrawerlayout";
 
 const Logs = (props: { path?: string }) => {
   const params = new URLSearchParams(window.location.search);
@@ -34,7 +36,11 @@ const Logs = (props: { path?: string }) => {
   const [logs, setLogs] = useState<any[]>([])
   const [exportFormat, setExportFormat] = useState<'csv' | 'txt'>('csv')
   const [isExporting, setIsExporting] = useState(false)
+  const [opened, setOpened] = useState<boolean>(false);
 
+  const toggleDrawer = () => {
+    setOpened(!opened);
+  };
 
   // Set default sort criteria for backend
   const [sortCriteria, setSortCriteria] = useState<SortCriteria[]>([
@@ -253,21 +259,35 @@ const Logs = (props: { path?: string }) => {
     }
   }
 
+  // const isFilterActive =
+  //   filters.apps.length > 0 ||
+  //   filters.logTypes.length > 0 ||
+  //   filters.fromDate !== undefined ||
+  //   filters.toDate !== undefined;
+
+  // const clearAllFilters = () => {
+  //   setFilters({
+  //     apps: [],
+  //     logTypes: [],
+  //     fromDate: undefined,
+  //     toDate: undefined,
+  //     search: ''
+  //   });
+  //   setPagination((prev) => ({ ...prev, page: 1 }));
+  // };
+
+
   return (
+
     <div
-      class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column"
+      class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column oj-sm-padding-6x"
       style="height: 100%; min-height: 0; flex: 1 1 0;"
     >
-      <div class="oj-flex oj-sm-12 oj-sm-padding-4x-start oj-sm-justify-content-space-between oj-sm-align-items-center">
+
+      <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
-      {/* <div>
-      </div> */}
-
-      <div class="oj-flex oj-flex-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom">
-        {/* style={{backgroundColor: '#8ace00'}} */}
-
-
+      <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
         <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Logs" />
         <LogExports
           setExportDialog={() => {
@@ -275,142 +295,92 @@ const Logs = (props: { path?: string }) => {
           }}
           isLoading={isExporting}
         />
-
-      </div>
-
-
-
-      <LogFilters filters={filters} onFilterChange={handleFilterChange} />
-
-
-      <div
-        class="oj-flex oj-sm-margin-4x oj-sm-justify-content-center oj-sm-align-items-center"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          minWidth: 0,
-          borderRadius: '16px',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        {isLoading ? (
-          <oj-c-progress-circle value={-1} size="md" />
-        ) : (
-
-          <oj-table
-            data={dataProvider}
-            onojSort={handleSort}
-            columns={[
-              {
-                id: 'rowNumber',
-                headerText: 'Row',
-                field: 'rowNumber',
-                resizable: 'enabled',
-                sortable: 'disabled',
-              },
-              {
-                id: 'app_name',
-                headerText: 'App Name',
-                field: 'app_name',
-                resizable: 'enabled',
-                sortable: 'enabled',
-              },
-              {
-                id: 'log_type',
-                headerText: 'Log Type',
-                field: 'log_type',
-                resizable: 'enabled',
-                sortable: 'enabled',
-              },
-              {
-                id: 'message',
-                headerText: 'Message',
-                field: 'message',
-                resizable: 'enabled',
-                sortable: 'enabled',
-              },
-              {
-                id: 'timestamp',
-                headerText: 'Timestamp',
-                field: 'timestamp',
-                resizable: 'enabled',
-                sortable: 'enabled',
-              },
-            ]}
-            display="grid"
-            class=" oj-sm-12"
-            layout="fixed"
-            horizontal-grid-visible="enabled"
-            vertical-grid-visible="disabled"
-            selectionMode={{ row: 'single' }}
-            selected={selectedRows}
-            onselectedChanged={handleRowSelect}
-          >
-            <template
-              slot="headerTemplate"
-              render={(col: any) => {
-                const dir = getDir(col.columnKey)
-                const icon =
-                  dir === 'ascending'
-                    ? 'oj-ux-ico-caret-up'
-                    : dir === 'descending'
-                      ? 'oj-ux-ico-caret-down'
-                      : ' oj-ux-ico-sort'
-
-                return (
-                  <div
-                    class="oj-table-header-cell-label oj-hover-cursor-pointer"
-                    onClick={() => {
-                      const nextDir = dir === 'ascending' ? 'descending' : 'ascending'
-                      handleSort({
-                        detail: { header: col.columnKey, direction: nextDir },
-                      } as CustomEvent)
-                    }}
-                  >
-                    <span>{col.headerText}</span>
-                    {col.headerText !== 'Row' && icon && (
-                      <span class={`${icon} oj-sm-display-inline-block oj-sm-margin-start-2`} />
-                    )}
-                  </div>
-                )
-              }}
-            />
-          </oj-table>
-        )
-        };
-      </div>
-
-
-      {/* Pagination */}
-      {pagination && (
-        <div
-          class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end"
-          style="gap: 16px;"
+        <oj-button
+          onojAction={toggleDrawer}
+          label={opened ? "Close Filters" : "Apply Filters"}
+          chroming={opened ? "outlined" : "callToAction"}
         >
-          <oj-button
-            chroming="callToAction"
-            onojAction={goToPrevPage}
-            disabled={!pagination.hasPrevPage || isLoading}
-          >
-            <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
-            Previous
-          </oj-button>
+          {
+            opened ? (<span slot="startIcon" class="oj-ux-ico-filter-alt-off"></span>) : (<span slot="startIcon" class="oj-ux-ico-filter-alt"></span>)
 
-          <span class="oj-typography-body-md oj-text-color-primary">
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
+          }
+        </oj-button>
+      </div>
 
-          <oj-button
-            chroming="callToAction"
-            onojAction={goToNextPage}
-            disabled={!pagination.hasNextPage || isLoading}
-          >
-            Next
-            <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
-          </oj-button>
+      <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1" style="width: 100%; overflow-x: hidden;">
+        <div class="oj-flex oj-sm-flex-1 oj-sm-overflow-hidden" style="min-width: 0;">
+          <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style="width: 100%;">
+
+            <LogsTable
+              isLoading={isLoading}
+              dataProvider={dataProvider}
+              sortCriteria={sortCriteria}
+              getDir={getDir}
+              handleSort={handleSort}
+              selectedRows={selectedRows}
+              handleRowSelect={handleRowSelect}
+            />
+
+
+
+            {pagination && (
+              <div
+                class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end"
+                style="gap: 16px;"
+              >
+                <oj-button
+                  chroming="callToAction"
+                  onojAction={goToPrevPage}
+                  disabled={!pagination.hasPrevPage || isLoading}
+                >
+                  <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
+                  Previous
+                </oj-button>
+
+                <span class="oj-typography-body-md oj-text-color-primary">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+
+                <oj-button
+                  chroming="callToAction"
+                  onojAction={goToNextPage}
+                  disabled={!pagination.hasNextPage || isLoading}
+                >
+                  Next
+                  <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
+                </oj-button>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        <div slot="end" class="" style="width: 280px; max-width: 100%; box-sizing: border-box;">
+          <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-padding-4x-start">
+            <h6>Filter Logs</h6>
+            {/* <oj-button
+              display="icons"
+              chroming="borderless"
+              onojAction={toggleDrawer}
+            >
+              <span slot="startIcon" class="oj-ux-ico-close"></span>
+              Close
+            </oj-button> */}
+          </div>
+
+          <div class="oj-flex">
+            <LogFilters filters={filters} onFilterChange={handleFilterChange} />
+
+            {/* <div class="oj-flex oj-flex-items-1 oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-padding-3x-bottom">
+              <LogExports
+                setExportDialog={() => {
+                  setExportDialog(!exportDialog)
+                }}
+                isLoading={isExporting}
+              />
+            </div> */}
+          </div>
+        </div>
+      </oj-drawer-layout>
 
       <LogExportsDialog
         opened={exportDialog}
@@ -421,16 +391,7 @@ const Logs = (props: { path?: string }) => {
         exportFormat={exportFormat}
         setExportFormat={setExportFormat}
       ></LogExportsDialog>
-      {
-        // exportDialog && (
-        //   <LogExportsDialog opened={exportDialog}></LogExportsDialog>
-        // )
-      }
-      {/* {isExporting && (
-        <div>
-          <oj-c-progress-circle value={-1}></oj-c-progress-circle> 
-        </div>
-      )} */}
+
 
       {showLogDialog && selectedRows && (
         <LogDetailsModal

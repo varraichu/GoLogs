@@ -14,20 +14,11 @@ export const updateLogSummary = async () => {
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // const logCount = await Logs.countDocuments({
-    //   timestamp: { $gte: twentyFourHoursAgo, $lte: now },
-    // });
-    // console.log('Log count in last 24h:', logCount);
-    // Fetch summary for all apps regardless of user access
     const summary = await fetchAllAppsLogSummary({
       startDate: twentyFourHoursAgo,
       endDate: now,
     });
 
-    // console.log('[LogSummary] Summary length:', summary.length);
-    // console.log('[LogSummary] Sample data:', JSON.stringify(summary[0], null, 2));
-
-    // Overwrite existing collection
     await LogSummary.deleteMany({});
     await LogSummary.insertMany(summary);
 

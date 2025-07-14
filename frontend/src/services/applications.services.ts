@@ -1,14 +1,14 @@
-// File: src/services/applications.services.ts
-
 export interface Application {
-  _id: string
-  name: string
-  description: string
-  created_at: string
-  is_active: boolean
-  groupCount: number
-  groupNames: string[]
-  logCount: number
+  _id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  is_active: boolean;
+  isPinned: boolean;
+  groupCount: number;
+  groupNames: string[];
+  logCount: number;
+  health_status: 'healthy' | 'warning' | 'critical'; 
 }
 
 export interface UserGroup {

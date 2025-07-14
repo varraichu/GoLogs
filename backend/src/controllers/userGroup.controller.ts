@@ -180,6 +180,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
         if (existing) {
           if (!existing.is_active) {
             existing.is_active = true;
+            existing.is_removed = false;
             await existing.save();
           }
         } else {
@@ -187,6 +188,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
             user_id: user._id,
             group_id: group._id,
             is_active: true,
+            is_removed: false,
           });
         }
       }
@@ -198,7 +200,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
       const userIdsToRemove = usersToRemove.map((u) => u._id);
       await UserGroupMember.updateMany(
         { user_id: { $in: userIdsToRemove }, group_id: group._id },
-        { is_active: false }
+        { is_active: false, is_removed: true }
       );
     }
 
@@ -263,8 +265,14 @@ export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
 
     group.is_active = is_active;
     await group.save();
-    await UserGroupApplications.updateMany({ group_id: groupId }, { is_active: is_active });
-    await UserGroupMember.updateMany({ group_id: groupId }, { is_active: is_active });
+    await UserGroupApplications.updateMany(
+      { group_id: groupId, is_removed: false },
+      { is_active: is_active }
+    );
+    await UserGroupMember.updateMany(
+      { group_id: groupId, is_removed: false },
+      { is_active: is_active }
+    );
 
     res
       .status(200)

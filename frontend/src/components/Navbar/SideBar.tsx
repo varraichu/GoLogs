@@ -44,7 +44,7 @@ export function SideBar({
 
     console.log(pathName)
     // return
-    setActiveItem(pathnameMappings[window.location.pathname] as string)
+    setActiveItem(pathnameMappings[window.location.pathname].split("?")[0] as string)
   }, [])
 
   const handleNavigation = (path: string, id: string) => {
