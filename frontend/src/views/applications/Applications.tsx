@@ -56,7 +56,7 @@ const Applications = (props: { path?: string }) => {
 
   const [errors, setErrors] = useState<{ name?: string; description?: string }>({})
   const [dataProvider, setDataProvider] = useState<any>(null)
-  const [searchTerm, setSearchTerm] = useState('')
+  // REMOVED: const [searchTerm, setSearchTerm] = useState('')
   const [allUserGroups, setAllUserGroups] = useState<UserGroup[]>([]);
   const [filters, setFilters] = useState<{ search: string; groupIds: string[]; status: string }>({
     search: '',
@@ -149,7 +149,6 @@ const Applications = (props: { path?: string }) => {
     const trimmedSearchTerm = newSearchTerm.trim();
 
     debounceTimeout.current = setTimeout(() => {
-
       if (trimmedSearchTerm !== filters.search) {
         setFilters(prev => ({ ...prev, search: trimmedSearchTerm }));
         setPagination(prev => ({ ...prev, page: 1 }));
@@ -384,7 +383,7 @@ const Applications = (props: { path?: string }) => {
       </div>
 
       <div class="oj-flex oj-sm-margin-4x-bottom  oj-sm-align-items-center" style="width: 100%; gap: 12px;">
-        <SearchBar value={searchTerm} onChange={handleSearchChange} placeholder="Search Applications" />
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Applications" />
         <oj-button
           onojAction={() => openDialog()}
           chroming="callToAction"
