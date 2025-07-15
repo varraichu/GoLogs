@@ -152,11 +152,11 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
             data.message || 'Error updating retention'
           )
         } else {
-          addNewToast(
-            'confirmation',
-            'Retention updated',
-            data.message || 'Retention updated successfully'
-          )
+          // addNewToast(
+          //   'confirmation',
+          //   'Retention updated',
+          //   data.message || 'Retention updated successfully'
+          // )
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
