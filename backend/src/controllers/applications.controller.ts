@@ -248,9 +248,7 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
       return;
     }
 
-    const alreadyPinned = user.pinned_apps.some(
-      (id) => id.toString() === appId
-    );
+    const alreadyPinned = user.pinned_apps.some((id) => id.toString() === appId);
 
     if (alreadyPinned) {
       res.status(400).json({ message: 'Application already pinned' });

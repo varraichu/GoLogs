@@ -40,12 +40,18 @@ export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen }:
   function getEndIconClass() {
     return (isSmallWidth ? "oj-icon demo-appheader-avatar" : "oj-component-icon oj-button-menu-dropdown-icon");
   }
-  const handleSignOut = (e: Event) => {
+  const handleSignOut = async (e: Event) => {
     e.preventDefault()
-    localStorage.removeItem('jwt')
-    setIsAuthenticated && setIsAuthenticated(false)
+
+    await fetch('http://localhost:3001/api/oauth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+
+    setIsAuthenticated?.(false)
     window.history.replaceState({}, '', window.location.origin + '/')
   }
+
 
   return (
     <header role="banner" class="oj-web-applayout-header" style="padding: 0; margin: 0;">

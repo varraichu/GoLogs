@@ -1,10 +1,19 @@
 import winston from 'winston';
 import config from 'config';
-
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
+import { getTraceId } from '../utils/trace.util';
 const { combine, timestamp, printf } = winston.format;
 
-const getTraceId = (): string => {
-  return 'traceid';
+const timezoned = () => {
+  const date_format = config.get('date_format');
+  if (date_format == 'ABSOLUTE') {
+    return dayjs().format('HH:mm:ss,SSS');
+  } else if (date_format === 'DATE') {
+    return dayjs().format('DD MMM YYYY HH:mm:ss,SSS');
+  }
+
+  return dayjs().format('YYYY-MM-DDTHH:mm:ss.SSS');
 };
 
 const logFormat = printf(({ level, message, timestamp }) => {
@@ -14,7 +23,12 @@ const logFormat = printf(({ level, message, timestamp }) => {
 
 const logger = winston.createLogger({
   level: config.get('logger.level'),
-  format: combine(timestamp(), logFormat),
+  format: combine(
+    timestamp({
+      format: timezoned,
+    }),
+    logFormat
+  ),
   transports: [
     new winston.transports.Console({
       format: combine(timestamp(), logFormat),

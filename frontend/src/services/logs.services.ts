@@ -136,7 +136,7 @@ class LogsService {
 
     const res = await fetch(finalUrl, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
     });
 
     const data = await res.json();
@@ -162,16 +162,16 @@ class LogsService {
     // if (!isAdmin) {
     //   baseEndpoint += `/${userId}`;
     // }
-    
+
     let exportEndpoint = `${this.baseUrl}/logs/export`; // Always use export endpoint
-    if (!isAdmin){
-      exportEndpoint+=`/${userId}`
+    if (!isAdmin) {
+      exportEndpoint += `/${userId}`
     }
-      // baseEndpoint += `/${userId}`;
+    // baseEndpoint += `/${userId}`;
 
     const params = new URLSearchParams();
     params.append('limit', String(limit));
-    
+
     if (sortCriteria && sortCriteria.length > 0) {
       const sortStr = sortCriteria
         .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)

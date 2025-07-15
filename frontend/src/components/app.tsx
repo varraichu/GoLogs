@@ -37,37 +37,32 @@ export const App = registerCustomElement(
     useEffect(() => {
       Context.getPageContext().getBusyContext().applicationBootstrapComplete()
 
-      const urlParams = new URLSearchParams(window.location.search)
-      const token = urlParams.get('token')
-
-      const processToken = (token: string) => {
+      // Remove all token parsing logic
+      const fetchUser = async () => {
         try {
-          const payload = JSON.parse(atob(token.split('.')[1]))
-          localStorage.setItem('jwt', token)
+          const res = await fetch('http://localhost:3001/api/oauth/me', {
+            method: 'GET',
+            credentials: 'include' // 🔥 Required to send cookies
+          })
+
+          if (!res.ok) throw new Error('Not authenticated')
+
+          const data = await res.json()
           setIsAuthenticated(true)
-          setIsAdmin(payload.isAdmin)
-          setProfileUrl(payload.picture_url)
-          setUsername(payload.username)
-          setEmail(payload.email)
-          setUserId(payload._id)
+          // console.log(data)
+          setIsAdmin(data.user.isAdmin)
+          setProfileUrl(data.user.picture)
+          setUsername(data.user.username)
+          setEmail(data.user.email)
+          setUserId(data.user._id)
         } catch (err) {
-          console.error('Invalid JWT token', err)
+          setIsAuthenticated(false)
+        } finally {
+          setLoading(false)
         }
       }
 
-      if (token) {
-        processToken(token)
-        // Remove token from URL
-        const newUrl = window.location.origin + '/dashboard'
-        window.history.replaceState({}, '', newUrl)
-        setLoading(false)
-      } else {
-        const storedToken = localStorage.getItem('jwt')
-        if (storedToken) {
-          processToken(storedToken)
-        }
-        setLoading(false)
-      }
+      fetchUser()
     }, [])
 
     if (loading) {
@@ -84,7 +79,7 @@ export const App = registerCustomElement(
         <div>
           <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
           <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened
-        startDisplay="reflow">
+            startDisplay="reflow">
             <SideBar
               collapsed={collapsed}
               // slot="start" 

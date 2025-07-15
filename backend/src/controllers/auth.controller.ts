@@ -6,6 +6,7 @@ import UserGroup from '../models/UserGroups';
 import UserGroupMembers from '../models/UserGroupMembers';
 import { generateToken } from '../utils/jwt.util';
 import { GoogleOauthCallbackInput } from '../schemas/auth.validator';
+import { IAuthRequest } from 'src/middleware/auth.middleware';
 
 const googleClient = new OAuth2Client({
   clientId: config.get<string>('google.client_id'),
@@ -77,13 +78,49 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
     };
     const token = generateToken(jwtPayload);
 
-    return res.redirect(`${frontendUrl}?token=${token}`);
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.redirect(`${config.get('FRONTEND_URL')}/dashboard`);
   } catch (error: any) {
     console.error('Error during Google OAuth:', error);
     res
       .status(500)
       .redirect(`${frontendUrl}/auth/error?message=${encodeURIComponent(error.message)}`);
   }
+};
+
+export const logoutHandler = (req: Request, res: Response) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  })
+  res.status(200).json({ message: 'Logged out' })
+};
+
+export const selfData = async (req: IAuthRequest, res: Response) => {
+  const userId = req.user?._id;
+  const user = await User.findById(userId);
+
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+
+  const userObj = {
+    _id: user._id,
+    email: user.email,
+    username: user.username,
+    picture: user.picture_url,
+    isAdmin: req.user?.isAdmin
+  }
+
+  res.status(200).json({ user: userObj });
 };
 
 // This is for development purposes only, allowing login without OAuth

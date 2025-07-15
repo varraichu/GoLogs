@@ -2,6 +2,8 @@ import express from 'express';
 import { Request, Response } from 'express';
 import cors from 'cors';
 import logger from './config/logger';
+import requestLogger from './middleware/logging.middleware';
+import traceMiddleware from './middleware/traceId.middleware';
 import authRoutes from './routes/auth.routes';
 import userGroupRoutes from './routes/userGroups.routes';
 import directoryRoutes from './routes/directory.routes';
@@ -11,16 +13,24 @@ import settingsRoutes from './routes/settings.routes';
 import { errorHandler } from './middleware/error.middleware';
 import assignGroupRoutes from './routes/assignGroup.routes';
 import appsHealthRoutes from './routes/appsHealth.routes';
+import { protect } from './middleware/auth.middleware';
+
+import cookieParser from 'cookie-parser';
+import { IAuthRequest } from './middleware/auth.middleware';
+import config from 'config';
+
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: config.get('FRONTEND_URL'),
+  credentials: true
+}))
 app.use(express.json());
+app.use(cookieParser())
 
-app.get('/', (req: Request, res: Response) => {
-  logger.info('Incoming request');
-  res.send('Hello World!');
-});
+app.use(traceMiddleware);
+app.use(requestLogger);
 
 app.use('/api/assignGroup', assignGroupRoutes);
 app.use('/api/oauth', authRoutes);

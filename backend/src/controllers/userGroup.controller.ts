@@ -162,7 +162,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
       }
 
       if (removeMemberEmails.length > 0) {
-        const flag = removeMemberEmails.filter(email => email === req.user?.email);
+        const flag = removeMemberEmails.filter((email) => email === req.user?.email);
 
         if (flag.length > 0) {
           res.status(403).json({ message: 'Cannot remove yourself from Admin Group.' });
@@ -201,7 +201,9 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
     // Remove members
     if (removeMemberEmails.length > 0) {
       const usersToRemove = await User.find({ email: { $in: removeMemberEmails } });
-      const userIdsToRemove: mongoose.Types.ObjectId[] = usersToRemove.map((u) => u._id as mongoose.Types.ObjectId);
+      const userIdsToRemove: mongoose.Types.ObjectId[] = usersToRemove.map(
+        (u) => u._id as mongoose.Types.ObjectId
+      );
 
       await UserGroupMember.updateMany(
         { user_id: { $in: userIdsToRemove }, group_id: group._id },
