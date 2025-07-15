@@ -22,10 +22,6 @@ const getHealthStatusStyle = (status: string) => {
   }
 };
 
-<<<<<<< HEAD
-
-=======
->>>>>>> feature/pinnedapps-bugfix
 export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: ApplicationCardProps) => {
   return (
     <div class="oj-panel application-card">
