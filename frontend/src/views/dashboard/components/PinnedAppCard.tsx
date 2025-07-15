@@ -25,17 +25,16 @@ export const PinnedAppCard = ({ app }: PinnedAppCardProps) => {
             key={app._id}
             class="oj-panel oj-panel-shadow-md"
             style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                padding: "12px 16px",
-                flex: "1 1 calc(33.333% - 16px)",
-                minWidth: "300px",
-                maxWidth: "calc(33.333% - 16px)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-start",
-                fontSize: "0.85rem",
-                boxSizing: "border-box",
+            border: "1px solid #e5e7eb",
+            borderRadius: "12px",
+            padding: "16px 20px",
+            flex: "1 1 100%",
+            minWidth: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            fontSize: "0.95rem",
+            boxSizing: "border-box",
             }}
         >
             {/* Header: Name + Status */}

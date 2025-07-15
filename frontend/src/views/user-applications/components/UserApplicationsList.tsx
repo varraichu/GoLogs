@@ -9,8 +9,10 @@ interface ApplicationsListProps {
 export const UserApplicationsList = ({ applications }: ApplicationsListProps) => {
   return (
     <div
-      class="oj-flex oj-flex-wrap oj-sm-padding-4x oj-sm-align-items-stretch oj-sm-justify-content-flex-start"
-      style={{ gap: '24px' }}
+      class="oj-flex oj-flex-wrap oj-sm-padding-4x-bottom oj-sm-align-items-stretch oj-sm-justify-content-flex-start"
+      style={{
+        gap: '24px',
+      }}
     >
       {applications.length === 0 ? (
         <div class="oj-typography-body-sm oj-text-color-secondary" style={{ padding: '12px' }}>

@@ -6,7 +6,7 @@ import ArrayDataProvider = require('ojs/ojarraydataprovider')
 import { logsService, LogEntry } from "../../../services/logs.services"
 import { route } from 'preact-router'
 
-const DashboardRecentLogs = () => {
+const DashboardRecentLogs = (props:{setActiveItem:(str:string)=>void}) => {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [dataProvider, setDataProvider] = useState<any>(null)
 
@@ -17,6 +17,7 @@ const DashboardRecentLogs = () => {
         const formatted = (data.logs || []).map((log: LogEntry, idx: number) => ({
           rowNumber: idx + 1,
           ...log,
+          app_name: log.app_name.replace(/\./g, ' '),
           timestamp: new Date(log.timestamp).toLocaleString(),
         }))
         setLogs(formatted)
@@ -25,15 +26,28 @@ const DashboardRecentLogs = () => {
   }, [])
 
   return (
-    <div class="oj-panel oj-sm-12 oj-panel-padding oj-sm-padding-4x oj-flex-item">
-      <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center ">
-          <div class="oj-flex-item ">
-              <h5 class="">Recent Logs</h5>
-              <h6 class=" oj-text-color-secondary">Latest 5 logs across all applications</h6>
-          </div>
-          
-          <oj-button class="oj-flex-item oj-sm-2" label="View All Logs" onojAction={() => { route(`/logs`) }}><span slot="startIcon" class="oj-ux-ico-external-link"></span></oj-button>
+
+    <div style={{ width: '100%' }}>
+      <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-justify-content-space-between oj-sm-margin-1x-bottom">
+        <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center" style={{ gap: '0.5rem' }}>
+          <span
+            class="oj-ux-ico-recent"
+            style={{
+              color: "#000000",
+              fontSize: "1.5rem",
+              fontFamily: "ojuxIconFont !important"
+            }}
+          ></span>
+          <h3 style={{ margin: 0, fontWeight: "bold", fontSize: "1.3rem" }}>
+            Recent Logs
+          </h3>
+        </div>
+        <oj-button class="oj-flex-item oj-sm-2" label="View All Logs" onojAction={() => { route(`/logs`) }}><span slot="startIcon" class="oj-ux-ico-external-link"></span></oj-button>
       </div>
+      <div>
+        <p class=" oj-text-color-secondary">Latest 5 logs across all applications</p>
+      </div>
+
       <oj-table
         data={dataProvider}
         columns={[
@@ -51,7 +65,8 @@ const DashboardRecentLogs = () => {
         class="oj-sm-12 oj-panel"
       />
     </div>
-  )
+
+  );
 }
 
 export default DashboardRecentLogs

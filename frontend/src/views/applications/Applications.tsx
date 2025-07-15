@@ -56,7 +56,7 @@ const Applications = (props: { path?: string }) => {
 
   const [errors, setErrors] = useState<{ name?: string; description?: string }>({})
   const [dataProvider, setDataProvider] = useState<any>(null)
-  const [searchTerm, setSearchTerm] = useState('')
+  // REMOVED: const [searchTerm, setSearchTerm] = useState('')
   const [allUserGroups, setAllUserGroups] = useState<UserGroup[]>([]);
   const [filters, setFilters] = useState<{ search: string; groupIds: string[]; status: string }>({
     search: '',
@@ -149,7 +149,6 @@ const Applications = (props: { path?: string }) => {
     const trimmedSearchTerm = newSearchTerm.trim();
 
     debounceTimeout.current = setTimeout(() => {
-
       if (trimmedSearchTerm !== filters.search) {
         setFilters(prev => ({ ...prev, search: trimmedSearchTerm }));
         setPagination(prev => ({ ...prev, page: 1 }));
@@ -161,7 +160,7 @@ const Applications = (props: { path?: string }) => {
     if (application) {
       setEditingState(true)
       setEditingApplication(application)
-      setName(application.name || '')
+      setName((application.name || '').replace(/\./g, ' '))
       setDescription(application.description || '')
       await fetchAllUserGroups()
       await fetchAppUserGroups(application._id || '')
@@ -377,15 +376,14 @@ const Applications = (props: { path?: string }) => {
 
   const toggleDrawer = () => setOpened(!opened)
 
-
   return (
     <div class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column oj-sm-padding-6x" style="height: 100%; min-height: 0; flex: 1 1 0;">
       <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Applications</h1>
       </div>
 
-      <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
-        <SearchBar value={searchTerm} onChange={handleSearchChange} placeholder="Search Applications" />
+      <div class="oj-flex oj-sm-margin-4x-bottom  oj-sm-align-items-center" style="width: 100%; gap: 12px;">
+        <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search Applications" />
         <oj-button
           onojAction={() => openDialog()}
           chroming="callToAction"
@@ -404,9 +402,11 @@ const Applications = (props: { path?: string }) => {
 
       <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1" style="width: 100%; overflow-x: hidden;">
         <div class="oj-flex oj-sm-flex-1 oj-sm-overflow-hidden" style="min-width: 0;">
-          <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style="width: 100%;">
+          <div class="oj-flex-item" style="width: 100%;">
             {isLoadingPage ? (
-              <oj-c-progress-circle value={-1} size="md" style="margin-top: 40px;" />
+              <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 400px; width: 100%;">
+                <oj-c-progress-circle value={-1} size="lg" style="margin-top: 40px;" />
+              </div>
             ) : (
               <ApplicationsList
                 applications={applications}
@@ -417,7 +417,7 @@ const Applications = (props: { path?: string }) => {
             )}
 
             {pagination.total > 0 && (
-              <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end oj-sm-margin-4x-end" style="gap: 16px;">
+              <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-flex-end" style="gap: 16px;">
                 <oj-button chroming="callToAction" onojAction={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))} disabled={!pagination.hasPrevPage}>
                   <span slot="startIcon" class="oj-ux-ico-arrow-left"></span> Previous
                 </oj-button>
@@ -485,6 +485,6 @@ const Applications = (props: { path?: string }) => {
       )}
       <Toast />
     </div>
-  )
+  );
 };
 export default Applications

@@ -3,15 +3,15 @@ import { Application } from '../../../services/applications.services';
 import '../../../styles/application-cards.css';
 
 const getHealthStatusColor = (status: string) => {
-    switch (status) {
-        case 'critical':
-            return { background: '#fde8e8', text: '#991b1b', border: '#fecaca' };
-        case 'warning':
-            return { background: '#fffbeb', text: '#b45309', border: '#fde68a' };
-        case 'healthy':
-        default:
-            return { background: '#eafaf1', text: '#065f46', border: '#a7f3d0' };
-    }
+  switch (status) {
+    case 'critical':
+      return { background: '#fde8e8', text: '#991b1b', border: '#fecaca' };
+    case 'warning':
+      return { background: '#fffbeb', text: '#b45309', border: '#fde68a' };
+    case 'healthy':
+    default:
+      return { background: '#eafaf1', text: '#065f46', border: '#a7f3d0' };
+  }
 };
 
 interface UserApplicationCardProps {
@@ -22,7 +22,7 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
   const healthColor = getHealthStatusColor(app.health_status);
   return (
     <div
-      class="oj-panel oj-panel-shadow-md"
+      class="oj-panel"
       style={{
         border: '1px solid #e5e7eb',
         borderRadius: '12px',
@@ -39,7 +39,7 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
         <div class="oj-flex" style={{ alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
           <div class="oj-flex oj-sm-flex-direction-column">
             <h3 class="oj-typography-heading-sm" style={{ margin: 0, wordBreak: 'break-word' }}>
-              {app.name}
+              {app.name.replace(/\./g, ' ')}
               {app.isPinned && (<span class="oj-ux-ico-pin-filled" style="color: #4CAF50; margin-left: 8px;" title="Pinned"></span>)}
             </h3>
             <span

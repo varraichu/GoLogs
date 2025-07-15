@@ -21,6 +21,8 @@ import {
   getAppCriticalLogs,
 } from '../controllers/applications.controller';
 
+import { getUserPinnedApps } from '../controllers/applications.controller';
+
 const router = express.Router();
 
 // router.use(protect, isAdmin);
@@ -43,5 +45,7 @@ router.delete('/:appId', protect, isAdmin, validate(applicationParamsSchema), de
 router.post('/pin/:userId/:appId', protect, pinApplication);
 router.post('/unpin/:userId/:appId', protect, unpinApplication);
 router.get('/logs/critical/:appId', protect, getAppCriticalLogs);
+
+router.get('/user/:id', protect, getUserPinnedApps);
 
 export default router;

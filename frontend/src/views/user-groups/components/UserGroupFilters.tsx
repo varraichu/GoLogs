@@ -37,7 +37,7 @@ export const UserGroupFilters = ({ onFilterChange }: Props) => {
 
     const appOptions = useMemo(() => {
         return new ArrayDataProvider(
-            allApps.map(app => ({ value: app._id, label: app.name })),
+            allApps.map(app => ({ value: app._id, label: app.name.replace(/\./g, ' ') })),
             { keyAttributes: 'value' }
         );
     }, [allApps]);

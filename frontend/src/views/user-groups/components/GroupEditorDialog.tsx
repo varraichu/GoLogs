@@ -37,7 +37,7 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
     const appDataProvider = useMemo(() => {
         const appOptions: AppOption[] = availableApps.filter(app => app.is_active).map(app => ({
             value: app._id,
-            text: app.name + (!app.is_active ? ' (Inactive)' : ''),
+            text: app.name.replace(/\./g, ' ') + (!app.is_active ? ' (Inactive)' : ''),
             disabled: !app.is_active
         }));
         return new ArrayDataProvider(appOptions, { keyAttributes: 'value' });

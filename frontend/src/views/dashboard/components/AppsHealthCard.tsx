@@ -27,6 +27,7 @@ interface CardProps {
     description: string;
     apps: CriticalAppSummary[];
     color: 'error' | 'warning';
+    setActiveItem: (str: string) => void;
 }
 
 /**
@@ -35,7 +36,7 @@ interface CardProps {
  * It now highlights apps that exceed their defined error or warning thresholds.
  * @param {CardProps} props - The properties for the component.
  */
-export function AppsHealthCard({ title, description, total, apps, color }: CardProps) {
+export function AppsHealthCard({ title, description, total, apps, color, setActiveItem }: CardProps) {
     // --- Determine dynamic classes based on the 'color' prop ---
     const iconClass = color === 'error' ? 'oj-ux-ico-error' : 'oj-ux-ico-warning';
     const textClass = color === 'error' ? 'oj-text-color-danger' : 'oj-text-color-warning';
@@ -43,9 +44,12 @@ export function AppsHealthCard({ title, description, total, apps, color }: CardP
 
     return (
         <oj-c-action-card
-            class={`oj-sm-margin-2x-bottom oj-flex-item ${color === 'error' ? 'oj-bg-danger-20' : 'oj-bg-warning-20'} oj-panel-shadow-sm`}
+            class={`oj-sm-margin-2x-bottom oj-flex-item ${color === 'error' ? 'oj-bg-danger-20' : 'oj-bg-warning-20'} oj-panel-shadow-md`}
             style={{ height: '260px', minWidth: '320px', maxWidth: '470px' }}
-            onojAction={() => { route(`/logs?log-type=${title === 'Errors' ? 'error' : 'warn'}`) }}
+            onojAction={() => {
+                route(`/logs?log-type=${title === 'Errors' ? 'error' : 'warn'}`)
+                setActiveItem("logs")
+            }}
         >
             <div class="oj-sm-padding-3x oj-flex oj-sm-flex-direction-column oj-flex-item oj-flex-grow-1">
                 {/* Header Section */}
