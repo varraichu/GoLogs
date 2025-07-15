@@ -65,16 +65,22 @@ class ApplicationsService {
     }
   }
 
-  private getUserIdFromToken(): string | null {
-    const token = localStorage.getItem('jwt');
-    if (!token) return null;
-
+  private async getUserIdFromSession(): Promise<string | null> {
     try {
-      const base64Payload = token.split('.')[1];
-      const payload = JSON.parse(atob(base64Payload));
-      return payload._id || null;
-    } catch (e) {
-      console.error('Error decoding JWT:', e);
+      const res = await fetch('http://localhost:3001/api/oauth/me', {
+        method: 'GET',
+        credentials: 'include', // 🔐 Ensures cookies are sent with the request
+      });
+
+      if (!res.ok) {
+        console.error('Failed to fetch user info');
+        return null;
+      }
+
+      const data = await res.json();
+      return data.user?._id || null;
+    } catch (err) {
+      console.error('Error fetching user session:', err);
       return null;
     }
   }
@@ -104,11 +110,14 @@ class ApplicationsService {
       params.append('groupIds', Array.from(filters.groupIds).join(','));
     }
 
+    console.log('1')
     const response = await fetch(`${this.baseUrl}/applications/?${params.toString()}`, {
       method: 'GET',
       credentials: 'include',
       headers: this.getHeaders(),
     });
+
+    console.log('2')
 
     const data = await response.json();
 
@@ -120,7 +129,7 @@ class ApplicationsService {
   }
 
   async fetchUserApplications(): Promise<ApplicationsResponse> {
-    const userId = this.getUserIdFromToken();
+    const userId = await this.getUserIdFromSession();
     if (!userId) {
       throw new Error('User ID not found in token');
     }
@@ -144,16 +153,16 @@ class ApplicationsService {
     filters: { search?: string; groupIds?: string[]; status?: string },
     pagination: { page: number; limit: number }
   ): Promise<ApplicationsResponse> {
-    const token = localStorage.getItem('jwt');
-    if (!token) {
-      throw new Error('User not authenticated');
-    }
+    const res = await fetch('http://localhost:3001/api/oauth/me', {
+      method: 'GET',
+      credentials: 'include', // 🔐 Ensures cookies are sent with the request
+    });
+
+    const data = await res.json();
 
     try {
-      const base64Payload = token.split('.')[1];
-      const payload = JSON.parse(atob(base64Payload));
 
-      if (payload.isAdmin) {
+      if (data.user.isAdmin) {
         return await this.fetchApplications(filters, pagination);
       } else {
         return await this.fetchUserApplications();

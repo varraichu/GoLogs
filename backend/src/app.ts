@@ -1,5 +1,4 @@
 import express from 'express';
-import { Request, Response } from 'express';
 import cors from 'cors';
 import logger from './config/logger';
 import requestLogger from './middleware/logging.middleware';
@@ -14,11 +13,8 @@ import { errorHandler } from './middleware/error.middleware';
 import assignGroupRoutes from './routes/assignGroup.routes';
 import appsHealthRoutes from './routes/appsHealth.routes';
 import { protect } from './middleware/auth.middleware';
-
 import cookieParser from 'cookie-parser';
-import { IAuthRequest } from './middleware/auth.middleware';
 import config from 'config';
-
 
 const app = express();
 
