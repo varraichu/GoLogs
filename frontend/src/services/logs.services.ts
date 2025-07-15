@@ -41,10 +41,9 @@ export interface LogFilters {
 class LogsService {
   private baseUrl = 'http://localhost:3001/api';
 
-  private getAuthHeaders() {
-    const token = localStorage.getItem('jwt');
+  private getHeaders() {
+
     return {
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
   }
@@ -136,7 +135,8 @@ class LogsService {
 
     const res = await fetch(finalUrl, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     });
 
     const data = await res.json();
@@ -162,16 +162,16 @@ class LogsService {
     // if (!isAdmin) {
     //   baseEndpoint += `/${userId}`;
     // }
-    
+
     let exportEndpoint = `${this.baseUrl}/logs/export`; // Always use export endpoint
-    if (!isAdmin){
-      exportEndpoint+=`/${userId}`
+    if (!isAdmin) {
+      exportEndpoint += `/${userId}`
     }
-      // baseEndpoint += `/${userId}`;
+    // baseEndpoint += `/${userId}`;
 
     const params = new URLSearchParams();
     params.append('limit', String(limit));
-    
+
     if (sortCriteria && sortCriteria.length > 0) {
       const sortStr = sortCriteria
         .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)

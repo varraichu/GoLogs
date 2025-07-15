@@ -44,7 +44,7 @@ export function AppsHealthCard({ title, description, total, apps, color, setActi
 
     return (
         <oj-c-action-card
-            class={`oj-sm-margin-2x-bottom oj-flex-item ${color === 'error' ? 'oj-bg-danger-20' : 'oj-bg-warning-20'} oj-panel-shadow-md`}
+            class={`oj-sm-margin-2x-bottom oj-flex-item ${color === 'error' ? 'oj-bg-danger-20' : 'oj-bg-warning-20'} oj-panel-shadow-sm`}
             style={{ height: '260px', minWidth: '320px', maxWidth: '470px' }}
             onojAction={() => {
                 route(`/logs?log-type=${title === 'Errors' ? 'error' : 'warn'}`)

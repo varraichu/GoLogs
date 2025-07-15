@@ -8,7 +8,7 @@ export interface Application {
   groupCount: number;
   groupNames: string[];
   logCount: number;
-  health_status: 'healthy' | 'warning' | 'critical'; 
+  health_status: 'healthy' | 'warning' | 'critical';
 }
 
 export interface UserGroup {
@@ -58,10 +58,9 @@ export interface ApplicationsResponse {
 class ApplicationsService {
   private baseUrl = 'http://localhost:3001/api'
 
-  private getAuthHeaders() {
-    const token = localStorage.getItem('jwt')
+  private getHeaders() {
+
     return {
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     }
   }
@@ -107,7 +106,8 @@ class ApplicationsService {
 
     const response = await fetch(`${this.baseUrl}/applications/?${params.toString()}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     });
 
     const data = await response.json();
@@ -127,7 +127,8 @@ class ApplicationsService {
 
     const response = await fetch(`${this.baseUrl}/applications/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     });
 
     const data = await response.json();
@@ -169,7 +170,8 @@ class ApplicationsService {
   async createApplication(applicationData: CreateApplicationData): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify(applicationData),
     })
 
@@ -189,7 +191,8 @@ class ApplicationsService {
   async updateApplication(appId: string, applicationData: UpdateApplicationData): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/${appId}`, {
       method: 'PATCH',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify(applicationData),
     })
 
@@ -209,7 +212,8 @@ class ApplicationsService {
   async deleteApplication(appId: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/${appId}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     const data = await response.json().catch(() => ({}))
@@ -227,7 +231,8 @@ class ApplicationsService {
   async toggleApplicationStatus(appId: string, isActive: boolean): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/status/${appId}`, {
       method: 'PATCH',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify({ is_active: isActive }),
     })
 
@@ -244,7 +249,8 @@ class ApplicationsService {
   async fetchAllUserGroups(): Promise<UserGroup[]> {
     const response = await fetch(`${this.baseUrl}/userGroup/`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     const data = await response.json()
@@ -262,7 +268,8 @@ class ApplicationsService {
   async fetchAppUserGroups(appId: string): Promise<UserGroupsResponse> {
     const response = await fetch(`${this.baseUrl}/assignGroup/${appId}/user-groups`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     const data = await response.json()
@@ -280,7 +287,8 @@ class ApplicationsService {
   async unassignUserGroup(appId: string, groupId: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/assignGroup/${appId}/user-groups/${groupId}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     if (!response.ok) {
@@ -296,7 +304,8 @@ class ApplicationsService {
 
     const response = await fetch(`${this.baseUrl}/assignGroup/${appId}/user-groups`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify({ groupIds }),
     })
 

@@ -20,30 +20,22 @@ export interface IAuthRequest<
 }
 
 export const protect = (req: IAuthRequest, res: Response, next: NextFunction) => {
-  let token;
-
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-
-      const decoded = jwt.verify(token, config.get('jwt.secret') as string) as JwtPayload;
-
-      req.user = {
-        _id: decoded._id,
-        email: decoded.email,
-        isAdmin: decoded.isAdmin,
-      };
-
-      next();
-    } catch (error) {
-      logger.error('Token verification failed:', error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
-      return;
-    }
-  }
-
+  const token = req.cookies.token
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(401).json({ message: 'Unauthorized' })
+    return;
+  }
+  try {
+    const decoded = jwt.verify(token, config.get('jwt.secret') as string) as JwtPayload;
+
+    req.user = {
+      _id: decoded._id,
+      email: decoded.email,
+      isAdmin: decoded.isAdmin,
+    };
+    next()
+  } catch {
+    res.status(403).json({ message: 'Invalid token' })
     return;
   }
 };

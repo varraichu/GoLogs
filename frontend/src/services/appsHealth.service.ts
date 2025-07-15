@@ -28,13 +28,13 @@ export interface AppsHealthResponse {
 }
 
 export const fetchAppsHealth = async (userId: string): Promise<AppsHealthResponse> => {
-    const token = localStorage.getItem('jwt');
+
     const response = await fetch(`http://localhost:3001/api/appsHealth/summary?userId=${userId}`, {
         method: 'GET',
+        credentials: 'include',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
-        },
+        }
     });
     if (!response.ok) {
         throw new Error('Failed to fetch apps health data')

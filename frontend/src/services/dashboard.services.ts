@@ -40,10 +40,9 @@ export interface Application {
 class DashboardService {
     private baseUrl = 'http://localhost:3001/api';
 
-    private getAuthHeaders() {
-        const token = localStorage.getItem('jwt');
+    private getHeaders() {
+
         return {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         };
     }
@@ -76,7 +75,8 @@ class DashboardService {
 
         const res = await fetch(endpoint, {
             method: 'GET',
-            headers: this.getAuthHeaders(),
+            credentials: 'include',
+            headers: this.getHeaders(),
         });
 
         const data = await res.json();
@@ -100,7 +100,8 @@ class DashboardService {
 
         const res = await fetch(endpoint, {
             method: 'GET',
-            headers: this.getAuthHeaders(),
+            credentials: 'include',
+            headers: this.getHeaders(),
         });
 
         const data = await res.json();
@@ -129,11 +130,13 @@ class DashboardService {
             const [appsRes, userRes] = await Promise.all([
                 fetch(`${this.baseUrl}/applications`, {
                     method: 'GET',
-                    headers: this.getAuthHeaders(),
+                    credentials: 'include',
+                    headers: this.getHeaders(),
                 }),
                 fetch(`${this.baseUrl}/applications/user/${userId}`, {
                     method: 'GET',
-                    headers: this.getAuthHeaders(),
+                    credentials: 'include',
+                    headers: this.getHeaders(),
                 }),
             ]);
 
@@ -150,7 +153,8 @@ class DashboardService {
         } else {
             const res = await fetch(`${this.baseUrl}/applications/${userId}`, {
                 method: 'GET',
-                headers: this.getAuthHeaders(),
+                credentials: 'include',
+                headers: this.getHeaders(),
             });
 
             const data = await res.json();
@@ -173,13 +177,12 @@ class DashboardService {
     }
 
     private async fetchCriticalLogs(applications: Application[]): Promise<Application[]> {
-        const token = localStorage.getItem('jwt');
-        if (!token) return applications;
 
         const updatedApps = await Promise.all(applications.map(async (app) => {
             try {
                 const res = await fetch(`${this.baseUrl}/applications/logs/critical/${app._id}`, {
-                    headers: this.getAuthHeaders(),
+                    credentials: 'include',
+                    headers: this.getHeaders(),
                 });
 
                 if (!res.ok) throw new Error(`Failed to fetch logs for app ${app._id}`);
