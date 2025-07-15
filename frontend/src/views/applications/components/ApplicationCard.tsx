@@ -10,19 +10,44 @@ interface ApplicationCardProps {
   onDelete: (appId: string) => void;
 }
 
+const getHealthStatusStyle = (status: string) => {
+  switch (status) {
+    case 'critical':
+      return { background: '#fde8e8', color: '#991b1b', border: '1px solid #fecaca' };
+    case 'warning':
+      return { background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' };
+    case 'healthy':
+    default:
+      return { background: '#eafaf1', color: '#065f46', border: '1px solid #a7f3d0' };
+  }
+};
+
 export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: ApplicationCardProps) => {
   return (
     <div class="oj-panel application-card">
       <div class="application-header">
         <div class="application-title-container">
-          <h3 class="oj-typography-heading-sm application-title">
-            {app.name.replace(/\./g, ' ')}
-          </h3>
-          <span
-            class={`oj-typography-body-xs status-badge ${app.is_active ? 'status-active' : 'status-inactive'}`}
-          >
-            {app.is_active ? 'Active' : 'Inactive'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+            <h3 class="oj-typography-heading-sm application-title" style={{ margin: 0 }}>
+              {app.name.replace(/\./g, ' ')}
+            </h3>
+            <span
+              class="oj-typography-body-xs"
+              style={{
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontWeight: 500,
+                marginTop: '6px',
+                textTransform: 'capitalize',
+                display: 'inline-block',
+                fontSize: '0.75rem',
+                ...getHealthStatusStyle(app.health_status),
+              }}
+            >
+              {app.health_status}
+            </span>
+          </div>
+
         </div>
         <oj-switch
           value={app.is_active}
