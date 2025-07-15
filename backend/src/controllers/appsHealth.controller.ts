@@ -10,12 +10,8 @@ export async function getAppsHealthHandler(req: Request, res: Response) {
     return;
   }
 
-  try {
-    const userId = new mongoose.Types.ObjectId(parsed.data.userId);
-    const summary = await getAppsHealthData(userId);
-    res.json(summary);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+  const userId = new mongoose.Types.ObjectId(parsed.data.userId);
+  const summary = await getAppsHealthData(userId);
+  res.json(summary);
+  return;
 }
