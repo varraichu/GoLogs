@@ -82,7 +82,7 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.redirect(`${config.get('FRONTEND_URL')}/dashboard`);
@@ -98,9 +98,9 @@ export const logoutHandler = (req: Request, res: Response) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  })
-  res.status(200).json({ message: 'Logged out' })
+    sameSite: 'lax',
+  });
+  res.status(200).json({ message: 'Logged out' });
 };
 
 export const selfData = async (req: IAuthRequest, res: Response) => {
@@ -117,8 +117,8 @@ export const selfData = async (req: IAuthRequest, res: Response) => {
     email: user.email,
     username: user.username,
     picture: user.picture_url,
-    isAdmin: req.user?.isAdmin
-  }
+    isAdmin: req.user?.isAdmin,
+  };
 
   res.status(200).json({ user: userObj });
 };

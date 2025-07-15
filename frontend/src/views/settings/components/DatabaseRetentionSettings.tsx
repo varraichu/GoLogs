@@ -34,7 +34,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
     warning_rate_threshold: -1,
     silent_duration: -1,
   })
-  
+
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const { addNewToast, messageDataProvider, removeToast } = useToast()
@@ -43,7 +43,6 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
-      const token = localStorage.getItem('jwt')
       // let userId = null
       // if (token) {
       //   try {
@@ -55,7 +54,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
       // }
       // Fetch retention
       try {
-        const { ok, data } = await settingsService.fetchRetention(token || '')
+        const { ok, data } = await settingsService.fetchRetention()
         if (ok) {
           // setRetention(data.ttlInDays || 30)
           const found = RETENTION_OPTIONS.find((opt) => opt.value === data.ttlInDays)
@@ -72,9 +71,9 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
         addNewToast('error', 'Failed to fetch retention', msg)
       }
       // Fetch settings
-      if ( userId) {
+      if (userId) {
         try {
-          const { ok, data } = await settingsService.fetchSettings(token || '', userId)
+          const { ok, data } = await settingsService.fetchSettings(userId)
           if (ok) {
             setSettings({
               error_rate_threshold: data.error_rate_threshold,
@@ -130,7 +129,6 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
   // Actually send PATCH requests
   const handleConfirmSave = async () => {
     setConfirmDialogOpen(false)
-    const token = localStorage.getItem('jwt')
     // let userId = null
     // if (token) {
     //   try {
@@ -145,7 +143,6 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
     if (isAdmin) {
       try {
         const { ok, data } = await settingsService.patchRetention(
-          token || '',
           retentionPeriod.value
         )
         if (!ok) {
@@ -167,9 +164,9 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
       }
     }
     // PATCH settings
-    if (!isAdmin && userId) {
+    if (userId) {
       try {
-        const { ok, data } = await settingsService.patchSettings(token || '', userId, settings)
+        const { ok, data } = await settingsService.patchSettings(userId, settings)
         if (!ok) {
           addNewToast(
             'error',
@@ -230,7 +227,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
           </div>
         </div>
       </div>
-      { (
+      {(
         <div class="oj-web-applayout-max-width oj-web-applayout-content oj-panel-border-0 oj-flex">
           <h3 class="oj-flex-item oj-flex ">
             <span class="oj-ux-ico-warning oj-text-color-secondary oj-typography-heading-sm"></span>

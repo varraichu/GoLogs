@@ -31,10 +31,10 @@ export interface SortCriteria {
 }
 
 export interface LogFilters {
-  apps: string[];            // Optional: multiple app IDs (you can use the first one)
-  logTypes: string[];        // e.g. ["debug", "error"]
-  fromDate: string | undefined;   // ISO date string
-  toDate: string | undefined;     // ISO date string
+  apps: string[];
+  logTypes: string[];
+  fromDate: string | undefined;
+  toDate: string | undefined;
   search: string;
 }
 
@@ -42,35 +42,31 @@ class LogsService {
   private baseUrl = 'http://localhost:3001/api';
 
   private getHeaders() {
-
     return {
       'Content-Type': 'application/json',
     };
   }
 
-  private parseJwt(token: string | null): any {
-    if (!token) return null;
-    try {
-      const base64Payload = token.split('.')[1];
-      const jsonPayload = atob(base64Payload);
-      return JSON.parse(jsonPayload);
-    } catch (err) {
-      console.error('Error decoding token', err);
-      return null;
+  /** 🔐 Fetch current authenticated user from cookie */
+  private async getUser(): Promise<{ _id: string; isAdmin: boolean }> {
+    const res = await fetch(`${this.baseUrl}/oauth/me`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      throw new Error('User not authenticated');
     }
+
+    const data = await res.json();
+    return data.user;
   }
 
   private buildSortQueryString(sortCriteria?: SortCriteria[]): string {
-    if (!sortCriteria || sortCriteria.length === 0) {
-      return '';
-    }
-
-    // Convert sort criteria to query parameters
-    // Format: &sort=timestamp:desc,log_type:desc,app_name:desc
+    if (!sortCriteria || sortCriteria.length === 0) return '';
     const sortParams = sortCriteria
       .map(criteria => `${criteria.attribute}:${criteria.direction === 'descending' ? 'desc' : 'asc'}`)
       .join(',');
-
     return `&sort=${encodeURIComponent(sortParams)}`;
   }
 
@@ -80,38 +76,25 @@ class LogsService {
     sortCriteria?: SortCriteria[],
     filters?: LogFilters
   ): Promise<LogsResponse> {
-    const token = localStorage.getItem('jwt');
-    const user = this.parseJwt(token);
-    const isAdmin = user?.isAdmin;
-    const userId = user?._id;
+    const user = await this.getUser();
+    const { _id: userId, isAdmin } = user;
 
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
-    // Set base endpoint
     let baseEndpoint = `${this.baseUrl}/logs`;
-
-    // If non-admin, use user-specific route
     if (!isAdmin) {
       baseEndpoint += `/${userId}`;
     }
 
     const params = new URLSearchParams();
-
-    // Pagination
     params.append('page', String(page));
     params.append('limit', String(limit));
 
-    // Sorting
-    if (sortCriteria && sortCriteria.length > 0) {
+    if (sortCriteria?.length) {
       const sortStr = sortCriteria
         .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)
         .join(',');
       params.append('sort', sortStr);
     }
 
-    // Filters — allow multiple
     if (filters?.logTypes?.length) {
       filters.logTypes.forEach(type => params.append('log_type', type));
     }
@@ -127,6 +110,7 @@ class LogsService {
     if (filters?.toDate) {
       params.append('endDate', filters.toDate);
     }
+
     if (filters?.search) {
       params.append('search', filters.search);
     }
@@ -147,32 +131,24 @@ class LogsService {
 
     return data;
   }
-  getExportUrl(
+
+  async getExportUrl(
     limit: number = 10,
     filters?: LogFilters,
     sortCriteria?: SortCriteria[]
-  ): string {
-    const token = localStorage.getItem('jwt');
-    const user = this.parseJwt(token);
-    const isAdmin = user?.isAdmin;
-    const userId = user?._id;
+  ): Promise<string> {
+    const user = await this.getUser();
+    const { _id: userId, isAdmin } = user;
 
-    // let baseEndpoint = `${this.baseUrl}/logs`;
-
-    // if (!isAdmin) {
-    //   baseEndpoint += `/${userId}`;
-    // }
-
-    let exportEndpoint = `${this.baseUrl}/logs/export`; // Always use export endpoint
+    let exportEndpoint = `${this.baseUrl}/logs/export`;
     if (!isAdmin) {
-      exportEndpoint += `/${userId}`
+      exportEndpoint += `/${userId}`;
     }
-    // baseEndpoint += `/${userId}`;
 
     const params = new URLSearchParams();
     params.append('limit', String(limit));
 
-    if (sortCriteria && sortCriteria.length > 0) {
+    if (sortCriteria?.length) {
       const sortStr = sortCriteria
         .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)
         .join(',');
@@ -194,6 +170,7 @@ class LogsService {
     if (filters?.toDate) {
       params.append('endDate', filters.toDate);
     }
+
     if (filters?.search) {
       params.append('search', filters.search);
     }
@@ -201,7 +178,6 @@ class LogsService {
     return `${exportEndpoint}?${params.toString()}`;
   }
 }
-
 
 export const logsService = new LogsService();
 export default logsService;

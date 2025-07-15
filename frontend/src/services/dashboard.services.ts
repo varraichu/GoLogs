@@ -16,7 +16,6 @@ export interface SummaryResponse {
     data: AppLogSummary[];
 }
 
-
 export interface CriticalLogs {
     totalLogs: number;
     errorLogs: number;
@@ -41,33 +40,27 @@ class DashboardService {
     private baseUrl = 'http://localhost:3001/api';
 
     private getHeaders() {
-
         return {
             'Content-Type': 'application/json',
         };
     }
 
-    private parseJwt(token: string | null): any {
-        if (!token) return null;
-        try {
-            const base64Payload = token.split('.')[1];
-            const jsonPayload = atob(base64Payload);
-            return JSON.parse(jsonPayload);
-        } catch (err) {
-            console.error('Error decoding token', err);
-            return null;
-        }
-    }
+    /** 🔐 Get user info from backend using cookie */
+    private async getUser(): Promise<{ _id: string; isAdmin: boolean }> {
+        const res = await fetch(`${this.baseUrl}/oauth/me`, {
+            credentials: 'include',
+        });
 
-    // Inside DashboardService class
-
-    public async fetchLogSummary(): Promise<SummaryResponse> {
-        const token = localStorage.getItem('jwt');
-        const user = this.parseJwt(token);
-
-        if (!user?._id) {
+        if (!res.ok) {
             throw new Error('User not authenticated');
         }
+
+        const data = await res.json();
+        return data.user;
+    }
+
+    public async fetchLogSummary(): Promise<SummaryResponse> {
+        const user = await this.getUser();
 
         const endpoint = user.isAdmin
             ? `${this.baseUrl}/logs/admin-cached-summary/`
@@ -89,14 +82,7 @@ class DashboardService {
     }
 
     public async refreshLogSummary(): Promise<SummaryResponse> {
-        const token = localStorage.getItem('jwt');
-        const user = this.parseJwt(token);
-
-        if (!user?._id) {
-            throw new Error('User not authenticated');
-        }
-
-        const endpoint = `${this.baseUrl}/logs/refresh-graph/`
+        const endpoint = `${this.baseUrl}/logs/refresh-graph/`;
 
         const res = await fetch(endpoint, {
             method: 'GET',
@@ -113,14 +99,8 @@ class DashboardService {
         return data;
     }
 
-    public async fetchApplications(): Promise<{ applications: Application[], userId: string }> {
-        const token = localStorage.getItem('jwt');
-        const user = this.parseJwt(token);
-
-        if (!user?._id) {
-            throw new Error('User not authenticated');
-        }
-
+    public async fetchApplications(): Promise<{ applications: Application[]; userId: string }> {
+        const user = await this.getUser();
         const { _id: userId, isAdmin } = user;
 
         let rawApplications: Application[] = [];
@@ -172,12 +152,12 @@ class DashboardService {
             ...app,
             isPinned: userPinnedApps.includes(app._id.toString()),
         }));
+
         const applications = await this.fetchCriticalLogs(applicationsWithPinFlag);
         return { applications, userId };
     }
 
     private async fetchCriticalLogs(applications: Application[]): Promise<Application[]> {
-
         const updatedApps = await Promise.all(applications.map(async (app) => {
             try {
                 const res = await fetch(`${this.baseUrl}/applications/logs/critical/${app._id}`, {
