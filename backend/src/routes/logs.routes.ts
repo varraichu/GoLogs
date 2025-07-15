@@ -19,22 +19,21 @@ import { updateLogTTLSchema, logsQuerySchema } from '../schemas/logs.validator';
 const router = express.Router();
 
 router.get('/', protect, isAdmin, validate(logsQuerySchema), getAllLogs);
-// router.get('/', validate(logsQuerySchema), getAllLogs);
 
-router.patch(
-  '/config/ttl',
-  protect,
-  isAdmin,
-  validate(updateLogTTLSchema), // Using the new schema
-  updateLogTTL
-);
-router.get('/admin-cached-summary/', protect, isAdmin, getAllCachedLogSummary);
+router.patch('/config/ttl', protect, isAdmin, validate(updateLogTTLSchema), updateLogTTL);
 
-router.get('/cached-summary/:userId', validate(logsQuerySchema), getCachedLogSummary);
-router.get('/get/ttl', getLogTTL);
-router.get('/refresh-graph', refreshLogGraph);
+router.get('/get/ttl', protect, getLogTTL);
 
 router.get('/export', protect, isAdmin, validate(logsQuerySchema), exportAdminLogs);
+
+router.get('/admin-cached-summary/', protect, isAdmin, getAllCachedLogSummary);
+
+router.get('/refresh-graph', protect, refreshLogGraph);
+
+router.get('/:userId', protect, validate(logsQuerySchema), getUserLogs);
+
+router.get('/cached-summary/:userId', protect, validate(logsQuerySchema), getCachedLogSummary);
+
 router.get(
   '/export/:userId',
   protect,
@@ -42,15 +41,5 @@ router.get(
   validate(logsQuerySchema),
   exportUserLogs
 );
-router.get('/:userId', validate(logsQuerySchema), getUserLogs);
 
-// router.get('/cached-summary/:userId', validate(logsQuerySchema), getCachedLogSummary);
-
-// router.patch(
-//   '/config/ttl',
-//   validate(updateLogTTLSchema), // Using the new schema
-//   updateLogTTL
-// );
-
-// router.get('/', protect, getAllLogs);
 export default router;

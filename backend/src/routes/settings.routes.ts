@@ -7,7 +7,6 @@ import { getSettingsById, updateSettingsController } from '../controllers/settin
 
 const router = express.Router();
 
-// Settings are user-specific — protect route but only admin can fetch/update others
 router.get(
   '/:user_id',
   protect,

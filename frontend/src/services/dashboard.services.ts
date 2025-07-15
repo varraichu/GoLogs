@@ -172,7 +172,6 @@ class DashboardService {
             ...app,
             isPinned: userPinnedApps.includes(app._id.toString()),
         }));
-
         const applications = await this.fetchCriticalLogs(applicationsWithPinFlag);
         return { applications, userId };
     }

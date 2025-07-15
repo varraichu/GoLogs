@@ -186,7 +186,7 @@ const Applications = (props: { path?: string }) => {
 
   const hasUnsavedChanges = () => {
     if (!showDialog) return false
-    if (name !== initialEditValues.name) return true
+    if (name.split(".").join(" ") !== initialEditValues.name.split(".").join(" ")) return true
     if (description !== initialEditValues.description) return true
 
     const current = new Set(Array.from(assignedGroupIds))

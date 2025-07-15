@@ -37,10 +37,17 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
     >
       <div>
         <div class="oj-flex" style={{ alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <div class="oj-flex oj-sm-flex-direction-column">
+          
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <h3 class="oj-typography-heading-sm" style={{ margin: 0, wordBreak: 'break-word' }}>
               {app.name.replace(/\./g, ' ')}
-              {app.isPinned && (<span class="oj-ux-ico-pin-filled" style="color: #4CAF50; margin-left: 8px;" title="Pinned"></span>)}
+              {app.isPinned && (
+                <span
+                  class="oj-ux-ico-pin-filled"
+                  style="color: #4CAF50; margin-left: 8px;"
+                  title="Pinned"
+                ></span>
+              )}
             </h3>
             <span
               class="oj-typography-body-xs"
@@ -48,17 +55,19 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
                 padding: '2px 8px',
                 borderRadius: '12px',
                 fontWeight: 500,
-                marginTop: '4px',
+                marginTop: '5px',
                 backgroundColor: healthColor.background,
                 color: healthColor.text,
                 border: `1px solid ${healthColor.border}`,
                 textTransform: 'capitalize',
-                alignSelf: 'flex-start'
+                display: 'inline-block',
+                fontSize: '0.75rem',
               }}
             >
               {app.health_status}
             </span>
           </div>
+
           <div class="oj-typography-body-xs" style={{ color: app.is_active ? '#065f46' : '#991b1b', flexShrink: 0 }}>
             {app.is_active ? 'Active' : 'Inactive'}
           </div>
