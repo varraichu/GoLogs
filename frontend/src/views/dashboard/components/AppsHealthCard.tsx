@@ -27,7 +27,7 @@ interface CardProps {
     description: string;
     apps: CriticalAppSummary[];
     color: 'error' | 'warning';
-    setActiveItem:(str:string)=>void;
+    setActiveItem: (str: string) => void;
 }
 
 /**
@@ -36,7 +36,7 @@ interface CardProps {
  * It now highlights apps that exceed their defined error or warning thresholds.
  * @param {CardProps} props - The properties for the component.
  */
-export function AppsHealthCard({ title, description, total, apps, color,setActiveItem}: CardProps) {
+export function AppsHealthCard({ title, description, total, apps, color, setActiveItem }: CardProps) {
     // --- Determine dynamic classes based on the 'color' prop ---
     const iconClass = color === 'error' ? 'oj-ux-ico-error' : 'oj-ux-ico-warning';
     const textClass = color === 'error' ? 'oj-text-color-danger' : 'oj-text-color-warning';
@@ -45,9 +45,9 @@ export function AppsHealthCard({ title, description, total, apps, color,setActiv
     return (
         <oj-c-action-card
             class={`oj-sm-margin-2x-bottom oj-flex-item ${color === 'error' ? 'oj-bg-danger-20' : 'oj-bg-warning-20'} oj-panel-shadow-md`}
-            style={{ height: '260px', minWidth: '320px', maxWidth: '400px' }}
-            onojAction={() => { 
-                route(`/logs?log-type=${title === 'Errors' ? 'error' : 'warn'}`) 
+            style={{ height: '260px', minWidth: '320px', maxWidth: '470px' }}
+            onojAction={() => {
+                route(`/logs?log-type=${title === 'Errors' ? 'error' : 'warn'}`)
                 setActiveItem("logs")
             }}
         >
@@ -85,7 +85,7 @@ export function AppsHealthCard({ title, description, total, apps, color,setActiv
                             )}
                         </div>
                     ) : (
-                        <div class={`oj-flex oj-sm-align-items-center oj-sm-justify-content-center oj-flex-grow-1 ${textClass} oj-typography-body-sm`} style={{ height: '100%' }}>No application data.</div>
+                        <div class={`oj-flex oj-sm-align-items-center oj-sm-justify-content-center oj-flex-grow-1 ${textClass} oj-typography-body-sm`} style={{ height: '100%' }}>No critical apps.</div>
                     )}
                 </div>
             </div>
