@@ -37,7 +37,7 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
     >
       <div>
         <div class="oj-flex" style={{ alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
-         
+          
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <h3 class="oj-typography-heading-sm" style={{ margin: 0, wordBreak: 'break-word' }}>
               {app.name.replace(/\./g, ' ')}
@@ -67,7 +67,6 @@ export const UserApplicationCard = ({ app }: UserApplicationCardProps) => {
               {app.health_status}
             </span>
           </div>
-
 
           <div class="oj-typography-body-xs" style={{ color: app.is_active ? '#065f46' : '#991b1b', flexShrink: 0 }}>
             {app.is_active ? 'Active' : 'Inactive'}

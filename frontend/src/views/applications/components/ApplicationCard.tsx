@@ -22,37 +22,15 @@ const getHealthStatusStyle = (status: string) => {
   }
 };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> feature/pinnedapps-bugfix
 export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: ApplicationCardProps) => {
   return (
     <div class="oj-panel application-card">
       <div class="application-header">
         <div class="application-title-container">
-          {/* <h3 class="oj-typography-heading-sm application-title">
-            {app.name.replace(/\./g, ' ')}
-          </h3>
-          <span
-            class={`oj-typography-body-xs status-badge ${app.is_active ? 'status-active' : 'status-inactive'}`}
-          >
-            {app.is_active ? 'Active' : 'Inactive'}
-          </span>
-          <span
-            class="oj-typography-body-xs"
-            style={{
-              padding: '2px 8px',
-              borderRadius: '12px',
-              fontWeight: 500,
-              marginTop: '4px',
-              marginLeft: '6px',
-              textTransform: 'capitalize',
-              alignSelf: 'flex-start',
-              display: 'inline-block',
-              fontSize: '0.75rem',
-              ...getHealthStatusStyle(app.health_status)
-            }}
-          >
-            {app.health_status}
-          </span> */}
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
             <h3 class="oj-typography-heading-sm application-title" style={{ margin: 0 }}>
               {app.name.replace(/\./g, ' ')}
