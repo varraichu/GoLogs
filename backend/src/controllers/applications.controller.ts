@@ -59,7 +59,7 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   const groupIds = (req.query.groupIds as string)?.split(',') || [];
   const status = req.query.status as 'active' | 'inactive' | undefined;
   const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
+  const limit = parseInt(req.query.limit as string) || 99;
 
   const { applications, pagination } = await getPaginatedFilteredApplications({
     search,
@@ -82,7 +82,7 @@ export const getUserApplications = async (req: IAuthRequest, res: Response): Pro
   const search = req.query.search as string | undefined;
   const status = req.query.status as 'active' | 'inactive' | undefined;
   const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 8; // Default limit
+  const limit = parseInt(req.query.limit as string) || 99;
 
   const { applications, pagination } = await getPaginatedFilteredApplications({
     userId,
