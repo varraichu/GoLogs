@@ -7,7 +7,7 @@ dotenv.config();
 
 export const updateLogSummary = async () => {
   try {
-    console.log('[LogSummary] Starting summary generation...');
+    // console.log('[LogSummary] Starting summary generation...');
 
     await mongoose.connect(process.env.MONGODB_URI!);
 
@@ -22,8 +22,8 @@ export const updateLogSummary = async () => {
     await LogSummary.deleteMany({});
     await LogSummary.insertMany(summary);
 
-    logger.info('[LogSummary] Summary updated at', new Date());
+    logger.info('Logs Summary updated at', new Date());
   } catch (error) {
-    logger.error('[LogSummary] Error updating summary:', error);
+    logger.error('Error updating summary:', error);
   }
 };

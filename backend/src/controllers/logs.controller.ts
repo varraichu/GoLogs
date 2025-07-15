@@ -10,7 +10,7 @@ import { UserIdParams } from '../schemas/application.validator';
 import { UpdateLogTTLInput, LogsQueryInput, logsQuerySchema } from '../schemas/logs.validator';
 import Logs from '../models/Logs';
 import LogsSummary from '../models/LogsSummary';
-import { updateLogSummary } from '../scripts/updateLogsSummary';
+import { updateLogSummary } from '../utils/updateLogsSummary.util';
 
 import { Parser } from 'json2csv'; // for CSV conversion
 
