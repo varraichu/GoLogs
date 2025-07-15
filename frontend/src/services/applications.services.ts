@@ -115,7 +115,6 @@ class ApplicationsService {
       method: 'GET',
       credentials: 'include',
       headers: this.getHeaders(),
-
     });
 
     console.log('2')
@@ -201,8 +200,8 @@ class ApplicationsService {
   async updateApplication(appId: string, applicationData: UpdateApplicationData): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/${appId}`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
       credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify(applicationData),
     })
 
@@ -241,8 +240,8 @@ class ApplicationsService {
   async toggleApplicationStatus(appId: string, isActive: boolean): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/status/${appId}`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
       credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify({ is_active: isActive }),
     })
 
@@ -314,8 +313,8 @@ class ApplicationsService {
 
     const response = await fetch(`${this.baseUrl}/assignGroup/${appId}/user-groups`, {
       method: 'POST',
-      headers: this.getHeaders(),
       credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify({ groupIds }),
     })
 

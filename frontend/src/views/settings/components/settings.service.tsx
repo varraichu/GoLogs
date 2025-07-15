@@ -5,9 +5,6 @@ export async function fetchRetention() {
   const resp = await fetch('http://localhost:3001/api/logs/get/ttl', {
     method: 'GET',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
   })
   const data = await resp.json()
   return { ok: resp.ok, data }
@@ -30,9 +27,6 @@ export async function fetchSettings(userId: string) {
   const resp = await fetch(`http://localhost:3001/api/settings/${userId}`, {
     method: 'GET',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
   })
   const data = await resp.json()
   return { ok: resp.ok, data }

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import logger from './config/logger';
 import requestLogger from './middleware/logging.middleware';
 import traceMiddleware from './middleware/traceId.middleware';
 import authRoutes from './routes/auth.routes';
@@ -11,20 +12,18 @@ import settingsRoutes from './routes/settings.routes';
 import { errorHandler } from './middleware/error.middleware';
 import assignGroupRoutes from './routes/assignGroup.routes';
 import appsHealthRoutes from './routes/appsHealth.routes';
-
+import { protect } from './middleware/auth.middleware';
 import cookieParser from 'cookie-parser';
 import config from 'config';
 
 const app = express();
 
-app.use(
-  cors({
-    origin: config.get('FRONTEND_URL'),
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: config.get('FRONTEND_URL'),
+  credentials: true
+}))
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser())
 
 app.use(traceMiddleware);
 app.use(requestLogger);

@@ -20,9 +20,9 @@ export interface IAuthRequest<
 }
 
 export const protect = (req: IAuthRequest, res: Response, next: NextFunction) => {
-  const token = req.cookies.token;
+  const token = req.cookies.token
   if (!token) {
-    res.status(401).json({ message: 'Unauthorized' });
+    res.status(401).json({ message: 'Unauthorized' })
     return;
   }
   try {
@@ -33,9 +33,9 @@ export const protect = (req: IAuthRequest, res: Response, next: NextFunction) =>
       email: decoded.email,
       isAdmin: decoded.isAdmin,
     };
-    next();
+    next()
   } catch {
-    res.status(403).json({ message: 'Invalid token' });
+    res.status(403).json({ message: 'Invalid token' })
     return;
   }
 };

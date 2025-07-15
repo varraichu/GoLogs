@@ -140,15 +140,22 @@ class LogsService {
     const user = await this.getUser();
     const { _id: userId, isAdmin } = user;
 
-    let exportEndpoint = `${this.baseUrl}/logs/export`;
+    // let baseEndpoint = `${this.baseUrl}/logs`;
+
+    // if (!isAdmin) {
+    //   baseEndpoint += `/${userId}`;
+    // }
+
+    let exportEndpoint = `${this.baseUrl}/logs/export`; // Always use export endpoint
     if (!isAdmin) {
-      exportEndpoint += `/${userId}`;
+      exportEndpoint += `/${userId}`
     }
+    // baseEndpoint += `/${userId}`;
 
     const params = new URLSearchParams();
     params.append('limit', String(limit));
 
-    if (sortCriteria?.length) {
+    if (sortCriteria && sortCriteria.length > 0) {
       const sortStr = sortCriteria
         .map(s => `${s.attribute}:${s.direction === 'descending' ? 'desc' : 'asc'}`)
         .join(',');
