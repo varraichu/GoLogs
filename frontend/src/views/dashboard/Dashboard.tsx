@@ -43,13 +43,15 @@ const Dashboard = (props: { path?: string; userId?: string }) => {
         <div class="oj-flex oj-sm-padding-4x oj-sm-flex-direction-column" style="gap: 32px;">
 
             {/* Application Health */}
-            <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
-                <div class="oj-flex oj-sm-align-items-center" style="gap: 4px;">
-                    <h3 style={{ margin: 0, fontWeight: "bold", fontSize: "1.3rem" }}>Application Health</h3>
+            <div class="oj-panel oj-sm-12 oj-sm-padding-4x oj-flex-item">
+                <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
+                    <div class="oj-flex oj-sm-align-items-center" style="gap: 4px;">
+                        <h3 style={{ margin: 0, fontWeight: "bold", fontSize: "1.5rem" }}>Application Health</h3>
+                    </div>
                 </div>
-            </div>
-            <div class="oj-flex-item oj-sm-margin-4x-bottom">
-                <AppsHealth userId={userId} />
+                <div class="oj-flex-item oj-sm-margin-2x-bottom oj-sm-margin-4x-top">
+                    <AppsHealth userId={userId} />
+                </div>
             </div>
 
             {/* Logs Graph & Pinned Apps */}

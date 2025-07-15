@@ -184,6 +184,9 @@ const UserGroups = (props: { path?: string }) => {
       loadGroups();
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to save user group.');
+      if (groupData.name === 'Admin Group') {
+        handleCloseEditor();
+      }
     }
   };
 

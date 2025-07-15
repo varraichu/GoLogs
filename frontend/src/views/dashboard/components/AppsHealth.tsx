@@ -42,17 +42,17 @@ export default function AppsHealth({ userId }: { userId: string }) {
 
     return (
         <>
-            <div class="oj-sm-margin-4x oj-flex-item oj-flex oj-sm-flex-items-1 oj-sm-justify-content-space-around ">
+            <div class=" oj-flex-item oj-flex oj-sm-flex-items-1 oj-sm-justify-content-space-between ">
                 <AppsHealthCard
                     title="Errors"
-                    description="Database Timeouts, Failed Payments"
+                    description="Apps exceeding the error log threshold"
                     total={data!.critical_summary.total_errors}
                     apps={data!.critical_summary.appsExceedingErrorThreshold}
                     color="error"
                 />
                 <AppsHealthCard
                     title="Warnings"
-                    description="Rate Limits, High Memory usage"
+                    description="Apps exceeding the warning log threshold"
                     total={data!.critical_summary.total_warnings}
                     apps={data!.critical_summary.appsExceedingWarningThreshold}
                     color="warning"

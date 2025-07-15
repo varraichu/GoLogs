@@ -43,8 +43,8 @@ export function AppsHealthCard({ title, description, total, apps, color }: CardP
 
     return (
         <oj-c-action-card
-            class={`oj-sm-margin-2x-bottom oj-flex-item ${color === 'error' ? 'oj-bg-danger-20' : 'oj-bg-warning-20'} oj-panel-shadow-md`}
-            style={{ height: '260px', minWidth: '320px', maxWidth: '400px' }}
+            class={`oj-sm-margin-2x-bottom oj-flex-item ${color === 'error' ? 'oj-bg-danger-20' : 'oj-bg-warning-20'} oj-panel-shadow-sm`}
+            style={{ height: '260px', minWidth: '320px', maxWidth: '470px' }}
             onojAction={() => { route(`/logs?log-type=${title === 'Errors' ? 'error' : 'warn'}`) }}
         >
             <div class="oj-sm-padding-3x oj-flex oj-sm-flex-direction-column oj-flex-item oj-flex-grow-1">
@@ -81,7 +81,7 @@ export function AppsHealthCard({ title, description, total, apps, color }: CardP
                             )}
                         </div>
                     ) : (
-                        <div class={`oj-flex oj-sm-align-items-center oj-sm-justify-content-center oj-flex-grow-1 ${textClass} oj-typography-body-sm`} style={{ height: '100%' }}>No application data.</div>
+                        <div class={`oj-flex oj-sm-align-items-center oj-sm-justify-content-center oj-flex-grow-1 ${textClass} oj-typography-body-sm`} style={{ height: '100%' }}>No critical apps.</div>
                     )}
                 </div>
             </div>

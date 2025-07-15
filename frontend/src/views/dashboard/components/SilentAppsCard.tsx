@@ -8,8 +8,8 @@ export function SilentAppsCard({ apps }: { apps: SilentAppSummary[] }) {
 
     return (
         <oj-c-action-card
-            class="oj-sm-margin-2x-bottom oj-flex-item oj-panel-shadow-md oj-bg-brand-10"
-            style={{ height: '260px', minWidth: '320px', maxWidth: '400px' }}
+            class="oj-sm-margin-2x-bottom oj-flex-item oj-bg-brand-10 oj-panel-shadow-sm"
+            style={{ height: '260px', minWidth: '320px', maxWidth: '470px' }}
 
         >
             <div class="oj-sm-padding-3x oj-flex oj-sm-flex-direction-column oj-flex-item oj-flex-grow-1">
