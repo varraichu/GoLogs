@@ -41,7 +41,7 @@ export const PinnedAppCard = ({ app }: PinnedAppCardProps) => {
             <div class="oj-flex" style={{ alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
                 <div class="oj-flex oj-sm-align-items-center" style="gap: 0.5rem;">
                     <h3 style={{ margin: "0", wordBreak: "break-word", fontSize: "0.95rem", fontWeight: "600", lineHeight: "1.2", color: "#111827" }}>
-                        {app.name}
+                        {app.name.replace(/\./g, ' ')}
                     </h3>
                     <span class="oj-typography-body-xs" style={{ padding: '2px 8px', borderRadius: '12px', fontWeight: 500, backgroundColor: healthColor.background, color: healthColor.text, border: `1px solid ${healthColor.border}`, textTransform: 'capitalize' }}>
                         {app.health_status}
