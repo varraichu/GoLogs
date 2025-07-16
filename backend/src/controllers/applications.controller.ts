@@ -1,8 +1,5 @@
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
-import Applications from '../models/Applications';
-import UserGroupApplications from '../models/UserGroupApplications';
-import UserGroupMembers from '../models/UserGroupMembers';
 import {
   CreateApplicationInput,
   UpdateApplicationInput,
@@ -10,47 +7,31 @@ import {
   applicationStatusInput,
   UserIdParams,
 } from '../schemas/application.validator';
-import mongoose from 'mongoose';
-import config from 'config';
-import logger from '../config/logger';
-import { getDetailedApplications } from '../services/applications.service';
-import Logs from '../models/Logs';
-import Users from '../models/Users';
-import { getPaginatedFilteredApplications } from '../services/applications.service';
-
-interface Application {
-  _id: string;
-  name: string;
-  description: string;
-  created_at: string;
-  is_active: boolean;
-  groupCount: number;
-  groupNames: string[];
-  logCount: number;
-  health_status: 'healthy' | 'warning' | 'critical';
-}
+import {
+  createApplicationService,
+  getAllApplicationsService,
+  getUserApplicationsService,
+  updateApplicationService,
+  deleteApplicationService,
+  toggleApplicationStatusService,
+  getAppCriticalLogsService,
+  pinApplicationService,
+  unpinApplicationService,
+  getUserPinnedAppsService,
+} from '../services/applications.service';
 
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   const { name, description } = req.body as CreateApplicationInput;
+  const result = await createApplicationService(name, description);
 
-  const existingApp = await Applications.findOne({
-    name,
-    is_deleted: false,
-  });
-  if (existingApp) {
-    res.status(400).json({ message: 'Application with the same name already exists' });
+  if (!result.success) {
+    res.status(400).json({ message: result.message });
     return;
   }
 
-  const newApp = await Applications.create({
-    name,
-    description,
-    is_deleted: false,
-    is_active: true,
-    created_at: new Date(),
-  });
-
-  res.status(201).json({ message: 'Application created successfully', application: newApp });
+  res
+    .status(201)
+    .json({ message: 'Application created successfully', application: result.application });
   return;
 };
 
@@ -61,7 +42,7 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
 
-  const { applications, pagination } = await getPaginatedFilteredApplications({
+  const { applications, pagination } = await getAllApplicationsService({
     search,
     groupIds,
     status,
@@ -69,22 +50,18 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
     limit,
   });
 
-  res.status(200).json({
-    message: 'Applications fetched successfully',
-    applications,
-    pagination,
-  });
+  res.status(200).json({ message: 'Applications fetched successfully', applications, pagination });
+  return;
 };
 
 export const getUserApplications = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId } = req.params as UserIdParams;
-
   const search = req.query.search as string | undefined;
   const status = req.query.status as 'active' | 'inactive' | undefined;
   const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 8; // Default limit
+  const limit = parseInt(req.query.limit as string) || 8;
 
-  const { applications, pagination } = await getPaginatedFilteredApplications({
+  const result = await getUserApplicationsService({
     userId,
     search,
     status,
@@ -92,61 +69,44 @@ export const getUserApplications = async (req: IAuthRequest, res: Response): Pro
     limit,
   });
 
-  const user = await Users.findById(userId);
-  if (!user) {
-    res.status(404).json({ message: 'User not found' });
+  if (!result.success) {
+    res.status(404).json({ message: result.message });
     return;
   }
 
-  const pinnedAppIds = new Set(user.pinned_apps.map((id) => id.toString()));
-  const applicationsWithPinStatus = applications.map((app: Application) => ({
-    ...app,
-    isPinned: pinnedAppIds.has(app._id.toString()),
-  }));
-
   res.status(200).json({
     message: 'Applications fetched successfully',
-    applications: applicationsWithPinStatus,
-    pagination,
+    applications: result.applications,
+    pagination: result.pagination,
   });
+  return;
 };
 
 export const updateApplication = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
-  // console.log('Updating application with ID:', appId);
   const { name, description } = req.body as UpdateApplicationInput;
 
-  const app = await Applications.findById(appId);
-  if (!app || app.is_deleted) {
-    res.status(404).json({ message: 'Application not found' });
+  const result = await updateApplicationService(appId, { name, description });
+
+  if (!result.success) {
+    res.status(404).json({ message: result.message });
     return;
   }
 
-  app.description = description || app.description;
-  app.name = name || app.name;
-  await app.save();
-
-  const detailedApps = await getDetailedApplications([app._id as mongoose.Types.ObjectId]);
   res
     .status(200)
-    .json({ message: 'Application updated successfully', applications: detailedApps[0] });
+    .json({ message: 'Application updated successfully', applications: result.application });
   return;
 };
 
 export const deleteApplication = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
-  // console.log('Deleting application with ID:', appId);
-  const app = await Applications.findById(appId);
+  const result = await deleteApplicationService(appId);
 
-  if (!app || app.is_deleted) {
-    res.status(404).json({ message: 'Application not found' });
+  if (!result.success) {
+    res.status(404).json({ message: result.message });
     return;
   }
-
-  app.is_deleted = true;
-  app.is_active = false;
-  await app.save();
-  await UserGroupApplications.updateMany({ app_id: appId }, { is_active: false });
 
   res.status(204).send();
   return;
@@ -154,47 +114,22 @@ export const deleteApplication = async (req: IAuthRequest, res: Response) => {
 
 export const toggleApplicationStatus = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
-  const app = await Applications.findById(appId);
-
   const { is_active } = req.body as applicationStatusInput;
 
-  if (!app || app.is_deleted) {
-    res.status(404).json({ message: 'Application not found' });
+  const result = await toggleApplicationStatusService(appId, is_active);
+
+  if (!result.success) {
+    res.status(404).json({ message: result.message });
     return;
   }
 
-  app.is_active = is_active;
-  await app.save();
-  await UserGroupApplications.updateMany(
-    { app_id: appId, is_removed: false },
-    { is_active: is_active }
-  );
-
-  res.status(200).json({ message: 'Application successfully set to ', is_active });
+  res.status(200).json({ message: 'Application successfully set to', is_active });
   return;
 };
 
 export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
-
-  const logStats = await Logs.aggregate([
-    { $match: { app_id: new mongoose.Types.ObjectId(appId) } },
-    {
-      $group: {
-        _id: '$log_type',
-        count: { $sum: 1 },
-      },
-    },
-  ]);
-
-  const totalLogs = logStats.reduce((sum, log) => sum + log.count, 0); // Sum of all logs
-
-  const criticalLogs = {
-    totalLogs: totalLogs,
-    // infoLogs: logStats.find(log => log._id === 'info')?.count || 0,
-    errorLogs: logStats.find((log) => log._id === 'error')?.count || 0,
-    warningLogs: logStats.find((log) => log._id === 'warn')?.count || 0,
-  };
+  const criticalLogs = await getAppCriticalLogsService(appId);
 
   res.status(200).json(criticalLogs);
   return;
@@ -202,28 +137,12 @@ export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
 
 export const pinApplication = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId, appId } = req.params as { userId: string; appId: string };
+  const result = await pinApplicationService(userId, appId);
 
-  const user = await Users.findById(userId);
-
-  if (!user) {
-    res.status(404).json({ message: 'User not found' });
+  if (!result.success) {
+    res.status(result.statusCode || 400).json({ message: result.message });
     return;
   }
-
-  const alreadyPinned = user.pinned_apps.some((id) => id.toString() === appId);
-
-  if (alreadyPinned) {
-    res.status(400).json({ message: 'Application already pinned' });
-    return;
-  }
-
-  if (user.pinned_apps.length >= 3) {
-    res.status(400).json({ message: 'Cannot pin more than 3 apps' });
-    return;
-  }
-
-  user.pinned_apps.push(new mongoose.Types.ObjectId(appId));
-  await user.save();
 
   res.status(200).json({ message: 'Application pinned successfully' });
   return;
@@ -231,21 +150,12 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
 
 export const unpinApplication = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId, appId } = req.params as { userId: string; appId: string };
+  const result = await unpinApplicationService(userId, appId);
 
-  const user = await Users.findById(userId);
-
-  if (!user) {
-    res.status(404).json({ message: 'User not found' });
+  if (!result.success) {
+    res.status(result.statusCode || 400).json({ message: result.message });
     return;
   }
-
-  if (!user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
-    res.status(400).json({ message: 'Application is not pinned' });
-    return;
-  }
-
-  user.pinned_apps = user.pinned_apps.filter((id) => id.toString() !== appId);
-  await user.save();
 
   res.status(200).json({ message: 'Application unpinned successfully' });
   return;
@@ -253,13 +163,13 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
 
 export const getUserPinnedApps = async (req: IAuthRequest, res: Response): Promise<void> => {
   const userId = req.params.id;
-  const user = await Users.findById(userId).select('pinned_apps');
+  const result = await getUserPinnedAppsService(userId);
 
-  if (!user) {
-    res.status(404).json({ message: 'User not found' });
+  if (!result.success) {
+    res.status(404).json({ message: result.message });
     return;
   }
 
-  res.status(200).json({ pinned_apps: user.pinned_apps });
+  res.status(200).json({ pinned_apps: result.pinned_apps });
   return;
 };

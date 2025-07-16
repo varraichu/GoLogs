@@ -1,8 +1,14 @@
 import mongoose from 'mongoose';
 import Applications from '../models/Applications';
-import UserGroupMembers from '../models/UserGroupMembers';
 import UserGroupApplications from '../models/UserGroupApplications';
+import UserGroupMembers from '../models/UserGroupMembers';
+import Users from '../models/Users';
 import Settings from '../models/Settings';
+import {
+  getPaginatedFilteredApplicationsPipeline,
+  getDetailedApplicationsPipeline,
+  getAppCriticalLogsPipeline,
+} from '../aggregations/applications.aggregation';
 
 export interface Application {
   _id: string;
@@ -25,217 +31,41 @@ interface FilterOptions {
   userId?: string;
 }
 
-const escapeRegex = (text: string) => {
-  return text.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&');
-};
+export const createApplicationService = async (name: string, description: string) => {
+  const existingApp = await Applications.findOne({
+    name,
+    is_deleted: false,
+  });
 
-export const getPaginatedFilteredApplications = async (options: FilterOptions) => {
-  const { page, limit, search, status, groupIds, userId } = options;
-
-  const userSettings = userId ? await Settings.findOne({ user_id: userId }) : null;
-
-  const warning_rate_threshold = userSettings?.warning_rate_threshold ?? 10;
-  // console.log('Warning Rate Threshold:', warning_rate_threshold);
-  // console.log('Error Rate Threshold:', userSettings?.error_rate_threshold);
-  const error_rate_threshold = userSettings?.error_rate_threshold ?? 20;
-  const oneMinuteAgo = new Date(Date.now() - 60000);
-
-  let accessibleAppIds: mongoose.Types.ObjectId[] | null = null;
-
-  if (userId) {
-    const userGroups = await UserGroupMembers.find({
-      user_id: userId,
-      is_active: true,
-      is_removed: false,
-    }).select('group_id');
-
-    if (userGroups.length > 0) {
-      const userGroupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
-      const userGroupApps = await UserGroupApplications.find({
-        group_id: { $in: userGroupIds },
-        is_active: true,
-        is_removed: false,
-      }).select('app_id');
-      accessibleAppIds = userGroupApps.map((a) => a.app_id as mongoose.Types.ObjectId);
-    } else {
-      accessibleAppIds = [];
-    }
-  }
-
-  if (accessibleAppIds && accessibleAppIds.length === 0) {
+  if (existingApp) {
     return {
-      applications: [],
-      pagination: { total: 0, page, limit, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+      success: false,
+      message: 'Application with the same name already exists',
     };
   }
 
-  const pipeline: any[] = [];
-  const matchStage: any = { is_deleted: false };
+  const newApp = await Applications.create({
+    name,
+    description,
+    is_deleted: false,
+    is_active: true,
+    created_at: new Date(),
+  });
 
-  if (accessibleAppIds) {
-    matchStage._id = { $in: accessibleAppIds };
-  }
+  return {
+    success: true,
+    application: newApp,
+  };
+};
 
-  if (status) {
-    matchStage.is_active = status === 'active';
-  }
-
-  if (search) {
-    const searchParts = search.split(' ').map((part) => escapeRegex(part));
-    const flexibleSearchRegex = searchParts.join('.*');
-    matchStage.$or = [
-      { name: { $regex: flexibleSearchRegex, $options: 'i' } },
-      { description: { $regex: flexibleSearchRegex, $options: 'i' } },
-    ];
-  }
-
-  pipeline.push({ $match: matchStage });
-
-  if (groupIds && groupIds.length > 0) {
-    pipeline.push(
-      {
-        $lookup: {
-          from: 'usergroupapplications',
-          localField: '_id',
-          foreignField: 'app_id',
-          as: 'groupAssignments',
-        },
-      },
-      {
-        $match: {
-          'groupAssignments.group_id': {
-            $in: groupIds.map((id) => new mongoose.Types.ObjectId(id)),
-          },
-        },
-      }
-    );
-  }
-
-  pipeline.push({
-    $facet: {
-      metadata: [{ $count: 'total' }],
-      data: [
-        {
-          $lookup: {
-            from: 'usergroupapplications',
-            localField: '_id',
-            foreignField: 'app_id',
-            as: 'groups',
-            pipeline: [{ $match: { is_active: true, is_removed: false } }],
-          },
-        },
-        {
-          $lookup: {
-            from: 'usergroups',
-            let: { groupIds: '$groups.group_id', appActive: '$is_active' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $in: ['$_id', '$$groupIds'] },
-                      { $eq: ['$is_deleted', false] },
-                      { $eq: ['$is_active', true] },
-                      { $eq: ['$$appActive', true] }, // ✅ Only include groups if app is active
-                    ],
-                  },
-                },
-              },
-            ],
-            as: 'groupDetails',
-          },
-        },
-        {
-          $lookup: {
-            from: 'logs',
-            let: { appId: '$_id' },
-            pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] } } }, { $count: 'total' }],
-            as: 'logStats',
-          },
-        },
-
-        { $sort: { created_at: -1 } },
-        {
-          $lookup: {
-            from: 'usergroupapplications',
-            localField: '_id',
-            foreignField: 'app_id',
-            as: 'groups',
-            pipeline: [{ $match: { is_active: true } }],
-          },
-        },
-        {
-          $lookup: {
-            from: 'usergroups',
-            localField: 'groups.group_id',
-            foreignField: '_id',
-            as: 'groupDetails',
-            pipeline: [{ $match: { is_deleted: false, is_active: true } }],
-          },
-        },
-        {
-          $lookup: {
-            from: 'logs',
-            let: { appId: '$_id' },
-            pipeline: [{ $match: { $expr: { $eq: ['$app_id', '$$appId'] } } }, { $count: 'total' }],
-            as: 'logStats',
-          },
-        },
-        {
-          $lookup: {
-            from: 'logs',
-            let: { appId: '$_id' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [{ $eq: ['$app_id', '$$appId'] }, { $gte: ['$timestamp', oneMinuteAgo] }],
-                  },
-                },
-              },
-              { $count: 'recentLogs' },
-            ],
-            as: 'recentLogStats',
-          },
-        },
-
-        {
-          $project: {
-            _id: 1,
-            name: 1,
-            description: 1,
-            created_at: 1,
-            is_active: 1,
-            groupCount: { $size: '$groupDetails' },
-            groupNames: '$groupDetails.name',
-            logCount: { $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0] },
-            health_status: {
-              $let: {
-                vars: {
-                  recent_logs: {
-                    $ifNull: [{ $arrayElemAt: ['$recentLogStats.recentLogs', 0] }, 0],
-                  },
-                },
-                in: {
-                  $switch: {
-                    branches: [
-                      { case: { $gte: ['$$recent_logs', error_rate_threshold] }, then: 'critical' },
-                      {
-                        case: { $gte: ['$$recent_logs', warning_rate_threshold] },
-                        then: 'warning',
-                      },
-                    ],
-                    default: 'healthy',
-                  },
-                },
-              },
-            },
-          },
-        },
-        { $skip: (page - 1) * limit },
-        { $limit: limit },
-      ],
-    },
+export const getAllApplicationsService = async (options: FilterOptions) => {
+  const { page, limit, search, status, groupIds } = options;
+  const pipeline = getPaginatedFilteredApplicationsPipeline({
+    page,
+    limit,
+    search,
+    status,
+    groupIds,
   });
 
   const result = await Applications.aggregate(pipeline);
@@ -256,74 +86,244 @@ export const getPaginatedFilteredApplications = async (options: FilterOptions) =
   };
 };
 
+export const getUserApplicationsService = async (options: FilterOptions) => {
+  const { userId, page, limit, search, status } = options;
+
+  const user = await Users.findById(userId);
+  if (!user) {
+    return {
+      success: false,
+      message: 'User not found',
+    };
+  }
+
+  const userSettings = await Settings.findOne({ user_id: userId });
+  const warning_rate_threshold = userSettings?.warning_rate_threshold ?? 10;
+  const error_rate_threshold = userSettings?.error_rate_threshold ?? 20;
+
+  // Get user's accessible app IDs
+  const userGroups = await UserGroupMembers.find({
+    user_id: userId,
+    is_active: true,
+    is_removed: false,
+  }).select('group_id');
+
+  let accessibleAppIds: mongoose.Types.ObjectId[] = [];
+  if (userGroups.length > 0) {
+    const userGroupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
+    const userGroupApps = await UserGroupApplications.find({
+      group_id: { $in: userGroupIds },
+      is_active: true,
+      is_removed: false,
+    }).select('app_id');
+    accessibleAppIds = userGroupApps.map((a) => a.app_id as mongoose.Types.ObjectId);
+  }
+
+  if (accessibleAppIds.length === 0) {
+    return {
+      success: true,
+      applications: [],
+      pagination: { total: 0, page, limit, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+    };
+  }
+
+  const pipeline = getPaginatedFilteredApplicationsPipeline({
+    page,
+    limit,
+    search,
+    status,
+    accessibleAppIds,
+    warning_rate_threshold,
+    error_rate_threshold,
+  });
+
+  const result = await Applications.aggregate(pipeline);
+  const data = result[0];
+  const applications = data.data;
+  const totalDocs = data.metadata[0]?.total || 0;
+
+  // Add pin status to applications
+  const pinnedAppIds = new Set(user.pinned_apps.map((id) => id.toString()));
+  const applicationsWithPinStatus = applications.map((app: Application) => ({
+    ...app,
+    isPinned: pinnedAppIds.has(app._id.toString()),
+  }));
+
+  return {
+    success: true,
+    applications: applicationsWithPinStatus,
+    pagination: {
+      total: totalDocs,
+      page,
+      limit,
+      totalPages: Math.ceil(totalDocs / limit),
+      hasNextPage: page * limit < totalDocs,
+      hasPrevPage: page > 1,
+    },
+  };
+};
+
+export const updateApplicationService = async (
+  appId: string,
+  updates: { name?: string; description?: string }
+) => {
+  const app = await Applications.findById(appId);
+  if (!app || app.is_deleted) {
+    return {
+      success: false,
+      message: 'Application not found',
+    };
+  }
+
+  app.description = updates.description || app.description;
+  app.name = updates.name || app.name;
+  await app.save();
+
+  const detailedApps = await getDetailedApplications([app._id as mongoose.Types.ObjectId]);
+
+  return {
+    success: true,
+    application: detailedApps[0],
+  };
+};
+
+export const deleteApplicationService = async (appId: string) => {
+  const app = await Applications.findById(appId);
+
+  if (!app || app.is_deleted) {
+    return {
+      success: false,
+      message: 'Application not found',
+    };
+  }
+
+  app.is_deleted = true;
+  app.is_active = false;
+  await app.save();
+  await UserGroupApplications.updateMany({ app_id: appId }, { is_active: false });
+
+  return {
+    success: true,
+  };
+};
+
+export const toggleApplicationStatusService = async (appId: string, is_active: boolean) => {
+  const app = await Applications.findById(appId);
+
+  if (!app || app.is_deleted) {
+    return {
+      success: false,
+      message: 'Application not found',
+    };
+  }
+
+  app.is_active = is_active;
+  await app.save();
+  await UserGroupApplications.updateMany(
+    { app_id: appId, is_removed: false },
+    { is_active: is_active }
+  );
+
+  return {
+    success: true,
+  };
+};
+
+export const getAppCriticalLogsService = async (appId: string) => {
+  const pipeline = getAppCriticalLogsPipeline(appId);
+  const logStats = await Applications.aggregate(pipeline);
+
+  const totalLogs = logStats.reduce((sum: number, log: any) => sum + log.count, 0);
+
+  return {
+    totalLogs: totalLogs,
+    errorLogs: logStats.find((log: any) => log._id === 'error')?.count || 0,
+    warningLogs: logStats.find((log: any) => log._id === 'warn')?.count || 0,
+  };
+};
+
+export const pinApplicationService = async (userId: string, appId: string) => {
+  const user = await Users.findById(userId);
+
+  if (!user) {
+    return {
+      success: false,
+      message: 'User not found',
+      statusCode: 404,
+    };
+  }
+
+  const alreadyPinned = user.pinned_apps.some((id) => id.toString() === appId);
+
+  if (alreadyPinned) {
+    return {
+      success: false,
+      message: 'Application already pinned',
+      statusCode: 400,
+    };
+  }
+
+  if (user.pinned_apps.length >= 3) {
+    return {
+      success: false,
+      message: 'Cannot pin more than 3 apps',
+      statusCode: 400,
+    };
+  }
+
+  user.pinned_apps.push(new mongoose.Types.ObjectId(appId));
+  await user.save();
+
+  return {
+    success: true,
+  };
+};
+
+export const unpinApplicationService = async (userId: string, appId: string) => {
+  const user = await Users.findById(userId);
+
+  if (!user) {
+    return {
+      success: false,
+      message: 'User not found',
+      statusCode: 404,
+    };
+  }
+
+  if (!user.pinned_apps.includes(new mongoose.Types.ObjectId(appId))) {
+    return {
+      success: false,
+      message: 'Application is not pinned',
+      statusCode: 400,
+    };
+  }
+
+  user.pinned_apps = user.pinned_apps.filter((id) => id.toString() !== appId);
+  await user.save();
+
+  return {
+    success: true,
+  };
+};
+
+export const getUserPinnedAppsService = async (userId: string) => {
+  const user = await Users.findById(userId).select('pinned_apps');
+
+  if (!user) {
+    return {
+      success: false,
+      message: 'User not found',
+    };
+  }
+
+  return {
+    success: true,
+    pinned_apps: user.pinned_apps,
+  };
+};
+
 export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[]) => {
-  const detailedApplications = await Applications.aggregate([
-    // 1. Filter for the requested, non-deleted applications
-    {
-      $match: {
-        _id: { $in: appIds },
-        is_deleted: false,
-      },
-    },
-    // 2. Lookup active groups from the UserGroupApplications collection
-    {
-      $lookup: {
-        from: 'usergroupapplications', // The actual collection name in MongoDB (usually plural and lowercase)
-        localField: '_id',
-        foreignField: 'app_id',
-        as: 'groups',
-        pipeline: [
-          { $match: { is_active: true, is_removed: false } }, // Only count active groups
-        ],
-      },
-    },
-
-    {
-      $lookup: {
-        from: 'usergroups', // The collection where group names are stored
-        localField: 'groups.group_id', // The field from the previous stage
-        foreignField: '_id', // The field to match in the 'usergroups' collection
-        as: 'groupDetails', // Store the full group documents here
-        pipeline: [
-          { $match: { is_deleted: false, is_active: true } }, // Only count active groups
-        ],
-      },
-    },
-
-    {
-      $lookup: {
-        from: 'logs',
-        let: { appId: '$_id' },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ['$app_id', '$$appId'] },
-              // Add additional filters here if needed:
-              // , created_at: { $gte: new Date('2024-01-01') }
-            },
-          },
-          { $count: 'total' },
-        ],
-        as: 'logStats',
-      },
-    },
-
-    // 4. Project the final shape of the output
-    {
-      $project: {
-        _id: 1,
-        name: 1,
-        description: 1,
-        created_at: 1,
-        is_active: 1,
-        groupCount: { $size: '$groupDetails' }, // Count the number of groups
-        groupNames: '$groupDetails.name', // Create an array of just the group names
-        logCount: {
-          $ifNull: [{ $arrayElemAt: ['$logStats.total', 0] }, 0],
-        },
-      },
-    },
-  ]);
-
+  const pipeline = getDetailedApplicationsPipeline(appIds);
+  const detailedApplications = await Applications.aggregate(pipeline);
   return detailedApplications;
 };

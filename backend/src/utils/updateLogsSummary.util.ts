@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
 import LogSummary from '../models/LogsSummary';
+import Log from '../models/Logs'; // You need to import your Log model
 import { fetchAllAppsLogSummary } from '../services/logs.service';
 import dotenv from 'dotenv';
 import logger from '../config/logger';
+import { buildLogSummaryAggregation } from '../aggregations/logs.aggregation';
 dotenv.config();
 
 export const updateLogSummary = async () => {
@@ -14,10 +16,12 @@ export const updateLogSummary = async () => {
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const summary = await fetchAllAppsLogSummary({
-      startDate: twentyFourHoursAgo,
-      endDate: now,
-    });
+    // Option 1: Use the aggregation pipeline directly
+    const pipeline = buildLogSummaryAggregation(twentyFourHoursAgo, now);
+    const summary = await Log.aggregate(pipeline);
+
+    // Option 2: Use the service function (commented out)
+    // const summary = await fetchAllAppsLogSummary(twentyFourHoursAgo, now);
 
     await LogSummary.deleteMany({});
     await LogSummary.insertMany(summary);

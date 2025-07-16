@@ -26,9 +26,10 @@ import { getUserPinnedApps } from '../controllers/applications.controller';
 const router = express.Router();
 
 router.get('/', protect, isAdmin, getAllApplications);
-router.get('/:userId', protect, getUserApplications);
 
 router.post('/', protect, isAdmin, validate(createApplicationSchema), createApplication);
+
+router.get('/:userId', protect, getUserApplications);
 
 router.patch('/:appId', protect, isAdmin, validate(updateApplicationSchema), updateApplication);
 

@@ -1,24 +1,23 @@
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
-import UserGroup from '../models/UserGroups';
-import UserGroupMember from '../models/UserGroupMembers';
-import UserGroupApplication from '../models/UserGroupApplications';
-import User from '../models/Users';
-import { findOrCreateUsersByEmail } from '../services/createUsers.service';
-import { getDetailedUserGroups, getPaginatedUserGroups } from '../services/userGroup.service';
+import { Request } from 'express';
 import {
   CreateUserGroupInput,
   UpdateUserGroupInput,
   UserGroupParams,
   userGroupStatusInput,
 } from '../schemas/userGroup.validator';
-import mongoose from 'mongoose';
-import config from 'config';
-import logger from '../config/logger';
-
-import { Request } from 'express';
-import { assignApplicationsToGroup } from '../services/userGroup.service';
-import UserGroupApplications from '../models/UserGroupApplications';
+import {
+  createUserGroupService,
+  getAllUserGroupsService,
+  getAllUserGroupInfoService,
+  getUserGroupByIdService,
+  updateUserGroupService,
+  deleteUserGroupService,
+  toggleGroupStatusService,
+  userGroupUsersService,
+  updateUserGroupAppAccessService,
+} from '../services/userGroup.service';
 
 export const updateUserGroupAppAccess = async (req: Request, res: Response): Promise<void> => {
   const { groupId } = req.params;
@@ -29,7 +28,7 @@ export const updateUserGroupAppAccess = async (req: Request, res: Response): Pro
     return;
   }
 
-  await assignApplicationsToGroup(groupId, appIds);
+  await updateUserGroupAppAccessService(groupId, appIds);
   res.status(200).json({ message: 'Application access updated' });
   return;
 };
@@ -37,42 +36,20 @@ export const updateUserGroupAppAccess = async (req: Request, res: Response): Pro
 export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   const { name, description, memberEmails } = req.body as CreateUserGroupInput;
 
-  const existingGroup = await UserGroup.findOne({
-    name,
-    is_deleted: false,
-  });
-  if (existingGroup) {
-    res.status(400).json({ message: 'User group with the same name already exists' });
+  const result = await createUserGroupService({ name, description, memberEmails });
+
+  if (result.error) {
+    res.status(400).json({ message: result.error });
     return;
   }
 
-  const newGroup = await UserGroup.create({ name, description, is_active: true });
-
-  const usersToAdd = await findOrCreateUsersByEmail(memberEmails);
-
-  if (usersToAdd.length > 0) {
-    const memberDocs = usersToAdd.map((user) => ({ user_id: user._id, group_id: newGroup._id }));
-    await UserGroupMember.insertMany(memberDocs);
-  }
-
-  const detailedGroup = await getDetailedUserGroups([newGroup._id as mongoose.Types.ObjectId]);
-
-  res.status(201).json(detailedGroup[0]);
+  res.status(201).json(result.data);
   return;
 };
 
 export const getAllUserGroups = async (req: IAuthRequest, res: Response) => {
-  const groups = await UserGroup.find({ is_deleted: false }).select('_id');
-  const groupIds = groups.map((g) => g._id as mongoose.Types.ObjectId);
-
-  if (groupIds.length === 0) {
-    res.status(200).json([]);
-    return;
-  }
-
-  const detailedGroups = await getDetailedUserGroups(groupIds);
-
-  res.status(200).json(detailedGroups);
+  const groups = await getAllUserGroupsService();
+  res.status(200).json(groups);
   return;
 };
 
@@ -87,134 +64,55 @@ export const getAllUserGroupInfo = async (req: IAuthRequest, res: Response) => {
     appIds: (appIds as string) ? (appIds as string).split(',') : [],
   };
 
-  const result = await getPaginatedUserGroups(options);
+  const result = await getAllUserGroupInfoService(options);
   res.status(200).json(result);
   return;
 };
 
 export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
-  const detailedGroup = await getDetailedUserGroups([new mongoose.Types.ObjectId(groupId)]);
+  const result = await getUserGroupByIdService(groupId);
 
-  if (!detailedGroup || detailedGroup.length === 0) {
-    res.status(404).json({ message: 'User group not found' });
+  if (result.error) {
+    res.status(404).json({ message: result.error });
     return;
   }
 
-  res.status(200).json(detailedGroup[0]);
+  res.status(200).json(result.data);
   return;
 };
 
 export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
-  const {
-    name,
-    description,
-    addMemberEmails = [],
-    removeMemberEmails = [],
-  } = req.body as UpdateUserGroupInput;
+  const updateData = req.body as UpdateUserGroupInput;
+  const userEmail = req.user?.email;
 
-  const group = await UserGroup.findById(groupId);
-  if (!group || group.is_deleted) {
-    res.status(404).json({ message: 'User group not found' });
+  const result = await updateUserGroupService(groupId, updateData, userEmail);
+
+  if (result.error) {
+    const statusCode = result.error.includes('not found')
+      ? 404
+      : result.error.includes('cannot be renamed') ||
+          result.error.includes('Cannot remove yourself')
+        ? 403
+        : 400;
+    res.status(statusCode).json({ message: result.error });
     return;
   }
 
-  const ADMIN_GROUP_NAME = config.get<string>('admin_group_name');
-  const isSuperAdminGroup = group.name === ADMIN_GROUP_NAME;
-
-  // Prevent renaming super admin group
-  if (isSuperAdminGroup) {
-    if (name && name !== ADMIN_GROUP_NAME) {
-      res.status(403).json({ message: `The '${ADMIN_GROUP_NAME}' group cannot be renamed.` });
-      return;
-    }
-
-    if (removeMemberEmails.length > 0) {
-      const flag = removeMemberEmails.filter((email) => email === req.user?.email);
-
-      if (flag.length > 0) {
-        res.status(403).json({ message: 'Cannot remove yourself from Admin Group.' });
-        return;
-      }
-    }
-  }
-
-  if (name && name !== group.name) {
-    const existingGroup = await UserGroup.findOne({ name, is_deleted: false });
-    if (existingGroup) {
-      res.status(400).json({ message: 'An active user group with that name already exists.' });
-      return;
-    }
-  }
-
-  // Update basic fields
-  group.name = name || group.name;
-  group.description = description || group.description;
-  await group.save();
-
-  // Add members
-  if (addMemberEmails.length > 0) {
-    const usersToAdd = await findOrCreateUsersByEmail(addMemberEmails);
-    for (const user of usersToAdd) {
-      const existing = await UserGroupMember.findOne({ user_id: user._id, group_id: group._id });
-      if (existing) {
-        if (!existing.is_active) {
-          existing.is_active = true;
-          existing.is_removed = false;
-          await existing.save();
-        }
-      } else {
-        await UserGroupMember.create({
-          user_id: user._id,
-          group_id: group._id,
-          is_active: true,
-          is_removed: false,
-        });
-      }
-    }
-  }
-
-  // Remove members
-  if (removeMemberEmails.length > 0) {
-    const usersToRemove = await User.find({ email: { $in: removeMemberEmails } });
-    const userIdsToRemove: mongoose.Types.ObjectId[] = usersToRemove.map(
-      (u) => u._id as mongoose.Types.ObjectId
-    );
-
-    await UserGroupMember.updateMany(
-      { user_id: { $in: userIdsToRemove }, group_id: group._id },
-      { is_active: false, is_removed: true }
-    );
-  }
-
-  // Return detailed group info
-  const detailedGroup = await getDetailedUserGroups([group._id as mongoose.Types.ObjectId]);
-  res.status(200).json(detailedGroup[0]);
+  res.status(200).json(result.data);
   return;
 };
 
 export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
-  const group = await UserGroup.findById(groupId);
+  const result = await deleteUserGroupService(groupId);
 
-  if (!group || group.is_deleted) {
-    res.status(404).json({ message: 'User group not found' });
+  if (result.error) {
+    const statusCode = result.error.includes('not found') ? 404 : 403;
+    res.status(statusCode).json({ message: result.error });
     return;
   }
-
-  if (group.name === config.get<string>('admin_group_name')) {
-    res.status(403).json({
-      message: `The '${config.get<string>('admin_group_name')}' group is protected and cannot be deleted.`,
-    });
-    return;
-  }
-
-  group.is_deleted = true;
-  group.is_active = false;
-  await group.save();
-  await UserGroupMember.updateMany({ group_id: groupId }, { is_active: false });
-  await UserGroupApplication.updateMany({ group_id: groupId }, { is_active: false });
 
   res.status(204).send();
   return;
@@ -222,42 +120,22 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
 
 export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
-  const group = await UserGroup.findById(groupId);
-
   const { is_active } = req.body as userGroupStatusInput;
 
-  if (!group || group.is_deleted || group.name === config.get('admin_group_name')) {
-    res.status(404).json({ message: 'User Group not found' });
+  const result = await toggleGroupStatusService(groupId, is_active);
+
+  if (result.error) {
+    res.status(404).json({ message: result.error });
     return;
   }
 
-  group.is_active = is_active;
-  await group.save();
-  await UserGroupApplications.updateMany(
-    { group_id: groupId, is_removed: false },
-    { is_active: is_active }
-  );
-  await UserGroupMember.updateMany(
-    { group_id: groupId, is_removed: false },
-    { is_active: is_active }
-  );
-
-  res
-    .status(200)
-    .json({ message: `User group successfully set to ${is_active ? 'Active' : 'Inactive'}` });
+  res.status(200).json({ message: result.message });
   return;
 };
 
 export const userGroupUsers = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params;
-
-  const members = await UserGroupMember.find({ group_id: groupId, is_active: true }).populate(
-    'user_id',
-    'email username picture_url'
-  ); // Populate user details
-
-  const users = members.map((member) => member.user_id);
-
+  const users = await userGroupUsersService(groupId);
   res.status(200).json({ users });
   return;
 };

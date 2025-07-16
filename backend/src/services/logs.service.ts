@@ -2,7 +2,15 @@
 import UserGroupMembers from '../models/UserGroupMembers';
 import Log from '../models/Logs';
 import UserGroupApplications from '../models/UserGroupApplications';
+import LogsSummary from '../models/LogsSummary';
 import mongoose from 'mongoose';
+import { Parser } from 'json2csv';
+import { updateLogSummary } from '../utils/updateLogsSummary.util';
+import {
+  buildPaginatedLogsAggregation,
+  buildUserLogsAggregation,
+  buildLogSummaryAggregation,
+} from '../aggregations/logs.aggregation';
 
 interface SortCriteria {
   field: string;
@@ -22,38 +30,34 @@ interface PaginationOptions {
   };
 }
 
-const buildSortObject = (sortCriteria: SortCriteria[]): Record<string, 1 | -1> => {
-  const sortObj: Record<string, 1 | -1> = {};
+interface UserLogsPaginationOptions extends PaginationOptions {
+  userId: string;
+}
 
-  sortCriteria.forEach((criteria) => {
-    let sortField = criteria.field;
+interface ExportUserLogsOptions {
+  userId: string;
+  limit: number;
+  sortCriteria: SortCriteria[];
+  filters: {
+    log_type?: string | string[];
+    app_name?: string | string[];
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+  };
+}
 
-    // Map frontend field names to database field names
-    switch (criteria.field) {
-      case 'app_name':
-        sortField = 'application.name';
-        break;
-      case 'log_type':
-        sortField = 'log_type';
-        break;
-      case 'message':
-        sortField = 'message';
-        break;
-      case 'timestamp':
-        sortField = 'timestamp';
-        break;
-      case 'ingested_at':
-        sortField = 'ingested_at';
-        break;
-      default:
-        sortField = criteria.field;
-    }
-
-    sortObj[sortField] = criteria.direction === 'asc' ? 1 : -1;
-  });
-
-  return sortObj;
-};
+interface ExportAdminLogsOptions {
+  limit: number;
+  sortCriteria: SortCriteria[];
+  filters: {
+    log_type?: string | string[];
+    app_name?: string | string[];
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+  };
+}
 
 export const fetchPaginatedLogsWithAppInfo = async ({
   page,
@@ -62,112 +66,13 @@ export const fetchPaginatedLogsWithAppInfo = async ({
   filters = {},
 }: PaginationOptions) => {
   const skip = (page - 1) * limit;
-  const sortObj = buildSortObject(sortCriteria);
 
-  // Base filters before join
-  const preLookupMatch: any = {};
-
-  if (filters.log_type) {
-    preLookupMatch.log_type = Array.isArray(filters.log_type)
-      ? { $in: filters.log_type }
-      : filters.log_type;
-  }
-
-  if (filters.startDate || filters.endDate) {
-    preLookupMatch.timestamp = {};
-    if (filters.startDate) preLookupMatch.timestamp.$gte = new Date(filters.startDate);
-    if (filters.endDate) preLookupMatch.timestamp.$lte = new Date(filters.endDate);
-  }
-
-  // Post-lookup match: after application is joined
-  const postLookupMatch: any = {
-    'application.is_active': true,
-  };
-
-  if (filters.app_name) {
-    postLookupMatch['application.name'] = Array.isArray(filters.app_name)
-      ? { $in: filters.app_name }
-      : filters.app_name;
-  }
-
-  // Search filters – must come after `$lookup` and `$unwind` so `application.name` is accessible
-  const searchConditions: any[] = [];
-  if (filters.search?.trim()) {
-    const keywords = filters.search.trim().split(/\s+/).filter(Boolean);
-
-    if (keywords.length === 1) {
-      const escaped = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = { $regex: escaped, $options: 'i' };
-
-      searchConditions.push({
-        $or: [
-          { message: regex },
-          { log_type: regex },
-          { 'application.name': regex }, // ✅ App name search
-        ],
-      });
-    } else {
-      const keywordRegexConditions = keywords.map((kw) => {
-        const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = { $regex: escaped, $options: 'i' };
-
-        return {
-          $or: [
-            { message: regex },
-            { log_type: regex },
-            { 'application.name': regex }, // ✅ App name search
-          ],
-        };
-      });
-
-      searchConditions.push(...keywordRegexConditions);
-    }
-  }
-
-  const pipeline = [
-    { $match: preLookupMatch },
-    {
-      $lookup: {
-        from: 'applications',
-        localField: 'app_id',
-        foreignField: '_id',
-        as: 'application',
-      },
-    },
-    { $unwind: '$application' },
-    { $match: postLookupMatch },
-    ...(searchConditions.length > 0 ? [{ $match: { $and: searchConditions } }] : []),
-    { $sort: sortObj },
-    { $skip: skip },
-    { $limit: limit },
-    {
-      $project: {
-        _id: 1,
-        message: 1,
-        timestamp: 1,
-        log_type: 1,
-        ingested_at: 1,
-        app_id: 1,
-        app_name: '$application.name',
-      },
-    },
-  ];
-
-  const countPipeline = [
-    { $match: preLookupMatch },
-    {
-      $lookup: {
-        from: 'applications',
-        localField: 'app_id',
-        foreignField: '_id',
-        as: 'application',
-      },
-    },
-    { $unwind: '$application' },
-    { $match: postLookupMatch },
-    ...(searchConditions.length > 0 ? [{ $match: { $and: searchConditions } }] : []),
-    { $count: 'total' },
-  ];
+  const { pipeline, countPipeline } = buildPaginatedLogsAggregation({
+    skip,
+    limit,
+    sortCriteria,
+    filters,
+  });
 
   const [logs, totalResult] = await Promise.all([
     Log.aggregate(pipeline),
@@ -189,20 +94,6 @@ export const fetchPaginatedLogsWithAppInfo = async ({
   };
 };
 
-interface UserLogsPaginationOptions {
-  userId: string;
-  page: number;
-  limit: number;
-  sortCriteria?: SortCriteria[];
-  filters?: {
-    log_type?: string | string[];
-    app_name?: string | string[];
-    startDate?: string;
-    endDate?: string;
-    search?: string;
-  };
-}
-
 export const fetchUserLogsWithAppInfo = async ({
   userId,
   page,
@@ -211,35 +102,9 @@ export const fetchUserLogsWithAppInfo = async ({
   filters = {},
 }: UserLogsPaginationOptions) => {
   const skip = (page - 1) * limit;
-  const sortObj = buildSortObject(sortCriteria);
 
-  const userGroups = await UserGroupMembers.find({
-    user_id: userId,
-    is_active: true,
-  }).select('group_id');
-
-  const groupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
-
-  if (groupIds.length === 0) {
-    return {
-      logs: [],
-      total: 0,
-      pagination: {
-        page,
-        limit,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
-      },
-    };
-  }
-
-  const userGroupApps = await UserGroupApplications.find({
-    group_id: { $in: groupIds },
-    is_active: true,
-  }).select('app_id');
-
-  const appIds = userGroupApps.map((g) => g.app_id as mongoose.Types.ObjectId);
+  // Get user's accessible app IDs
+  const appIds = await getUserAccessibleAppIds(userId);
 
   if (appIds.length === 0) {
     return {
@@ -255,147 +120,20 @@ export const fetchUserLogsWithAppInfo = async ({
     };
   }
 
-  const match: any = {
-    app_id: { $in: appIds },
-  };
+  const { pipeline, countPipeline } = buildUserLogsAggregation({
+    appIds,
+    skip,
+    limit,
+    sortCriteria,
+    filters,
+  });
 
-  if (filters.log_type) {
-    match.log_type = Array.isArray(filters.log_type) ? { $in: filters.log_type } : filters.log_type;
-  }
-  if (filters.startDate || filters.endDate) {
-    match.timestamp = {};
-    if (filters.startDate) match.timestamp.$gte = new Date(filters.startDate);
-    if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
-  }
-
-  if (filters.search) {
-    const trimmedSearch = filters.search.trim();
-
-    if (trimmedSearch) {
-      const keywords = trimmedSearch.split(/\s+/).filter((k) => !!k);
-
-      if (keywords.length === 1) {
-        const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = { $regex: escaped, $options: 'i' };
-
-        match.$or = [{ message: regex }, { log_type: regex }];
-      } else {
-        const regexConditions = keywords.map((kw) => {
-          const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = { $regex: escaped, $options: 'i' };
-
-          return {
-            $or: [{ message: regex }, { log_type: regex }],
-          };
-        });
-
-        match.$and = regexConditions;
-      }
-    }
-  }
-
-  // if (filters.search) {
-  //   // Trim trailing and leading spaces
-  //   const trimmedSearch = filters.search.trim();
-
-  //   // Only proceed if there's something to search after trimming
-  //   if (trimmedSearch) {
-  //     // Split by spaces and filter out empty strings
-  //     const keywords = trimmedSearch.split(/\s+/).filter((keyword) => keyword.length > 0);
-
-  //     if (keywords.length === 1) {
-  //       // Single keyword - use simple regex
-  //       const escapedSearch = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  //       match.message = { $regex: escapedSearch, $options: 'i' };
-  //     } else if (keywords.length > 1) {
-  //       // Multiple keywords - all must be present (AND logic)
-  //       const regexConditions = keywords.map((keyword) => {
-  //         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  //         return { message: { $regex: escapedKeyword, $options: 'i' } };
-  //       });
-
-  //       match.$and = regexConditions;
-  //     }
-  //   }
-  // }
-
-  // if (filters.search) {
-  //   // Trim trailing and leading spaces
-  //   const trimmedSearch = filters.search.trim();
-
-  //   // Only proceed if there's something to search after trimming
-  //   if (trimmedSearch) {
-  //     // Escape special regex characters to prevent regex injection
-  //     const escapedSearch = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  //     match.message = { $regex: escapedSearch, $options: 'i' };
-  //   }
-  // }
-
-  // if (filters.search) {
-  //   // Escape special regex characters to prevent regex injection
-  //   const escapedSearch = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  //   match.message = { $regex: escapedSearch, $options: 'i' };
-  // }
-  // const hasSpecialChars = /[^a-zA-Z0-9\s]/.test(filters.search ?? '');
-
-  // if (filters.search) {
-  //   if (hasSpecialChars) {
-  //     match.message = { $regex: filters.search, $options: 'i' };
-  //   } else {
-  //     match.$text = { $search: filters.search };
-  //   }
-  // }
-
-  const appMatch: any = { 'application.is_active': true };
-  if (filters.app_name) {
-    appMatch['application.name'] = Array.isArray(filters.app_name)
-      ? { $in: filters.app_name }
-      : filters.app_name;
-  }
-
-  const [logs, total] = await Promise.all([
-    Log.aggregate([
-      { $match: match },
-      {
-        $lookup: {
-          from: 'applications',
-          localField: 'app_id',
-          foreignField: '_id',
-          as: 'application',
-        },
-      },
-      { $unwind: '$application' },
-      { $match: appMatch },
-      { $sort: sortObj },
-      { $skip: skip },
-      { $limit: limit },
-      {
-        $project: {
-          _id: 1,
-          message: 1,
-          timestamp: 1,
-          log_type: 1,
-          ingested_at: 1,
-          app_id: 1,
-          app_name: '$application.name',
-        },
-      },
-    ]),
-    Log.aggregate([
-      { $match: match },
-      {
-        $lookup: {
-          from: 'applications',
-          localField: 'app_id',
-          foreignField: '_id',
-          as: 'application',
-        },
-      },
-      { $unwind: '$application' },
-      { $match: appMatch },
-      { $count: 'total' },
-    ]).then((result) => result[0]?.total || 0),
+  const [logs, totalResult] = await Promise.all([
+    Log.aggregate(pipeline),
+    Log.aggregate(countPipeline),
   ]);
+
+  const total = totalResult[0]?.total || 0;
 
   return {
     logs,
@@ -410,87 +148,117 @@ export const fetchUserLogsWithAppInfo = async ({
   };
 };
 
-interface LogSummaryOptions {
-  userId: string;
-  startDate: Date;
-  endDate: Date;
-}
+export const updateLogTTLService = async (newTTLInDays: number): Promise<void> => {
+  const newTTLInSeconds = newTTLInDays * 24 * 60 * 60;
+  const LogModel = mongoose.model('Logs');
+  const collection = LogModel.collection;
+  const indexName = 'ingested_at_1';
 
-interface AllAppsLogSummaryOptions {
-  startDate: Date;
-  endDate: Date;
-}
+  try {
+    await collection.dropIndex(indexName);
+  } catch (error) {
+    if ((error as any).code !== 27) {
+      throw error;
+    }
+  }
 
-export const fetchAllAppsLogSummary = async ({ startDate, endDate }: AllAppsLogSummaryOptions) => {
+  await collection.createIndex({ ingested_at: 1 }, { expireAfterSeconds: newTTLInSeconds });
+};
+
+export const getLogTTLService = async (): Promise<number | null> => {
+  const indexes = await Log.collection.indexes();
+  const ttlIndex = indexes.find((idx) => idx.name === 'ingested_at_1');
+
+  if (!ttlIndex || typeof ttlIndex.expireAfterSeconds !== 'number') {
+    return null;
+  }
+
+  return Math.floor(ttlIndex.expireAfterSeconds / (24 * 60 * 60));
+};
+
+export const exportUserLogsService = async ({
+  userId,
+  limit,
+  sortCriteria,
+  filters,
+}: ExportUserLogsOptions): Promise<string> => {
+  const { logs } = await fetchUserLogsWithAppInfo({
+    userId,
+    page: 1,
+    limit,
+    sortCriteria,
+    filters,
+  });
+
+  const fields = ['timestamp', 'log_type', 'message', 'app_name', 'ingested_at'];
+  const parser = new Parser({ fields });
+  return parser.parse(logs);
+};
+
+export const exportAdminLogsService = async ({
+  limit,
+  sortCriteria,
+  filters,
+}: ExportAdminLogsOptions): Promise<string> => {
+  const { logs } = await fetchPaginatedLogsWithAppInfo({
+    page: 1,
+    limit,
+    sortCriteria,
+    filters,
+  });
+
+  const fields = ['timestamp', 'log_type', 'message', 'app_name', 'ingested_at'];
+  const parser = new Parser({ fields });
+  return parser.parse(logs);
+};
+
+export const getCachedLogSummaryService = async (userId: string) => {
+  const appIds = await getUserAccessibleAppIds(userId);
+
+  if (appIds.length === 0) {
+    return { message: 'User has no app access', data: [] };
+  }
+
+  const summaries = await LogsSummary.find({
+    app_id: { $in: appIds },
+  });
+
+  return { message: 'User summary fetched', data: summaries };
+};
+
+export const getAllCachedLogSummaryService = async () => {
+  return await LogsSummary.find({});
+};
+
+export const refreshLogGraphService = async (): Promise<void> => {
+  await updateLogSummary();
+};
+
+export const fetchAllAppsLogSummary = async (startDate: Date, endDate: Date) => {
   const effectiveStartDate = startDate || new Date(Date.now() - 24 * 60 * 60 * 1000);
   const effectiveEndDate = endDate || new Date();
 
-  const match = {
-    timestamp: { $gte: effectiveStartDate, $lte: effectiveEndDate },
-  };
+  const pipeline = buildLogSummaryAggregation(effectiveStartDate, effectiveEndDate);
+  return await Log.aggregate(pipeline);
+};
 
-  const summary = await Log.aggregate([
-    { $match: match },
-    {
-      $lookup: {
-        from: 'applications',
-        localField: 'app_id',
-        foreignField: '_id',
-        as: 'application',
-      },
-    },
-    { $unwind: '$application' },
+// Helper function to get user's accessible app IDs
+const getUserAccessibleAppIds = async (userId: string): Promise<mongoose.Types.ObjectId[]> => {
+  const userGroups = await UserGroupMembers.find({
+    user_id: userId,
+    is_active: true,
+  }).select('group_id');
 
-    // Count per log_type per app
-    {
-      $group: {
-        _id: {
-          app_id: '$app_id',
-          app_name: '$application.name',
-          log_type: { $toLower: '$log_type' }, // normalize
-        },
-        count: { $sum: 1 },
-      },
-    },
+  const groupIds = userGroups.map((g) => g.group_id as mongoose.Types.ObjectId);
 
-    // Group all log_types under each app
-    {
-      $group: {
-        _id: {
-          app_id: '$_id.app_id',
-          app_name: '$_id.app_name',
-        },
-        logTypePairs: {
-          $push: {
-            k: '$_id.log_type',
-            v: '$count',
-          },
-        },
-        total: { $sum: '$count' },
-      },
-    },
+  if (groupIds.length === 0) {
+    return [];
+  }
 
-    // Flatten logTypePairs into fields
-    {
-      $addFields: {
-        logTypes: { $arrayToObject: '$logTypePairs' },
-      },
-    },
+  const userGroupApps = await UserGroupApplications.find({
+    group_id: { $in: groupIds },
+    is_active: true,
+  }).select('app_id');
 
-    // Final projection with flattened fields
-    {
-      $project: {
-        _id: 0,
-        app_id: '$_id.app_id',
-        app_name: '$_id.app_name',
-        total: 1,
-        debug: '$logTypes.debug',
-        info: '$logTypes.info',
-        warn: '$logTypes.warn',
-        error: '$logTypes.error',
-      },
-    },
-  ]);
-
-  return summary;
+  return userGroupApps.map((g) => g.app_id as mongoose.Types.ObjectId);
 };
