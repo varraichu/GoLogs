@@ -30,7 +30,7 @@ export async function getAppsHealthData(userId: mongoose.Types.ObjectId) {
   const adminGroup = await UserGroup.findOne({ name: 'Admin Group', is_deleted: false });
   const isAdmin =
     adminGroup &&
-    (await UserGroupMember.findOne({ user_id: userId, group_id: adminGroup._id, is_active: true }));
+    (await UserGroupMember.findOne({ user_id: userId, group_id: adminGroup._id, is_active: true, is_removed: false }));
 
   let apps;
   if (isAdmin) {
@@ -40,12 +40,13 @@ export async function getAppsHealthData(userId: mongoose.Types.ObjectId) {
     );
   } else {
     // Non-admins access apps through their user groups
-    const groupIds = await UserGroupMember.find({ user_id: userId, is_active: true }).distinct(
+    const groupIds = await UserGroupMember.find({ user_id: userId, is_active: true, is_removed: false }).distinct(
       'group_id'
     );
     const appIds = await UserGroupApplication.find({
       group_id: { $in: groupIds },
       is_active: true,
+      is_removed: false,
     }).distinct('app_id');
     apps = await Application.find({
       _id: { $in: appIds },
