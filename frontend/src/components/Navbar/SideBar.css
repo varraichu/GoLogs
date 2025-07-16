@@ -5,13 +5,27 @@
 }
 
 /* Optional: If you want smooth transition */
-.selected-red .oj-selected {
-  /* transition: background-color 0.3s, border-left 0.3s; */
-  transition: var(--oj-animation-ease-in);
-}
 .sidebar-avatar-collapsed {
+  transition: var(--oj-animation-ease-in);
   display: flex;
   justify-content: center;
   align-items: center;
   padding: var(--oj-spacing-4x) var(--oj-spacing-3x);
 }
+
+
+:root {
+  --sidebar-expanded-width: 200px;
+  --sidebar-collapsed-width: 72px;
+}
+
+.sidebar-container {
+  width: var(--sidebar-expanded-width);
+  transition: width var(--oj-animation-duration-long) var(--oj-animation-ease-in-out);
+  overflow: hidden;
+}
+
+.sidebar-container.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+

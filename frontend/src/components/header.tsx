@@ -17,9 +17,10 @@ type Props = {
   userLogin: string,
   setIsAuthenticated?: (value: boolean) => void
   setStartOpen: () => void
+  setActiveItem: (str:string)=>void
 };
 
-export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen }: Props) {
+export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen, setActiveItem }: Props) {
   const mediaQueryRef = useRef<MediaQueryList>(window.matchMedia(ResponsiveUtils.getFrameworkQuery("sm-only")!));
 
   const [isSmallWidth, setIsSmallWidth] = useState(mediaQueryRef.current.matches);
@@ -68,7 +69,7 @@ export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen }:
           </oj-c-button>
 
           <h1 class="oj-typography-heading-md oj-text-color-primary">
-            <a href="/dashboard" style="color: inherit; text-decoration: none;">
+            <a href="/dashboard" style="color: inherit; text-decoration: none;" onClick={()=>{setActiveItem("dashboard")}}>
               <span class="oj-text-color-danger">Go</span>Logs
             </a>
           </h1>
