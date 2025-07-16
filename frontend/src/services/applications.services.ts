@@ -110,14 +110,11 @@ class ApplicationsService {
       params.append('groupIds', Array.from(filters.groupIds).join(','));
     }
 
-    console.log('1')
     const response = await fetch(`${this.baseUrl}/applications/?${params.toString()}`, {
       method: 'GET',
       credentials: 'include',
       headers: this.getHeaders(),
     });
-
-    console.log('2')
 
     const data = await response.json();
 
