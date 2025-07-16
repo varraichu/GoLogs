@@ -77,7 +77,7 @@ export const App = registerCustomElement(
     return (
       <ToastProvider>
         <div>
-          <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen}></Header>
+          <Header appName="GoLogs" userLogin={email} setIsAuthenticated={setIsAuthenticated} setStartOpen={setStartOpen} setActiveItem={setActiveItem}></Header>
           <oj-c-drawer-layout class="oj-web-applayout-page oj-flex" startOpened
             startDisplay="reflow">
             <SideBar

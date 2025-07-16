@@ -42,7 +42,10 @@ const DashboardRecentLogs = (props:{setActiveItem:(str:string)=>void}) => {
             Recent Logs
           </h3>
         </div>
-        <oj-button class="oj-flex-item oj-sm-2" label="View All Logs" chroming='callToAction' onojAction={() => { route(`/logs`) }}><span slot="startIcon" class="oj-ux-ico-external-link"></span></oj-button>
+        <oj-button class="oj-flex-item oj-sm-2" label="View All Logs" chroming='callToAction' onojAction={() => { 
+          route(`/logs`)
+          props.setActiveItem("logs")
+           }}><span slot="startIcon" class="oj-ux-ico-external-link"></span></oj-button>
       </div>
       <div>
         <p class=" oj-text-color-secondary">Latest 5 logs across all applications</p>
