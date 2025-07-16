@@ -49,6 +49,7 @@ const Applications = (props: { path?: string }) => {
   const [assignedGroupIds, setAssignedGroupIds] = useState<any>(new Set([]))
   const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]))
   const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null>(null)
+  const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
 
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
   const [editingState, setEditingState] = useState<boolean>(false)
@@ -157,32 +158,45 @@ const Applications = (props: { path?: string }) => {
   };
 
   const openDialog = async (application?: Application) => {
-    if (application) {
-      setEditingState(true)
-      setEditingApplication(application)
-      setName((application.name || '').replace(/\./g, ' '))
-      setDescription(application.description || '')
-      await fetchAllUserGroups()
-      await fetchAppUserGroups(application._id || '')
-      setInitialEditValues({
-        name: application.name || '',
-        description: application.description || '',
-        assignedGroupIds: new Set(appUserGroups.map((g) => String(g))),
-      })
-    } else {
-      setEditingApplication(null)
-      setName('')
-      setDescription('')
-      await fetchAllUserGroups()
-      setInitialEditValues({
-        name: '',
-        description: '',
-        assignedGroupIds: new Set(),
-      })
-      setEditingState(false)
+    setShowDialog(true);
+    setIsLoadingDialogData(true);
+    try {
+      if (application) {
+        setEditingState(true);
+        setEditingApplication(application);
+        setName((application.name || '').replace(/\./g, ' '));
+        setDescription(application.description || '');
+
+        const groups = await applicationsService.fetchAllUserGroups();
+        setUserGroups(groups);
+
+        await fetchAppUserGroups(application._id || '', groups);
+
+        setInitialEditValues({
+          name: application.name || '',
+          description: application.description || '',
+          assignedGroupIds: new Set(appUserGroups.map((g) => String(g))),
+        });
+      } else {
+        setEditingApplication(null);
+        setName('');
+        setDescription('');
+        await fetchAllUserGroups();
+        setInitialEditValues({
+          name: '',
+          description: '',
+          assignedGroupIds: new Set(),
+        });
+        setEditingState(false);
+      }
+    } catch (error) {
+      addNewToast('error', 'Error', String(error));
+    } finally {
+      setIsLoadingDialogData(false);
     }
-    setShowDialog(true)
-  }
+  };
+
+
 
   const hasUnsavedChanges = () => {
     if (!showDialog) return false
@@ -308,30 +322,50 @@ const Applications = (props: { path?: string }) => {
     }
   };
 
-  const fetchAppUserGroups = async (appId: string) => {
-    // setIsLoadingPage(true);
+  // const fetchAppUserGroups = async (appId: string) => {
+  //   // setIsLoadingPage(true);
+  //   try {
+  //     const result = await applicationsService.fetchAppUserGroups(appId);
+  //     const validIds = (result.groupIds || [])
+  //       .map(String)
+  //       .filter((id: string) => userGroups.some((g) => String(g._id) === id));
+
+  //     setAssignedGroupIds(new Set(validIds));
+  //     setInitialAssignedGroupIds(new Set(validIds));
+
+  //     if (setAppUserGroups) {
+  //       const assignedNames = userGroups
+  //         .filter((g) => validIds.includes(String(g._id)))
+  //         .map((g) => g.name);
+  //       setAppUserGroups(assignedNames);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching App usergroups:', error);
+  //     addNewToast('error', 'Failed to fetch app user groups', String(error));
+  //   } finally {
+  //     setIsLoadingPage(false);
+  //   }
+  // };
+
+  const fetchAppUserGroups = async (appId: string, groups: UserGroup[]) => {
     try {
       const result = await applicationsService.fetchAppUserGroups(appId);
       const validIds = (result.groupIds || [])
         .map(String)
-        .filter((id: string) => userGroups.some((g) => String(g._id) === id));
+        .filter((id: string) => groups.some((g) => String(g._id) === id));
 
       setAssignedGroupIds(new Set(validIds));
       setInitialAssignedGroupIds(new Set(validIds));
 
-      if (setAppUserGroups) {
-        const assignedNames = userGroups
-          .filter((g) => validIds.includes(String(g._id)))
-          .map((g) => g.name);
-        setAppUserGroups(assignedNames);
-      }
+      setAppUserGroups(
+        groups.filter((g) => validIds.includes(String(g._id))).map((g) => g.name)
+      );
     } catch (error) {
-      console.error('Error fetching App usergroups:', error);
       addNewToast('error', 'Failed to fetch app user groups', String(error));
-    } finally {
-      setIsLoadingPage(false);
     }
+
   };
+
 
 
   const optionsData = useMemo(() => {
@@ -458,6 +492,7 @@ const Applications = (props: { path?: string }) => {
           userGroups={userGroups}
           assignedGroupIds={assignedGroupIds}
           editingState={editingState}
+          isLoading={isLoadingDialogData}
           onNameChange={setName}
           onDescriptionChange={setDescription}
           onAssignedGroupsChange={handleAssignedGroupsChange}
@@ -465,10 +500,11 @@ const Applications = (props: { path?: string }) => {
           onCancel={() => hasUnsavedChanges() ? setShowDiscardDialog(true) : setShowDialog(false)}
           hasUnsavedChanges={hasUnsavedChanges()}
           onDiscardChanges={() => {
-            setShowDialog(false)
-            setShowDiscardDialog(false)
+            setShowDialog(false);
+            setShowDiscardDialog(false);
           }}
         />
+
       )}
       {showDiscardDialog && (
         <ConfirmDialog

@@ -61,7 +61,9 @@ export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: Appli
       <div class="stats-container">
         <div class="stat-box">
           <div class="oj-typography-body-sm oj-text-color-secondary">Logs</div>
-          <div class="oj-typography-heading-md">{app.logCount.toLocaleString()}</div>
+          <div class="oj-typography-heading-md">
+            {app.is_active ? app.logCount.toLocaleString() : '0'}
+          </div>
         </div>
         <div class="stat-box">
           <div class="oj-typography-body-sm oj-text-color-secondary">Groups</div>
