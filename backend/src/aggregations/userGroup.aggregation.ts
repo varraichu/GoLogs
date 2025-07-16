@@ -133,6 +133,13 @@ export const getPaginatedUserGroupsAggregation = async (options: {
         localField: '_id',
         foreignField: 'group_id',
         as: 'assignedApplications',
+        pipeline: [
+          {
+            $match: {
+              is_removed: false,
+            },
+          },
+        ],
       },
     },
     // Apply all filters (including the app filter)
@@ -162,6 +169,11 @@ export const getPaginatedUserGroupsAggregation = async (options: {
               as: 'applicationsWithName',
               pipeline: [
                 {
+                  $match: {
+                    is_removed: false,
+                  },
+                },
+                {
                   $lookup: {
                     from: 'applications',
                     localField: 'app_id',
@@ -173,6 +185,7 @@ export const getPaginatedUserGroupsAggregation = async (options: {
                   $match: {
                     'applicationDetails.is_active': true,
                     'applicationDetails.is_deleted': false,
+
                   },
                 },
                 {
