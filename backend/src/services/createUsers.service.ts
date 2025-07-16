@@ -1,6 +1,7 @@
 import User, { IUser } from '../models/Users';
 import { getDirectoryClient } from '../utils/googleDirectory.util';
 import logger from '../config/logger';
+import Settings from '../models/Settings';
 
 export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[]> => {
   if (!emails || emails.length === 0) {
@@ -39,10 +40,24 @@ export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[
 
   const newUsersToCreate = validDirectoryEmails.map((email) => ({
     email: email,
-    username: email.split('@')[0],
+    username: email.split('@')[0].split('.').join(' '),
   }));
 
   const createdUsers = await User.insertMany(newUsersToCreate);
+
+  if (createdUsers && createdUsers.length > 0) {
+    // Prepare the default settings for each new user
+    const defaultSettingsToCreate = createdUsers.map((user) => ({
+      user_id: user._id, // Link to the new user's ID
+      error_rate_threshold: 10,
+      warning_rate_threshold: 25,
+      silent_duration: 12,
+    }));
+
+    // Bulk insert the new settings documents
+    await Settings.insertMany(defaultSettingsToCreate);
+    logger.info(`Created default settings for ${createdUsers.length} new users.`);
+  }
 
   return [...existingUsers, ...createdUsers];
 };
