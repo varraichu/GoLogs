@@ -92,7 +92,7 @@ const Dashboard = (props: { path?: string; userId?: string, setActiveItem: (str:
             {/* Recent Logs */}
             <div
                 class="oj-panel oj-panel-shadow-xs oj-sm-padding-4x"
-                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}
             >
                 <DashboardRecentLogs setActiveItem={props.setActiveItem} />
             </div>

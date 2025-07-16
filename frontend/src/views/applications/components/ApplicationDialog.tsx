@@ -14,23 +14,26 @@ import RegExpValidator = require('ojs/ojvalidator-regexp')
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 
 interface ApplicationDialogProps {
-  editingApplication: Application | null
-  name: string
-  description: string
-  userGroups: UserGroup[]
-  assignedGroupIds: any
-  editingState: boolean
-  onNameChange: (value: string) => void
-  onDescriptionChange: (value: string) => void
-  onAssignedGroupsChange: (e: CustomEvent) => void
-  onSave: () => void
-  onCancel: () => void
-  hasUnsavedChanges: boolean
-  onDiscardChanges: () => void
+  editingApplication: Application | null;
+  name: string;
+  description: string;
+  userGroups: UserGroup[];
+  assignedGroupIds: any;
+  editingState: boolean;
+  isLoading: boolean; // <-- Add this
+  onNameChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onAssignedGroupsChange: (e: CustomEvent) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  hasUnsavedChanges: boolean;
+  onDiscardChanges: () => void;
 }
+
 
 export const ApplicationDialog = ({
   editingApplication,
+  isLoading,
   name,
   description,
   userGroups,
@@ -101,10 +104,10 @@ export const ApplicationDialog = ({
             validators={[
               new LengthValidator({ min: 5, max: 20 }),
               new RegExpValidator({
-                pattern: '^[a-zA-Z0-9 _.-]+$',
-                hint: 'Only letters, numbers, spaces, periods (.), underscores (_), and hyphens (-) are allowed.',
+                pattern: '^[a-zA-Z0-9 _-]+$',
+                hint: 'Only letters, numbers, spaces, underscores (_), and hyphens (-) are allowed.',
                 messageSummary: 'Invalid name format.',
-                messageDetail: 'Use only letters, numbers, spaces, periods (.), underscores (_), and hyphens (-).',
+                messageDetail: 'Use only letters, numbers, spaces, underscores (_), and hyphens (-).',
               })
             ]}
           ></oj-c-input-text>
@@ -117,11 +120,10 @@ export const ApplicationDialog = ({
             validators={[
               new LengthValidator({ min: 10, max: 100 }),
               new RegExpValidator({
-                pattern: '^[a-zA-Z0-9 _-]+$',
-                hint: 'Only letters, numbers, spaces, hyphens(-), and underscores (_) are allowed.',
-                messageSummary: 'Invalid name format.',
-                messageDetail:
-                  'Use only letters, numbers, spaces, hyphens(-), and underscores (_).',
+                pattern: "^[a-zA-Z0-9 _.,:;()\\[\\]\"'-]+$",
+                hint: 'Allowed characters: letters, numbers, spaces, hyphens (-), underscores (_), periods (.), commas (,), colons (:), semicolons (;), parentheses (), brackets [], apostrophes (\'), and quotation marks (").',
+                messageSummary: 'Invalid description format.',
+                messageDetail: 'Only use letters, numbers, spaces, and these special characters: - _ . , : ; ( ) [ ] \' "',
               }),
             ]}
           ></oj-c-input-text>
@@ -130,14 +132,23 @@ export const ApplicationDialog = ({
             editingState && (
               <div>
                 <h4 class="oj-typography-heading-sm">Assigned To</h4>
-                <oj-c-select-multiple
-                  label-hint="Assign to user groups"
-                  value={assignedGroupIds}
-                  onvalueChanged={onAssignedGroupsChange}
-                  data={optionsData}
-                  item-text="text"
-                  class="oj-sm-margin-2x-vertical"
-                ></oj-c-select-multiple>
+                <div style="min-height: 38px;">
+                  {isLoading ? (
+                    <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 38px;">
+                      <oj-c-progress-circle value={-1} size="sm"></oj-c-progress-circle>
+                    </div>
+                  ) : (
+                    <oj-c-select-multiple
+                      label-hint="Assign to user groups"
+                      value={assignedGroupIds}
+                      onvalueChanged={onAssignedGroupsChange}
+                      data={optionsData}
+                      item-text="text"
+                      class="oj-sm-margin-2x-vertical"
+                    ></oj-c-select-multiple>
+                  )}
+                </div>
+
               </div>
             )
           }

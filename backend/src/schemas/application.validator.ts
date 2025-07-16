@@ -8,8 +8,8 @@ export const createApplicationSchema = object({
       .max(20, 'Name must not exceed 20 characters')
       .regex(/^[A-Za-z0-9_.-]+$/, 'Only letters, numbers, hyphens and underscores are allowed'),
     description: string()
-      .min(5, 'Description must be at least 5 characters long')
-      .max(50, 'Description must not exceed 50 characters'),
+      .min(5, 'Description must be at least 10 characters long')
+      .max(50, 'Description must not exceed 100 characters'),
   }),
 });
 
@@ -36,8 +36,8 @@ export const updateApplicationSchema = object({
       .regex(/^[A-Za-z0-9_.-]+$/, 'Only letters, numbers, hyphens and underscores are allowed')
       .optional(),
     description: string()
-      .min(5, 'Description must be at least 5 characters long')
-      .max(50, 'Description must not exceed 50 characters')
+      .min(5, 'Description must be at least 10 characters long')
+      .max(50, 'Description must not exceed 100 characters')
       .optional(),
   }).refine((data) => Object.keys(data).length > 0, {
     message: 'Update body cannot be empty',

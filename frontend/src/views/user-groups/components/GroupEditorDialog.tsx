@@ -103,16 +103,27 @@ export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, 
                         </div>
                         {errors.memberEmails && <div class="oj-text-color-danger oj-sm-margin-bottom">{errors.memberEmails}</div>}
                     </div>
-                    <oj-c-select-multiple
-                        id="app-access-dropdown"
-                        label-hint="Application Access"
-                        data={appDataProvider}
-                        item-text="text"
-                        value={stagedAppIds}
-                        onvalueChanged={(e: CustomEvent) => setStagedAppIds(e.detail.value || new Set())}
-                        class="oj-form-control-full-width"
-                        disabled={isAdminGroup}
-                    />
+                    <div>
+                        <oj-label for="user-select-multiple">App Access</oj-label>
+                        <div style="min-height: 38px;">
+                            {isLoading ? (
+                                <div class="oj-flex oj-sm-align-items-center oj-sm-justify-content-center" style="height: 38px;">
+                                    <oj-c-progress-circle value={-1} size="sm"></oj-c-progress-circle>
+                                </div>
+                            ) : (
+                                <oj-c-select-multiple
+                                    id="app-access-dropdown"
+                                    label-hint="Application Access"
+                                    data={appDataProvider}
+                                    item-text="text"
+                                    value={stagedAppIds}
+                                    onvalueChanged={(e: CustomEvent) => setStagedAppIds(e.detail.value || new Set())}
+                                    class="oj-form-control-full-width"
+                                    disabled={isAdminGroup}
+                                />
+                            )}
+                        </div>
+                    </div>
                 </oj-c-form-layout>
             </div>
             <div class="oj-dialog-footer">

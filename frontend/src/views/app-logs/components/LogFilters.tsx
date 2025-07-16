@@ -133,11 +133,19 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
     from: string | undefined = fromDate,
     to: string | undefined = toDate
   ) => {
+    const fromISO = toBackendDateFormat(from);
+    const toISO = toBackendDateFormat(to);
+
+    if (fromISO && toISO && new Date(toISO) < new Date(fromISO)) {
+      addNewToast("error", "Invalid Date Range", "The 'To' date cannot be earlier than the 'From' date.");
+      return;
+    }
+
     onFilterChange({
       apps,
       logTypes,
-      fromDate: toBackendDateFormat(from),
-      toDate: toBackendDateFormat(to),
+      fromDate: fromISO,
+      toDate: toISO,
     });
   };
 
@@ -229,21 +237,19 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
       </div>
 
       {/* To DateTime */}
-      <div class="oj-flex-item oj-sm-flex-1 oj-sm-padding-2x-bottom">
-        <oj-input-date-time
-          value={toDate}
-          onvalueChanged={handleToDateChange}
-          max={localDateTime}
-          min={minDateTime}
-          class="oj-form-control-width-sm"
-          timePicker={{
-            footerLayout: '',
-            timeIncrement: '00:01:00:00'
-          }}
-          label-hint="To"
-          label-edge="inside"
-        />
-      </div>
+      <oj-input-date-time
+        value={toDate}
+        onvalueChanged={handleToDateChange}
+        max={localDateTime}
+        min={fromDate || minDateTime} // 👈 Use selected fromDate as min, else fallback
+        class="oj-form-control-width-sm"
+        timePicker={{
+          footerLayout: '',
+          timeIncrement: '00:01:00:00'
+        }}
+        label-hint="To"
+        label-edge="inside"
+      />
 
       {/* Keep only the Clear button since filters apply automatically */}
       <oj-button
