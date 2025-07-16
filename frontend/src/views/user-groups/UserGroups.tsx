@@ -371,7 +371,11 @@ const UserGroups = (props: { path?: string }) => {
                   .filter(user => user) // ensure not null
                   .map(user => (
                     <li key={user._id}>
-                      {user.username || user.email || 'Unnamed User'}
+                      {(user.username ?? user.email ?? 'Unnamed User')
+                        .split('.')
+                        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                        .join(' ')
+                      }
                     </li>
                   ))}
               </ul>
