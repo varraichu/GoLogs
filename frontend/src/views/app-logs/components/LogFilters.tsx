@@ -57,7 +57,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
     groupIds: [],
     status: 'all',
   });
-  
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 500,
@@ -68,16 +68,16 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('jwt');
-    if (!token) return;
+
 
     try {
       async function fetchRetention() {
         try {
           const response = await fetch('http://localhost:3001/api/logs/get/ttl', {
             method: 'GET',
+            credentials: 'include',
             headers: {
-              'Authorization': `Bearer ${token}`,
+
               'Content-Type': 'application/json',
             },
           });
@@ -95,7 +95,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
 
       fetchRetention();
     } catch (err) {
-      console.error('Invalid JWT token:', err);
+      console.error('An error occurred', err);
     }
   }, []);
 
