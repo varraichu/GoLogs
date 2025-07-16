@@ -1,4 +1,5 @@
 // --- Interfaces (can be moved to a types.ts file) ---
+import config from '../config/config'
 export interface User {
     _id: string;
     username: string;
@@ -47,7 +48,7 @@ export const fetchUserGroups = async (filters: { search: string; status: string;
     if (filters.appIds.length > 0) {
         params.append('appIds', filters.appIds.join(','));
     }
-    const response = await fetch(`http://localhost:3001/api/userGroup/info?${params.toString()}`,
+    const response = await fetch(`${config.API_BASE_URL}/userGroup/info?${params.toString()}`,
         {
             credentials: 'include',
             headers: {
@@ -60,7 +61,7 @@ export const fetchUserGroups = async (filters: { search: string; status: string;
 };
 
 export const fetchDirectoryUsers = async (): Promise<{ value: string; text: string; }[]> => {
-    const response = await fetch(`http://localhost:3001/api/directory/search`,
+    const response = await fetch(`${config.API_BASE_URL}/directory/search`,
         {
             credentials: 'include',
             headers: {
@@ -74,7 +75,7 @@ export const fetchDirectoryUsers = async (): Promise<{ value: string; text: stri
 };
 
 export const fetchApplications = async (): Promise<Application[]> => {
-    const response = await fetch('http://localhost:3001/api/applications', {
+    const response = await fetch(`${config.API_BASE_URL}/applications`, {
         method: 'GET', credentials: 'include', headers: {
             'Content-Type': 'application/json',
         }
@@ -84,7 +85,7 @@ export const fetchApplications = async (): Promise<Application[]> => {
 };
 
 export const fetchGroupUsers = async (groupId: string): Promise<User[]> => {
-    const response = await fetch(`http://localhost:3001/api/userGroup/${groupId}/users`, {
+    const response = await fetch(`${config.API_BASE_URL}/userGroup/${groupId}/users`, {
         credentials: 'include', headers: {
             'Content-Type': 'application/json',
         }
@@ -95,7 +96,7 @@ export const fetchGroupUsers = async (groupId: string): Promise<User[]> => {
 
 export const saveUserGroup = async (groupData: any, editingGroup: UserGroup | null) => {
     const isEditing = !!editingGroup;
-    const url = isEditing ? `http://localhost:3001/api/userGroup/${editingGroup?._id}` : 'http://localhost:3001/api/userGroup/';
+    const url = isEditing ? `${config.API_BASE_URL}/userGroup/${editingGroup?._id}` : `${config.API_BASE_URL}/userGroup/`;
     const method = isEditing ? 'PATCH' : 'POST';
 
     console.log(url)
@@ -113,7 +114,7 @@ export const saveUserGroup = async (groupData: any, editingGroup: UserGroup | nu
 };
 
 export const updateGroupAppAccess = async (groupId: string, appIds: string[]) => {
-    const response = await fetch(`http://localhost:3001/api/userGroup/${groupId}/app-access`, {
+    const response = await fetch(`${config.API_BASE_URL}/userGroup/${groupId}/app-access`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {
@@ -125,7 +126,7 @@ export const updateGroupAppAccess = async (groupId: string, appIds: string[]) =>
 };
 
 export const deleteUserGroup = async (groupId: string) => {
-    const response = await fetch(`http://localhost:3001/api/userGroup/${groupId}`, {
+    const response = await fetch(`${config.API_BASE_URL}/userGroup/${groupId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -140,7 +141,7 @@ export const deleteUserGroup = async (groupId: string) => {
 };
 
 export const toggleGroupStatus = async (groupId: string, is_active: boolean) => {
-    const response = await fetch(`http://localhost:3001/api/userGroup/status/${groupId}`, {
+    const response = await fetch(`${config.API_BASE_URL}/userGroup/status/${groupId}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {

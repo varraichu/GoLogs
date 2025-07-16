@@ -1,5 +1,5 @@
 // File: src/services/logs.services.ts
-
+import config from '../config/config'
 export interface LogEntry {
   _id: string;
   app_id: string;
@@ -39,7 +39,7 @@ export interface LogFilters {
 }
 
 class LogsService {
-  private baseUrl = 'http://localhost:3001/api';
+  private baseUrl = `${config.API_BASE_URL}`;
 
   private getHeaders() {
     return {

@@ -15,6 +15,7 @@ import { SideBar } from './Navbar/SideBar'
 import { Header } from './header'
 import UserApplications from "../views/user-applications/UserApplications";
 import { ToastProvider } from '../context/ToastContext'
+import config from '../config/config'
 
 type Props = {
   appName?: string
@@ -40,7 +41,7 @@ export const App = registerCustomElement(
       // Remove all token parsing logic
       const fetchUser = async () => {
         try {
-          const res = await fetch('http://localhost:3001/api/oauth/me', {
+          const res = await fetch(`${config.API_BASE_URL}/oauth/me`, {
             method: 'GET',
             credentials: 'include' // 🔥 Required to send cookies
           })

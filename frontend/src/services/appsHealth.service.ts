@@ -1,3 +1,4 @@
+import config from '../config/config';
 export interface CriticalAppSummary {
     app_id: string
     app_name: string
@@ -29,7 +30,7 @@ export interface AppsHealthResponse {
 
 export const fetchAppsHealth = async (userId: string): Promise<AppsHealthResponse> => {
 
-    const response = await fetch(`http://localhost:3001/api/appsHealth/summary?userId=${userId}`, {
+    const response = await fetch(`${config.API_BASE_URL}/appsHealth/summary?userId=${userId}`, {
         method: 'GET',
         credentials: 'include',
         headers: {

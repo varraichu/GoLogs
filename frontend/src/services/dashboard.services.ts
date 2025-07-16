@@ -1,3 +1,4 @@
+import config from '../config/config'
 export interface AppLogSummary {
     _id: string;
     app_id: string;
@@ -37,7 +38,7 @@ export interface Application {
 }
 
 class DashboardService {
-    private baseUrl = 'http://localhost:3001/api';
+    private baseUrl = `${config.API_BASE_URL}`;
 
     private getHeaders() {
         return {
