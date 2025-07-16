@@ -8,7 +8,7 @@ export interface Application {
   groupCount: number;
   groupNames: string[];
   logCount: number;
-  health_status: 'healthy' | 'warning' | 'critical'; 
+  health_status: 'healthy' | 'warning' | 'critical';
 }
 
 export interface UserGroup {
@@ -58,24 +58,29 @@ export interface ApplicationsResponse {
 class ApplicationsService {
   private baseUrl = 'http://localhost:3001/api'
 
-  private getAuthHeaders() {
-    const token = localStorage.getItem('jwt')
+  private getHeaders() {
+
     return {
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     }
   }
 
-  private getUserIdFromToken(): string | null {
-    const token = localStorage.getItem('jwt');
-    if (!token) return null;
-
+  private async getUserIdFromSession(): Promise<string | null> {
     try {
-      const base64Payload = token.split('.')[1];
-      const payload = JSON.parse(atob(base64Payload));
-      return payload._id || null;
-    } catch (e) {
-      console.error('Error decoding JWT:', e);
+      const res = await fetch('http://localhost:3001/api/oauth/me', {
+        method: 'GET',
+        credentials: 'include', // 🔐 Ensures cookies are sent with the request
+      });
+
+      if (!res.ok) {
+        console.error('Failed to fetch user info');
+        return null;
+      }
+
+      const data = await res.json();
+      return data.user?._id || null;
+    } catch (err) {
+      console.error('Error fetching user session:', err);
       return null;
     }
   }
@@ -105,10 +110,14 @@ class ApplicationsService {
       params.append('groupIds', Array.from(filters.groupIds).join(','));
     }
 
+    console.log('1')
     const response = await fetch(`${this.baseUrl}/applications/?${params.toString()}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     });
+
+    console.log('2')
 
     const data = await response.json();
 
@@ -120,14 +129,15 @@ class ApplicationsService {
   }
 
   async fetchUserApplications(): Promise<ApplicationsResponse> {
-    const userId = this.getUserIdFromToken();
+    const userId = await this.getUserIdFromSession();
     if (!userId) {
       throw new Error('User ID not found in token');
     }
 
     const response = await fetch(`${this.baseUrl}/applications/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     });
 
     const data = await response.json();
@@ -143,16 +153,16 @@ class ApplicationsService {
     filters: { search?: string; groupIds?: string[]; status?: string },
     pagination: { page: number; limit: number }
   ): Promise<ApplicationsResponse> {
-    const token = localStorage.getItem('jwt');
-    if (!token) {
-      throw new Error('User not authenticated');
-    }
+    const res = await fetch('http://localhost:3001/api/oauth/me', {
+      method: 'GET',
+      credentials: 'include', // 🔐 Ensures cookies are sent with the request
+    });
+
+    const data = await res.json();
 
     try {
-      const base64Payload = token.split('.')[1];
-      const payload = JSON.parse(atob(base64Payload));
 
-      if (payload.isAdmin) {
+      if (data.user.isAdmin) {
         return await this.fetchApplications(filters, pagination);
       } else {
         return await this.fetchUserApplications();
@@ -169,7 +179,8 @@ class ApplicationsService {
   async createApplication(applicationData: CreateApplicationData): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify(applicationData),
     })
 
@@ -189,7 +200,8 @@ class ApplicationsService {
   async updateApplication(appId: string, applicationData: UpdateApplicationData): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/${appId}`, {
       method: 'PATCH',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify(applicationData),
     })
 
@@ -209,7 +221,8 @@ class ApplicationsService {
   async deleteApplication(appId: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/${appId}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     const data = await response.json().catch(() => ({}))
@@ -227,7 +240,8 @@ class ApplicationsService {
   async toggleApplicationStatus(appId: string, isActive: boolean): Promise<any> {
     const response = await fetch(`${this.baseUrl}/applications/status/${appId}`, {
       method: 'PATCH',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify({ is_active: isActive }),
     })
 
@@ -244,7 +258,8 @@ class ApplicationsService {
   async fetchAllUserGroups(): Promise<UserGroup[]> {
     const response = await fetch(`${this.baseUrl}/userGroup/`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     const data = await response.json()
@@ -262,7 +277,8 @@ class ApplicationsService {
   async fetchAppUserGroups(appId: string): Promise<UserGroupsResponse> {
     const response = await fetch(`${this.baseUrl}/assignGroup/${appId}/user-groups`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     const data = await response.json()
@@ -280,7 +296,8 @@ class ApplicationsService {
   async unassignUserGroup(appId: string, groupId: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/assignGroup/${appId}/user-groups/${groupId}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
     })
 
     if (!response.ok) {
@@ -296,7 +313,8 @@ class ApplicationsService {
 
     const response = await fetch(`${this.baseUrl}/assignGroup/${appId}/user-groups`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
+      headers: this.getHeaders(),
       body: JSON.stringify({ groupIds }),
     })
 

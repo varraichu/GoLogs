@@ -16,7 +16,6 @@ export interface SummaryResponse {
     data: AppLogSummary[];
 }
 
-
 export interface CriticalLogs {
     totalLogs: number;
     errorLogs: number;
@@ -40,35 +39,28 @@ export interface Application {
 class DashboardService {
     private baseUrl = 'http://localhost:3001/api';
 
-    private getAuthHeaders() {
-        const token = localStorage.getItem('jwt');
+    private getHeaders() {
         return {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         };
     }
 
-    private parseJwt(token: string | null): any {
-        if (!token) return null;
-        try {
-            const base64Payload = token.split('.')[1];
-            const jsonPayload = atob(base64Payload);
-            return JSON.parse(jsonPayload);
-        } catch (err) {
-            console.error('Error decoding token', err);
-            return null;
-        }
-    }
+    /** 🔐 Get user info from backend using cookie */
+    private async getUser(): Promise<{ _id: string; isAdmin: boolean }> {
+        const res = await fetch(`${this.baseUrl}/oauth/me`, {
+            credentials: 'include',
+        });
 
-    // Inside DashboardService class
-
-    public async fetchLogSummary(): Promise<SummaryResponse> {
-        const token = localStorage.getItem('jwt');
-        const user = this.parseJwt(token);
-
-        if (!user?._id) {
+        if (!res.ok) {
             throw new Error('User not authenticated');
         }
+
+        const data = await res.json();
+        return data.user;
+    }
+
+    public async fetchLogSummary(): Promise<SummaryResponse> {
+        const user = await this.getUser();
 
         const endpoint = user.isAdmin
             ? `${this.baseUrl}/logs/admin-cached-summary/`
@@ -76,7 +68,8 @@ class DashboardService {
 
         const res = await fetch(endpoint, {
             method: 'GET',
-            headers: this.getAuthHeaders(),
+            credentials: 'include',
+            headers: this.getHeaders(),
         });
 
         const data = await res.json();
@@ -89,18 +82,12 @@ class DashboardService {
     }
 
     public async refreshLogSummary(): Promise<SummaryResponse> {
-        const token = localStorage.getItem('jwt');
-        const user = this.parseJwt(token);
-
-        if (!user?._id) {
-            throw new Error('User not authenticated');
-        }
-
-        const endpoint = `${this.baseUrl}/logs/refresh-graph/`
+        const endpoint = `${this.baseUrl}/logs/refresh-graph/`;
 
         const res = await fetch(endpoint, {
             method: 'GET',
-            headers: this.getAuthHeaders(),
+            credentials: 'include',
+            headers: this.getHeaders(),
         });
 
         const data = await res.json();
@@ -112,14 +99,8 @@ class DashboardService {
         return data;
     }
 
-    public async fetchApplications(): Promise<{ applications: Application[], userId: string }> {
-        const token = localStorage.getItem('jwt');
-        const user = this.parseJwt(token);
-
-        if (!user?._id) {
-            throw new Error('User not authenticated');
-        }
-
+    public async fetchApplications(): Promise<{ applications: Application[]; userId: string }> {
+        const user = await this.getUser();
         const { _id: userId, isAdmin } = user;
 
         let rawApplications: Application[] = [];
@@ -129,11 +110,13 @@ class DashboardService {
             const [appsRes, userRes] = await Promise.all([
                 fetch(`${this.baseUrl}/applications`, {
                     method: 'GET',
-                    headers: this.getAuthHeaders(),
+                    credentials: 'include',
+                    headers: this.getHeaders(),
                 }),
                 fetch(`${this.baseUrl}/applications/user/${userId}`, {
                     method: 'GET',
-                    headers: this.getAuthHeaders(),
+                    credentials: 'include',
+                    headers: this.getHeaders(),
                 }),
             ]);
 
@@ -150,7 +133,8 @@ class DashboardService {
         } else {
             const res = await fetch(`${this.baseUrl}/applications/${userId}`, {
                 method: 'GET',
-                headers: this.getAuthHeaders(),
+                credentials: 'include',
+                headers: this.getHeaders(),
             });
 
             const data = await res.json();
@@ -174,13 +158,11 @@ class DashboardService {
     }
 
     private async fetchCriticalLogs(applications: Application[]): Promise<Application[]> {
-        const token = localStorage.getItem('jwt');
-        if (!token) return applications;
-
         const updatedApps = await Promise.all(applications.map(async (app) => {
             try {
                 const res = await fetch(`${this.baseUrl}/applications/logs/critical/${app._id}`, {
-                    headers: this.getAuthHeaders(),
+                    credentials: 'include',
+                    headers: this.getHeaders(),
                 });
 
                 if (!res.ok) throw new Error(`Failed to fetch logs for app ${app._id}`);

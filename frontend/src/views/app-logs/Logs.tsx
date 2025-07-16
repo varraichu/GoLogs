@@ -90,13 +90,11 @@ const Logs = (props: { path?: string }) => {
       setIsExporting(true)
       setExportDialog(false) // close the dialog first (or keep if async behavior preferred)
 
-      const url = logsService.getExportUrl(pagination.total, filters, sortCriteria)
+      const url = await logsService.getExportUrl(pagination.total, filters, sortCriteria)
 
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('jwt')}`,
-        },
+        credentials: 'include',
       })
 
       if (!response.ok) {

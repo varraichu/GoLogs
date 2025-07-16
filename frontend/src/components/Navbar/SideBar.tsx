@@ -36,7 +36,7 @@ export function SideBar({
   collapsed,
   setActiveItem,
 }: Props) {
-  
+
 
   useEffect(() => {
     const p = window.location.pathname
@@ -49,12 +49,18 @@ export function SideBar({
     route(path === '/' ? '/dashboard' : path)
   }
 
-  const signOut = (e: Event) => {
+  const handleSignOut = async (e: Event) => {
     e.preventDefault()
-    localStorage.removeItem('jwt')
+
+    await fetch('http://localhost:3001/api/oauth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+
     setIsAuthenticated?.(false)
-    window.history.replaceState({}, '', `${window.location.origin}/`)
+    window.history.replaceState({}, '', window.location.origin + '/')
   }
+
 
   return (
     <div
@@ -66,27 +72,27 @@ export function SideBar({
         <oj-avatar
           size="xs"
           src={pictureUrl || undefined}
-          initials={!pictureUrl && username ? username[0] : undefined} 
+          initials={!pictureUrl && username ? username[0] : undefined}
           // shape='circle'
           class="oj-md-padding-4x-vertical oj-md-padding-3x-horizontal oj-align-items-center oj-flex-item sidebar-avatar-collapsed"
         />
       ) : (
         <div class="oj-flex oj-align-items-center oj-md-padding-2x">
-        <oj-avatar
-          size="sm"
-          class="oj-sm-margin-end-5x oj-sm-padding-2x "
-          src={pictureUrl || undefined}
-          initials={!pictureUrl && username ? username[0] : undefined}
-          slot="leading"
-        ></oj-avatar>
-        <div style="display: flex; flex-direction: column;" class="oj-sm-gap-1x oj-sm-padding-2x">
-          <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[0]}</div>
-          <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[1]}</div>
-          <div class="oj-typography-subbody-sm oj-text-color-secondary">
-            {isAdmin ? 'Admin' : 'User'}
+          <oj-avatar
+            size="sm"
+            class="oj-sm-margin-end-5x oj-sm-padding-2x "
+            src={pictureUrl || undefined}
+            initials={!pictureUrl && username ? username[0] : undefined}
+            slot="leading"
+          ></oj-avatar>
+          <div style="display: flex; flex-direction: column;" class="oj-sm-gap-1x oj-sm-padding-2x">
+            <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[0]}</div>
+            <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[1]}</div>
+            <div class="oj-typography-subbody-sm oj-text-color-secondary">
+              {isAdmin ? 'Admin' : 'User'}
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       <li class="oj-navigationlist-category-divider"></li>

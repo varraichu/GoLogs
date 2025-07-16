@@ -40,7 +40,7 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   const groupIds = (req.query.groupIds as string)?.split(',') || [];
   const status = req.query.status as 'active' | 'inactive' | undefined;
   const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
+  const limit = parseInt(req.query.limit as string) || 99;
 
   const { applications, pagination } = await getAllApplicationsService({
     search,
