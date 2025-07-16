@@ -269,6 +269,11 @@ export const getUserGroupMembersAggregation = async (groupId: string) => {
       },
     },
     {
+      $match: {
+        'user.0': { $exists: true },
+      },
+    },
+    {
       $project: {
         _id: 0,
         user: { $arrayElemAt: ['$user', 0] },
