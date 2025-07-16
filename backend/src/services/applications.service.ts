@@ -9,6 +9,7 @@ import {
   getDetailedApplicationsPipeline,
   getAppCriticalLogsPipeline,
 } from '../aggregations/applications.aggregation';
+import Logs from '../models/Logs';
 
 export interface Application {
   _id: string;
@@ -231,7 +232,7 @@ export const toggleApplicationStatusService = async (appId: string, is_active: b
 
 export const getAppCriticalLogsService = async (appId: string) => {
   const pipeline = getAppCriticalLogsPipeline(appId);
-  const logStats = await Applications.aggregate(pipeline);
+  const logStats = await Logs.aggregate(pipeline); 
 
   const totalLogs = logStats.reduce((sum: number, log: any) => sum + log.count, 0);
 
