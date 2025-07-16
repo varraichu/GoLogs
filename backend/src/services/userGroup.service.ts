@@ -1,114 +1,23 @@
-import mongoose, { PipelineStage } from 'mongoose';
-import UserGroup from '../models/UserGroups'; // Assuming paths are correct
-import UserGroupApplications from '../models/UserGroupApplications';
-import UserGroups from '../models/UserGroups';
+import mongoose from 'mongoose';
+import config from 'config';
+import logger from '../config/logger';
+import UserGroup from '../models/UserGroups';
+import UserGroupMember from '../models/UserGroupMembers';
+import UserGroupApplication from '../models/UserGroupApplications';
+import User from '../models/Users';
+import { findOrCreateUsersByEmail } from './createUsers.service';
+import {
+  getDetailedUserGroupsAggregation,
+  getPaginatedUserGroupsAggregation,
+  getUserGroupMembersAggregation,
+} from '../aggregations/userGroup.aggregation';
+import { CreateUserGroupInput, UpdateUserGroupInput } from '../schemas/userGroup.validator';
 
-/**
- * This service file abstracts complex database queries away from the controller.
- * It's responsible for aggregating detailed information about user groups.
- */
-
-/**
- * Fetches detailed information for a given list of user group IDs.
- * It calculates the number of active users and applications for each group.
- * @param groupIds - An array of mongoose.Types.ObjectId for the groups to fetch.
- * @returns A promise that resolves to an array of detailed user group objects.
- */
-export const getDetailedUserGroups = async (groupIds: mongoose.Types.ObjectId[]) => {
-  const detailedGroups = await UserGroup.aggregate([
-    {
-      $match: {
-        _id: { $in: groupIds },
-        is_deleted: false,
-      },
-    },
-    // 2. Lookup active members from the UserGroupMembers collection (this part is correct)
-    {
-      $lookup: {
-        from: 'usergroupmembers',
-        localField: '_id',
-        foreignField: 'group_id',
-        as: 'members',
-        pipeline: [{ $match: { is_active: true, is_removed: false } }],
-      },
-    },
-    // 3. Perform a multi-stage lookup to get application names
-    {
-      $lookup: {
-        from: 'usergroupapplications', // FIX: Corrected collection name typo
-        localField: '_id',
-        foreignField: 'group_id',
-        as: 'assignedApplications',
-        // This pipeline will run on the 'usergroupapplications' collection
-        pipeline: [
-          // {
-          //   $match: {
-          //     is_active: true,
-          //     is_removed: false,
-          //   },
-          // },
-          // First, join with the 'applications' collection to get details
-          {
-            $lookup: {
-              from: 'applications',
-              localField: 'app_id',
-              foreignField: '_id',
-              as: 'applicationDetails',
-            },
-          },
-          // We only want active applications
-          {
-            $match: {
-              'applicationDetails.is_active': true,
-              'applicationDetails.is_deleted': false,
-            },
-          },
-          // Reshape the document to only include the application name
-          {
-            $project: {
-              _id: 0, // Exclude the id of the link table
-              name: { $arrayElemAt: ['$applicationDetails.name', 0] },
-            },
-          },
-        ],
-      },
-    },
-    // 4. Project the final shape of the output
-    {
-      $project: {
-        _id: 1,
-        name: 1,
-        description: 1,
-        created_at: 1,
-        is_active: 1,
-        userCount: { $size: '$members' },
-        // FIX: Use the result of our new lookup
-        applicationCount: {
-          $cond: {
-            if: { $eq: ['$is_active', true] },
-            then: { $size: '$assignedApplications' },
-            else: 0,
-          },
-        },
-        applicationNames: {
-          $cond: {
-            if: { $eq: ['$is_active', true] },
-            then: '$assignedApplications.name',
-            else: [],
-          },
-        },
-      },
-    },
-  ]);
-
-  return detailedGroups;
-};
-
-export const assignApplicationsToGroup = async (groupId: string, appIds: string[]) => {
-  const groupExists = await UserGroups.exists({ _id: groupId });
+export const updateUserGroupAppAccessService = async (groupId: string, appIds: string[]) => {
+  const groupExists = await UserGroup.exists({ _id: groupId });
   if (!groupExists) throw new Error('Group not found');
 
-  await UserGroupApplications.deleteMany({ group_id: groupId });
+  await UserGroupApplication.deleteMany({ group_id: groupId });
 
   const bulkInsert = appIds.map((appId) => ({
     group_id: new mongoose.Types.ObjectId(groupId),
@@ -117,151 +26,204 @@ export const assignApplicationsToGroup = async (groupId: string, appIds: string[
   }));
 
   if (bulkInsert.length > 0) {
-    await UserGroupApplications.insertMany(bulkInsert);
+    await UserGroupApplication.insertMany(bulkInsert);
   }
 };
 
-export const getPaginatedUserGroups = async (options: {
+export const createUserGroupService = async (data: CreateUserGroupInput) => {
+  const { name, description, memberEmails } = data;
+
+  const existingGroup = await UserGroup.findOne({
+    name,
+    is_deleted: false,
+  });
+
+  if (existingGroup) {
+    return { error: 'User group with the same name already exists' };
+  }
+
+  const newGroup = await UserGroup.create({ name, description, is_active: true });
+
+  const usersToAdd = await findOrCreateUsersByEmail(memberEmails);
+
+  if (usersToAdd.length > 0) {
+    const memberDocs = usersToAdd.map((user) => ({ user_id: user._id, group_id: newGroup._id }));
+    await UserGroupMember.insertMany(memberDocs);
+  }
+
+  const detailedGroup = await getDetailedUserGroupsAggregation([
+    newGroup._id as mongoose.Types.ObjectId,
+  ]);
+
+  return { data: detailedGroup[0] };
+};
+
+export const getAllUserGroupsService = async () => {
+  const groups = await UserGroup.find({ is_deleted: false }).select('_id');
+  const groupIds = groups.map((g) => g._id as mongoose.Types.ObjectId);
+
+  if (groupIds.length === 0) {
+    return [];
+  }
+
+  const detailedGroups = await getDetailedUserGroupsAggregation(groupIds);
+  return detailedGroups;
+};
+
+export const getAllUserGroupInfoService = async (options: {
   search: string;
   status: string;
   page: number;
   limit: number;
-  appIds: string[]; // Add appIds to options type
+  appIds: string[];
 }) => {
-  const { search, status, page, limit, appIds } = options;
-  const skip = (page - 1) * limit;
+  return await getPaginatedUserGroupsAggregation(options);
+};
 
-  const matchStage: any = { is_deleted: false };
-  if (search) {
-    const searchRegex = new RegExp(search, 'i');
-    matchStage.$or = [{ name: searchRegex }, { description: searchRegex }];
-  }
-  if (status === 'active') {
-    matchStage.is_active = true;
-  } else if (status === 'inactive') {
-    matchStage.is_active = false;
+export const getUserGroupByIdService = async (groupId: string) => {
+  const detailedGroup = await getDetailedUserGroupsAggregation([
+    new mongoose.Types.ObjectId(groupId),
+  ]);
+
+  if (!detailedGroup || detailedGroup.length === 0) {
+    return { error: 'User group not found' };
   }
 
-  // New logic to filter by application IDs
-  if (appIds && appIds.length > 0) {
-    // Convert string IDs to Mongoose ObjectIds for matching
-    const appObjectIds = appIds.map((id) => new mongoose.Types.ObjectId(id));
-    matchStage['assignedApplications.app_id'] = { $in: appObjectIds };
+  return { data: detailedGroup[0] };
+};
+
+export const updateUserGroupService = async (
+  groupId: string,
+  updateData: UpdateUserGroupInput,
+  userEmail?: string
+) => {
+  const { name, description, addMemberEmails = [], removeMemberEmails = [] } = updateData;
+
+  const group = await UserGroup.findById(groupId);
+  if (!group || group.is_deleted) {
+    return { error: 'User group not found' };
   }
 
-  // We need to perform the application lookup BEFORE the main $match stage
-  // if we want to filter by application.
-  const aggregationPipeline: PipelineStage[] = [
-    // 1. Lookup applications first
-    {
-      $lookup: {
-        from: 'usergroupapplications',
-        localField: '_id',
-        foreignField: 'group_id',
-        as: 'assignedApplications',
-      },
-    },
-    // 2. Apply all filters (including the new app filter)
-    { $match: matchStage },
-    // 3. Facet for pagination and detailed lookups
-    {
-      $facet: {
-        paginatedResults: [
-          { $sort: { created_at: 1 } },
-          { $skip: skip },
-          { $limit: limit },
-          {
-            $lookup: {
-              from: 'usergroupmembers',
-              localField: '_id',
-              foreignField: 'group_id',
-              as: 'members',
-              pipeline: [{ $match: { is_active: true } }],
-            },
-          },
-          // The application lookup is already done, but we need to refine it to get names
-          {
-            $lookup: {
-              from: 'usergroupapplications',
-              localField: '_id',
-              foreignField: 'group_id',
-              as: 'applicationsWithName', // Use a different name to avoid conflicts
-              pipeline: [
-                {
-                  $lookup: {
-                    from: 'applications',
-                    localField: 'app_id',
-                    foreignField: '_id',
-                    as: 'applicationDetails',
-                  },
-                },
-                {
-                  $match: {
-                    'applicationDetails.is_active': true,
-                    'applicationDetails.is_deleted': false,
-                  },
-                },
-                {
-                  $project: {
-                    _id: 0,
-                    name: { $arrayElemAt: ['$applicationDetails.name', 0] },
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              name: 1,
-              description: 1,
-              created_at: 1,
-              is_active: 1,
-              userCount: { $size: '$members' },
-              applicationCount: {
-                $cond: {
-                  if: { $eq: ['$is_active', true] },
-                  then: { $size: '$applicationsWithName' },
-                  else: 0,
-                },
-              },
-              applicationNames: {
-                $cond: {
-                  if: { $eq: ['$is_active', true] },
-                  then: '$applicationsWithName.name',
-                  else: [],
-                },
-              },
-            },
-          },
-        ],
-        totalCount: [{ $count: 'total' }],
-      },
-    },
-  ];
+  const ADMIN_GROUP_NAME = config.get<string>('admin_group_name');
+  const isSuperAdminGroup = group.name === ADMIN_GROUP_NAME;
 
-  const results = await UserGroup.aggregate(aggregationPipeline);
+  // Prevent renaming super admin group
+  if (isSuperAdminGroup) {
+    if (name && name !== ADMIN_GROUP_NAME) {
+      return { error: `The '${ADMIN_GROUP_NAME}' group cannot be renamed.` };
+    }
 
-  if (!results[0] || results[0].paginatedResults.length === 0) {
+    if (removeMemberEmails.length > 0) {
+      const flag = removeMemberEmails.filter((email) => email === userEmail);
+
+      if (flag.length > 0) {
+        return { error: 'Cannot remove yourself from Admin Group.' };
+      }
+    }
+  }
+
+  if (name && name !== group.name) {
+    const existingGroup = await UserGroup.findOne({ name, is_deleted: false });
+    if (existingGroup) {
+      return { error: 'An active user group with that name already exists.' };
+    }
+  }
+
+  // Update basic fields
+  group.name = name || group.name;
+  group.description = description || group.description;
+  await group.save();
+
+  // Add members
+  if (addMemberEmails.length > 0) {
+    const usersToAdd = await findOrCreateUsersByEmail(addMemberEmails);
+    for (const user of usersToAdd) {
+      const existing = await UserGroupMember.findOne({ user_id: user._id, group_id: group._id });
+      if (existing) {
+        if (!existing.is_active) {
+          existing.is_active = true;
+          existing.is_removed = false;
+          await existing.save();
+        }
+      } else {
+        await UserGroupMember.create({
+          user_id: user._id,
+          group_id: group._id,
+          is_active: true,
+          is_removed: false,
+        });
+      }
+    }
+  }
+
+  // Remove members
+  if (removeMemberEmails.length > 0) {
+    const usersToRemove = await User.find({ email: { $in: removeMemberEmails } });
+    const userIdsToRemove: mongoose.Types.ObjectId[] = usersToRemove.map(
+      (u) => u._id as mongoose.Types.ObjectId
+    );
+
+    await UserGroupMember.updateMany(
+      { user_id: { $in: userIdsToRemove }, group_id: group._id },
+      { is_active: false, is_removed: true }
+    );
+  }
+
+  // Return detailed group info
+  const detailedGroup = await getDetailedUserGroupsAggregation([
+    group._id as mongoose.Types.ObjectId,
+  ]);
+  return { data: detailedGroup[0] };
+};
+
+export const deleteUserGroupService = async (groupId: string) => {
+  const group = await UserGroup.findById(groupId);
+
+  if (!group || group.is_deleted) {
+    return { error: 'User group not found' };
+  }
+
+  if (group.name === config.get<string>('admin_group_name')) {
     return {
-      groups: [],
-      pagination: { total: 0, page, limit, totalPages: 0, hasNextPage: false, hasPrevPage: false },
+      error: `The '${config.get<string>('admin_group_name')}' group is protected and cannot be deleted.`,
     };
   }
 
-  const groups = results[0].paginatedResults;
-  const totalGroups = results[0].totalCount.length > 0 ? results[0].totalCount[0].total : 0;
-  const totalPages = Math.ceil(totalGroups / limit);
+  group.is_deleted = true;
+  group.is_active = false;
+  await group.save();
+  await UserGroupMember.updateMany({ group_id: groupId }, { is_active: false });
+  await UserGroupApplication.updateMany({ group_id: groupId }, { is_active: false });
 
-  return {
-    groups,
-    pagination: {
-      total: totalGroups,
-      page,
-      limit,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
-    },
-  };
+  return { success: true };
 };
+
+export const toggleGroupStatusService = async (groupId: string, is_active: boolean) => {
+  const group = await UserGroup.findById(groupId);
+
+  if (!group || group.is_deleted || group.name === config.get('admin_group_name')) {
+    return { error: 'User Group not found' };
+  }
+
+  group.is_active = is_active;
+  await group.save();
+  await UserGroupApplication.updateMany(
+    { group_id: groupId, is_removed: false },
+    { is_active: is_active }
+  );
+  await UserGroupMember.updateMany(
+    { group_id: groupId, is_removed: false },
+    { is_active: is_active }
+  );
+
+  return { message: `User group successfully set to ${is_active ? 'Active' : 'Inactive'}` };
+};
+
+export const userGroupUsersService = async (groupId: string) => {
+  return await getUserGroupMembersAggregation(groupId);
+};
+
+// Legacy exports for backward compatibility
+export const getDetailedUserGroups = getDetailedUserGroupsAggregation;
+export const assignApplicationsToGroup = updateUserGroupAppAccessService;
+export const getPaginatedUserGroups = getPaginatedUserGroupsAggregation;
