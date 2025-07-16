@@ -54,16 +54,23 @@ const UserApplications = (props: { path?: string }) => {
     }, []);
 
     useEffect(() => {
-        const token = localStorage.getItem('jwt');
-        if (token) {
+        const fetchUserId = async () => {
             try {
-                const base64Payload = token.split('.')[1];
-                const payload = JSON.parse(atob(base64Payload));
-                setUserId(payload._id || null);
-            } catch (e) {
-                console.error("Error decoding JWT:", e);
+                const res = await fetch('http://localhost:3001/api/oauth/me', {
+                    method: 'GET',
+                    credentials: 'include', // VERY IMPORTANT: this sends the auth cookie
+                });
+
+                if (!res.ok) throw new Error("Not authenticated");
+
+                const data = await res.json();
+                setUserId(data.user._id);
+            } catch (err) {
+                console.error("Failed to fetch user info", err);
             }
-        }
+        };
+
+        fetchUserId();
     }, []);
 
     useEffect(() => {
@@ -96,9 +103,9 @@ const UserApplications = (props: { path?: string }) => {
             const res = await fetch(`http://localhost:3001/api/applications/${userId}?${params.toString()}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
             });
 
             const data = await res.json();
