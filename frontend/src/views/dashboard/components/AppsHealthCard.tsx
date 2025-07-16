@@ -71,7 +71,7 @@ export function AppsHealthCard({ title, description, total, apps, color, setActi
                             {apps.slice(0, 2).map(app => (
                                 <div class="oj-flex oj-sm-justify-content-between oj-sm-align-items-center oj-typography-body-sm oj-sm-padding-1x-vertical" key={app.app_id}>
                                     <div class="oj-flex-item oj-flex oj-sm-align-items-center">
-                                        <span class={`${textClass}`}>{app.app_name}</span>
+                                        <span class={`${textClass}`}>{app.app_name.replace(/\./g, ' ')}</span>
                                     </div>
                                     <span class={`oj-badge ${badgeColorClass}`}>
                                         {color === 'error' ? app.errors : app.warnings}
