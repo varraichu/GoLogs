@@ -15,9 +15,10 @@ const getHealthStatusColor = (status: string) => {
 
 interface PinnedAppCardProps {
   app: Application;
+  onUnpin: (appId: string) => void;
 }
 
-export const PinnedAppCard = ({ app }: PinnedAppCardProps) => {
+export const PinnedAppCard = ({ app, onUnpin }: PinnedAppCardProps) => {
     const healthColor = getHealthStatusColor(app.health_status);
 
     return (
@@ -35,21 +36,34 @@ export const PinnedAppCard = ({ app }: PinnedAppCardProps) => {
             justifyContent: "flex-start",
             fontSize: "0.95rem",
             boxSizing: "border-box",
+            position: "relative",
             }}
         >
-            {/* Header: Name + Status */}
-            <div class="oj-flex" style={{ alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                <div class="oj-flex oj-sm-align-items-center" style="gap: 0.5rem;">
+             {/* Unpin Button - Added to the top right corner */}
+            <oj-button
+                onojAction={() => onUnpin(app._id)}
+                display="icons"
+                chroming="borderless"
+                title="Unpin application"
+                class="oj-button-sm"
+                style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1 }}
+            >
+                <span slot="startIcon" class="oj-ux-ico-unpin" style="color: #6b7280;"></span>
+            </oj-button>
+
+            {/* Header section */}
+            <div style={{ paddingRight: '30px', marginBottom: '8px' }}>
+                <div class="oj-flex oj-sm-align-items-center" style="gap: 0.5rem; flex-wrap: wrap;">
                     <h3 style={{ margin: "0", wordBreak: "break-word", fontSize: "0.95rem", fontWeight: "600", lineHeight: "1.2", color: "#111827" }}>
                         {app.name.replace(/\./g, ' ')}
                     </h3>
-                    <span class="oj-typography-body-xs" style={{ padding: '2px 8px', borderRadius: '12px', fontWeight: 500, backgroundColor: healthColor.background, color: healthColor.text, border: `1px solid ${healthColor.border}`, textTransform: 'capitalize' }}>
+                    <span style={{ padding: '1px 6px', fontSize: '0.7rem', borderRadius: '12px', fontWeight: 400, backgroundColor: healthColor.background, color: healthColor.text, border: `1px solid ${healthColor.border}`, textTransform: 'capitalize', marginTop: '2px' }}>
                         {app.health_status}
                     </span>
+                    <span style={{ padding: "1px 6px", fontWeight: 400, color: app.is_active ? "#065f46" : "#991b1b", fontSize: "0.7rem", backgroundColor: app.is_active ? "#e6ffed" : "#ffebeb", borderRadius: "4px", lineHeight: "1.2", flexShrink: 0, marginTop: '2px' }}>
+                        {app.is_active ? "Active" : "Inactive"}
+                    </span>
                 </div>
-                <span class="oj-typography-body-xs" style={{ padding: "2px 8px", fontWeight: "500", color: app.is_active ? "#065f46" : "#991b1b", fontSize: "0.75rem", backgroundColor: app.is_active ? "#e6ffed" : "#ffebeb", borderRadius: "4px", lineHeight: "1.2" }}>
-                    {app.is_active ? "Active" : "Inactive"}
-                </span>
             </div>
 
             {/* App Description */}

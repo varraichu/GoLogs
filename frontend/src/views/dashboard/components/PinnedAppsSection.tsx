@@ -8,6 +8,12 @@ import { Application } from "../../../services/dashboard.services";
 import { PinUnpinDialog, handleCheckboxChange, savePinnedApps } from "./PinUnpinDialog";
 import { PinnedAppCard } from "./PinnedAppCard";
 
+const getHeaders = () => {
+  return {
+    'Content-Type': 'application/json',
+  };
+};
+
 interface PinnedAppsSectionProps {
   applications: Application[];
   userId: string;
@@ -51,12 +57,36 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
       setShowErrorDialog
     );
   };
-
   const handleCancel = () => {
-    const pinnedIds = applications.filter(app => app.isPinned).map(app => app._id);
-    setSelectedAppIds(pinnedIds);
-    setShowPinDialog(false);
-  };
+          const currentlyPinnedIds = applications.filter(app => app.isPinned).map(app => app._id);
+          setSelectedAppIds(currentlyPinnedIds);
+          setShowPinDialog(false);
+      };
+      
+  const handleUnpin = async (appId: string) => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/applications/unpin/${userId}/${appId}`, {
+                method: 'POST',
+                headers: getHeaders(),
+                credentials: 'include',
+              });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({})); 
+                throw new Error(errorData.message || 'Failed to unpin application');
+            }
+
+            setApplications(prev => prev.map(app => (app._id === appId ? { ...app, isPinned: false } : app)));
+            // const app = applications.find(a => a._id === appId);
+            // const appName = app?.name || 'Application';
+            // setErrorDialogMessage(`Unpinned: ${appName}`);
+            // setShowErrorDialog(true);
+        } catch (error) {
+            console.error('Error unpinning application:', error);
+            setErrorDialogMessage(error instanceof Error ? error.message : 'An unknown error occurred');
+            setShowErrorDialog(true);
+        }
+    };
 
   return (
     <div class="oj-flex-item oj-sm-12">
@@ -86,27 +116,16 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
 
       </div>
 
-
       {/* Pinned Applications Cards */}
       <div class="oj-flex oj-flex-direction-col" style={{ gap: "16px" }}>
         {pinnedApplications.length > 0 ? (
           pinnedApplications.map((app) => (
-            <PinnedAppCard key={app._id} app={app} />
+            <PinnedAppCard key={app._id} app={app} onUnpin={handleUnpin} />
           ))
         ) : (
           <div class="oj-typography-body-md oj-sm-margin-4x">No applications pinned yet.</div>
         )}
       </div>
-
-      {/* <div class="oj-flex oj-sm-justify-content-flex-end oj-sm-margin-top-4x">
-        <oj-button
-          onojAction={() => setShowPinDialog(true)}
-          chroming="callToAction"
-          class="oj-button-sm"
-        >
-          + Pin Apps
-        </oj-button>
-      </div> */}
 
       {/* Pin Apps Dialog */}
       <PinUnpinDialog
@@ -122,7 +141,9 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
         <oj-dialog
           id="errorDialog"
           dialogTitle={
-            errorDialogMessage.startsWith("App(s)") || errorDialogMessage.startsWith("Pinned")
+            errorDialogMessage.startsWith("App(s)") || 
+            errorDialogMessage.startsWith("Pinned") ||  
+            errorDialogMessage.startsWith("Unpinned")
               ? "Success"
               : "Error"
           }
