@@ -149,7 +149,12 @@ export const PinUnpinDialog = ({
                   style="margin-right: 8px;"
                 />
                 <span class="oj-typography-body-md" style="flex-grow: 1;">
-                  {app.name}
+                  {app.name
+                    .replace(/[\._-]+/g, ' ')                       
+                    .split(' ')                                     
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))  
+                    .join(' ')                                      
+                  }
                 </span>
                 {app.isPinned && (
                   <span
