@@ -4,12 +4,14 @@ import UserGroupApplications from '../models/UserGroupApplications';
 import UserGroupMembers from '../models/UserGroupMembers';
 import Users from '../models/Users';
 import Settings from '../models/Settings';
+import UserGroup from '../models/UserGroups';
 import {
   getPaginatedFilteredApplicationsPipeline,
   getDetailedApplicationsPipeline,
   getAppCriticalLogsPipeline,
 } from '../aggregations/applications.aggregation';
 import Logs from '../models/Logs';
+import config from 'config';
 
 export interface Application {
   _id: string;
@@ -57,6 +59,23 @@ export const createApplicationService = async (name: string, description: string
     is_deleted: false,
     is_active: true,
     created_at: new Date(),
+  });
+
+  const adminGroup = await UserGroup.findOne(
+    { name: config.get('admin_group_name'), is_deleted: false },
+    { _id: 1 }
+  );
+
+  if (!adminGroup) {
+    return {
+      success: false,
+      message: 'Could not find Admin Group',
+    };
+  }
+
+  await UserGroupApplications.create({
+    app_id: newApp._id,
+    group_id: adminGroup._id,
   });
 
   return {
@@ -270,7 +289,7 @@ export const toggleApplicationStatusService = async (appId: string, is_active: b
  */
 export const getAppCriticalLogsService = async (appId: string) => {
   const pipeline = getAppCriticalLogsPipeline(appId);
-  const logStats = await Logs.aggregate(pipeline); 
+  const logStats = await Logs.aggregate(pipeline);
 
   const totalLogs = logStats.reduce((sum: number, log: any) => sum + log.count, 0);
 

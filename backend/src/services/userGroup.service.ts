@@ -193,25 +193,22 @@ export const updateUserGroupService = async (
 
   // Remove members
   if (removeMemberEmails.length > 0) {
-    const usersToRemove = await User.find({ email: { $in: removeMemberEmails } });
-    const userIdsToRemove: mongoose.Types.ObjectId[] = usersToRemove.map(
-      (u) => u._id as mongoose.Types.ObjectId
-    );
+    const usersToRemove = await User.find({ email: { $in: removeMemberEmails } });
+    const userIdsToRemove: mongoose.Types.ObjectId[] = usersToRemove.map(
+      (u) => u._id as mongoose.Types.ObjectId
+    );
 
-    await UserGroupMember.updateMany(
-      { user_id: { $in: userIdsToRemove }, group_id: group._id },
-      { is_active: false, is_removed: true }
-    );
+    await UserGroupMember.updateMany(
+      { user_id: { $in: userIdsToRemove }, group_id: group._id },
+      { is_active: false, is_removed: true }
+    );
 
     if (userIdsToRemove.length > 0) {
-        await User.updateMany(
-            { _id: { $in: userIdsToRemove } },
-            { $set: { pinned_apps: [] } }
-        );
+      await User.updateMany({ _id: { $in: userIdsToRemove } }, { $set: { pinned_apps: [] } });
     }
-  }
+  }
 
-  const detailedGroup = await getDetailedUserGroupsAggregation([
+  const detailedGroup = await getDetailedUserGroupsAggregation([
     group._id as mongoose.Types.ObjectId,
   ]);
   return { data: detailedGroup[0] };

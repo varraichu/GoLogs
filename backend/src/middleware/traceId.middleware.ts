@@ -4,11 +4,11 @@ import { runWithTraceId } from '../utils/trace.util';
 
 // Middleware to generate and attach a trace ID to each request
 const traceMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    const traceId = uuidv4();
+  const traceId = uuidv4();
 
-    runWithTraceId(traceId, () => {
-        next();
-    });
+  runWithTraceId(traceId, () => {
+    next();
+  });
 };
 
 export default traceMiddleware;
