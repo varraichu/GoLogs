@@ -3,6 +3,12 @@ import { getDirectoryClient } from '../utils/googleDirectory.util';
 import logger from '../config/logger';
 import Settings from '../models/Settings';
 
+/**
+ * Finds existing users by their emails or creates new ones after validating them in the Google Directory.
+ * Also creates default settings for any newly created users.
+ * @param emails - An array of user email addresses to find or create.
+ * @returns A list of existing and newly created user documents.
+ */
 export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[]> => {
   if (!emails || emails.length === 0) {
     return [];

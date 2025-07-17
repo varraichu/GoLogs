@@ -34,6 +34,12 @@ interface FilterOptions {
   userId?: string;
 }
 
+/**
+ * Creates a new application if one with the same name does not already exist.
+ * @param name - The name of the application.
+ * @param description - A brief description of the application.
+ * @returns Promise<object> - Result of the creation attempt with success status and application info.
+ */
 export const createApplicationService = async (name: string, description: string) => {
   const existingApp = await Applications.findOne({
     name,
@@ -78,6 +84,11 @@ export const createApplicationService = async (name: string, description: string
   };
 };
 
+/**
+ * Retrieves all applications with pagination and optional filtering by status, search query, and group IDs.
+ * @param options - Filter and pagination options.
+ * @returns Promise<object> - Paginated list of applications and metadata.
+ */
 export const getAllApplicationsService = async (options: FilterOptions) => {
   const { page, limit, search, status, groupIds } = options;
   const pipeline = getPaginatedFilteredApplicationsPipeline({
@@ -106,6 +117,11 @@ export const getAllApplicationsService = async (options: FilterOptions) => {
   };
 };
 
+/**
+ * Retrieves applications accessible by a specific user, considering group membership and pinned status.
+ * @param options - Filter and pagination options, including userId.
+ * @returns Promise<object> - List of applications with pin status and pagination info.
+ */
 export const getUserApplicationsService = async (options: FilterOptions) => {
   const { userId, page, limit, search, status } = options;
 
@@ -183,6 +199,12 @@ export const getUserApplicationsService = async (options: FilterOptions) => {
   };
 };
 
+/**
+ * Updates the name and/or description of a given application.
+ * @param appId - The ID of the application to update.
+ * @param updates - Object containing updated name and/or description.
+ * @returns Promise<object> - Result of the update operation with updated application details.
+ */
 export const updateApplicationService = async (
   appId: string,
   updates: { name?: string; description?: string }
@@ -207,6 +229,11 @@ export const updateApplicationService = async (
   };
 };
 
+/**
+ * Marks an application as deleted and deactivates all its group associations.
+ * @param appId - The ID of the application to delete.
+ * @returns Promise<object> - Result of the delete operation with success status.
+ */
 export const deleteApplicationService = async (appId: string) => {
   const app = await Applications.findById(appId);
 
@@ -227,6 +254,12 @@ export const deleteApplicationService = async (appId: string) => {
   };
 };
 
+/**
+ * Toggles the active status of an application and updates its group assignments accordingly.
+ * @param appId - The ID of the application to update.
+ * @param is_active - The new active status.
+ * @returns Promise<object> - Result of the update operation with success status.
+ */
 export const toggleApplicationStatusService = async (appId: string, is_active: boolean) => {
   const app = await Applications.findById(appId);
 
@@ -249,6 +282,11 @@ export const toggleApplicationStatusService = async (appId: string, is_active: b
   };
 };
 
+/**
+ * Retrieves counts of error and warning logs for a specific application using aggregation.
+ * @param appId - The ID of the application.
+ * @returns Promise<object> - Object containing total, error, and warning log counts.
+ */
 export const getAppCriticalLogsService = async (appId: string) => {
   const pipeline = getAppCriticalLogsPipeline(appId);
   const logStats = await Logs.aggregate(pipeline);
@@ -262,6 +300,12 @@ export const getAppCriticalLogsService = async (appId: string) => {
   };
 };
 
+/**
+ * Pins an application to the user's dashboard if it is not already pinned and the limit is not exceeded.
+ * @param userId - The ID of the user.
+ * @param appId - The ID of the application to pin.
+ * @returns Promise<object> - Result of the pin operation with success status or error details.
+ */
 export const pinApplicationService = async (userId: string, appId: string) => {
   const user = await Users.findById(userId);
 
@@ -299,6 +343,12 @@ export const pinApplicationService = async (userId: string, appId: string) => {
   };
 };
 
+/**
+ * Unpins an application from the user's dashboard if it is currently pinned.
+ * @param userId - The ID of the user.
+ * @param appId - The ID of the application to unpin.
+ * @returns Promise<object> - Result of the unpin operation with success status or error message.
+ */
 export const unpinApplicationService = async (userId: string, appId: string) => {
   const user = await Users.findById(userId);
 
@@ -326,6 +376,11 @@ export const unpinApplicationService = async (userId: string, appId: string) => 
   };
 };
 
+/**
+ * Retrieves the list of pinned application IDs for a given user.
+ * @param userId - The ID of the user.
+ * @returns Promise<object> - Result containing pinned applications or error message.
+ */
 export const getUserPinnedAppsService = async (userId: string) => {
   const user = await Users.findById(userId).select('pinned_apps');
 
@@ -342,6 +397,11 @@ export const getUserPinnedAppsService = async (userId: string) => {
   };
 };
 
+/**
+ * Retrieves detailed information for a list of applications using a pre-defined aggregation pipeline.
+ * @param appIds - List of application ObjectIds.
+ * @returns Promise<Application[]> - Array of detailed application objects.
+ */
 export const getDetailedApplications = async (appIds: mongoose.Types.ObjectId[]) => {
   const pipeline = getDetailedApplicationsPipeline(appIds);
   const detailedApplications = await Applications.aggregate(pipeline);

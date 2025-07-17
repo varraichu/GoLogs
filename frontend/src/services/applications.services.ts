@@ -1,3 +1,5 @@
+import config from '../config/config';
+
 export interface Application {
   _id: string;
   name: string;
@@ -56,7 +58,7 @@ export interface ApplicationsResponse {
 }
 
 class ApplicationsService {
-  private baseUrl = 'http://localhost:3001/api'
+  private baseUrl = `${config.API_BASE_URL}`;
 
   private getHeaders() {
 
@@ -67,7 +69,7 @@ class ApplicationsService {
 
   private async getUserIdFromSession(): Promise<string | null> {
     try {
-      const res = await fetch('http://localhost:3001/api/oauth/me', {
+      const res = await fetch(`${config.API_BASE_URL}/oauth/me`, {
         method: 'GET',
         credentials: 'include', // 🔐 Ensures cookies are sent with the request
       });
@@ -150,7 +152,7 @@ class ApplicationsService {
     filters: { search?: string; groupIds?: string[]; status?: string },
     pagination: { page: number; limit: number }
   ): Promise<ApplicationsResponse> {
-    const res = await fetch('http://localhost:3001/api/oauth/me', {
+    const res = await fetch(`${config.API_BASE_URL}/oauth/me`, {
       method: 'GET',
       credentials: 'include', // 🔐 Ensures cookies are sent with the request
     });
