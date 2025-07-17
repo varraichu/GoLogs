@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Defines the schema for user groups, including metadata fields and unique constraints
+
 export interface IUserGroup extends Document {
   name: string;
   description: string;

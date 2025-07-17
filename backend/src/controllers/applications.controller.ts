@@ -20,6 +20,7 @@ import {
   getUserPinnedAppsService,
 } from '../services/applications.service';
 
+// Creates a new application with given name and description.
 export const createApplication = async (req: IAuthRequest, res: Response) => {
   const { name, description } = req.body as CreateApplicationInput;
   const result = await createApplicationService(name, description);
@@ -35,6 +36,7 @@ export const createApplication = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Fetches all applications (with optional search, group, and pagination filters) - for admin
 export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   const search = req.query.search as string | undefined;
   const groupIds = (req.query.groupIds as string)?.split(',') || [];
@@ -54,6 +56,7 @@ export const getAllApplications = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Fetches applications assigned to a specific user.
 export const getUserApplications = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId } = req.params as UserIdParams;
   const search = req.query.search as string | undefined;
@@ -82,6 +85,7 @@ export const getUserApplications = async (req: IAuthRequest, res: Response): Pro
   return;
 };
 
+// Updates application name and description by ID.
 export const updateApplication = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
   const { name, description } = req.body as UpdateApplicationInput;
@@ -99,6 +103,7 @@ export const updateApplication = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Deletes an application by ID.
 export const deleteApplication = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
   const result = await deleteApplicationService(appId);
@@ -112,6 +117,7 @@ export const deleteApplication = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Toggles application status (active/inactive) by ID.
 export const toggleApplicationStatus = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
   const { is_active } = req.body as applicationStatusInput;
@@ -127,6 +133,7 @@ export const toggleApplicationStatus = async (req: IAuthRequest, res: Response) 
   return;
 };
 
+// Fetches critical logs for a specific application using its ID.
 export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
   const { appId } = req.params as ApplicationParams;
   const criticalLogs = await getAppCriticalLogsService(appId);
@@ -135,6 +142,7 @@ export const getAppCriticalLogs = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Pins an application using user ID and app ID.
 export const pinApplication = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId, appId } = req.params as { userId: string; appId: string };
   const result = await pinApplicationService(userId, appId);
@@ -148,6 +156,7 @@ export const pinApplication = async (req: IAuthRequest, res: Response): Promise<
   return;
 };
 
+// Unpins an application using user ID and app ID.
 export const unpinApplication = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId, appId } = req.params as { userId: string; appId: string };
   const result = await unpinApplicationService(userId, appId);
@@ -161,6 +170,7 @@ export const unpinApplication = async (req: IAuthRequest, res: Response): Promis
   return;
 };
 
+// Fetches pinned applications for a specific user.
 export const getUserPinnedApps = async (req: IAuthRequest, res: Response): Promise<void> => {
   const userId = req.params.id;
   const result = await getUserPinnedAppsService(userId);

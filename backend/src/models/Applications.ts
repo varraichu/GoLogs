@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Defines the MongoDB schema and model for applications, including status and metadata fields
+
 export interface IApplication extends Document {
   name: string;
   description: string;

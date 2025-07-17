@@ -11,6 +11,7 @@ import mongoose from 'mongoose';
 import logger from '../config/logger';
 import Users from '../models/Users';
 
+// Fetches user settings or creates default if missing.
 export const getSettingsById = async (req: IAuthRequest, res: Response) => {
   const { user_id } = req.params as SettingsParams;
   const userObjectId = new mongoose.Types.ObjectId(user_id);
@@ -23,6 +24,7 @@ export const getSettingsById = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Updates existing user settings if found.
 export const updateSettingsController = async (req: IAuthRequest, res: Response) => {
   const { user_id } = req.params as SettingsParams;
   const userObjectId = new mongoose.Types.ObjectId(user_id);
