@@ -2,6 +2,7 @@
 import { h } from 'preact'
 import { useRef, useMemo } from 'preact/hooks'
 import { Application, UserGroup } from '../../../services/applications.services'
+import config from '../../../config/config';
 
 import 'oj-c/input-text'
 import 'oj-c/form-layout'
@@ -52,7 +53,7 @@ export const ApplicationDialog = ({
 
   const optionsData = useMemo(() => {
     const groupOptions = userGroups
-      .filter((g) => !g.is_deleted && g.is_active)
+      .filter((g) => !g.is_deleted && g.is_active && g.name !== config.ADMIN_USER_GROUP)
       .map((g) => ({
         value: String(g._id),
         text: g.name,

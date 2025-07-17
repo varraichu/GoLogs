@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Defines the schema for log summaries, aggregating log counts by type and application
+
 export interface ILogSummary extends Document {
   app_id: mongoose.Types.ObjectId;
   app_name: string;

@@ -6,6 +6,7 @@ import {
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 
+// Assigns an application to multiple groups using appId and groupIds.
 export const assignToGroups = async (req: Request, res: Response): Promise<void> => {
   const { appId } = req.params;
   const { groupIds } = req.body;
@@ -25,6 +26,7 @@ export const assignToGroups = async (req: Request, res: Response): Promise<void>
   return;
 };
 
+// Unassigns an application from a specific group using appId and groupId.
 export const unassignFromGroup = async (req: Request, res: Response): Promise<void> => {
   const { appId, groupId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(appId) || !mongoose.Types.ObjectId.isValid(groupId)) {
@@ -35,6 +37,7 @@ export const unassignFromGroup = async (req: Request, res: Response): Promise<vo
   return;
 };
 
+// Fetches all groups assigned to a specific application using appId.
 export const getAssignedGroups = async (req: Request, res: Response): Promise<void> => {
   const { appId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(appId)) {

@@ -2,6 +2,7 @@
 import { h } from 'preact';
 import { Application } from '../../../services/applications.services';
 import '../../../styles/application-cards.css';
+import config from '../../../config/config';
 
 interface ApplicationCardProps {
   app: Application;
@@ -76,12 +77,18 @@ export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: Appli
           Assigned To
         </p>
         <div class="group-chips">
-          {app.groupNames.slice(0, 2).map((group, index) => (
-            <span key={index} class="group-chip">
-              {group}
-            </span>
-          ))}
-          {app.groupNames.length > 2 && (
+          <span class="admin-chip" >
+            {config.ADMIN_USER_GROUP}
+          </span>
+          {app.groupNames
+            .slice(0, 3)
+            .filter(group => group !== config.ADMIN_USER_GROUP)
+            .map((group, index) => (
+              <span key={index} class="group-chip">
+                {group}
+              </span>
+            ))}
+          {app.groupNames.length > 3 && (
             <span class="more-chip">+{app.groupNames.length - 2}</span>
           )}
         </div>

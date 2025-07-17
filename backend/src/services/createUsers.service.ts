@@ -3,6 +3,12 @@ import { getDirectoryClient } from '../utils/googleDirectory.util';
 import logger from '../config/logger';
 import Settings from '../models/Settings';
 
+/**
+ * Finds existing users by their emails or creates new ones after validating them in the Google Directory.
+ * Also creates default settings for any newly created users.
+ * @param emails - An array of user email addresses to find or create.
+ * @returns A list of existing and newly created user documents.
+ */
 export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[]> => {
   if (!emails || emails.length === 0) {
     return [];
@@ -17,7 +23,6 @@ export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[
     return existingUsers;
   }
 
-  // Validate new emails in Google Directory
   const directory = getDirectoryClient();
 
   const validDirectoryEmails: string[] = [];
@@ -46,15 +51,13 @@ export const findOrCreateUsersByEmail = async (emails: string[]): Promise<IUser[
   const createdUsers = await User.insertMany(newUsersToCreate);
 
   if (createdUsers && createdUsers.length > 0) {
-    // Prepare the default settings for each new user
     const defaultSettingsToCreate = createdUsers.map((user) => ({
-      user_id: user._id, // Link to the new user's ID
+      user_id: user._id,
       error_rate_threshold: 10,
       warning_rate_threshold: 25,
       silent_duration: 12,
     }));
 
-    // Bulk insert the new settings documents
     await Settings.insertMany(defaultSettingsToCreate);
     logger.info(`Created default settings for ${createdUsers.length} new users.`);
   }

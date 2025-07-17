@@ -6,6 +6,12 @@ import UserGroups from '../models/UserGroups';
 import Logs from '../models/Logs';
 import { IUserGroupMember } from '../models/UserGroupMembers';
 
+/**
+ * Assigns an application to multiple user groups by upserting active assignment records.
+ * @param appId - The ID of the application to assign.
+ * @param groupIds - The list of user group IDs to assign the application to.
+ * @returns Promise<void>
+ */
 export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
   // Validate: appId format
   const appExists = await Applications.exists({ _id: appId, is_deleted: false });
@@ -44,6 +50,12 @@ export const assignAppToGroups = async (appId: string, groupIds: string[]) => {
   }
 };
 
+/**
+ * Unassigns an application from a specific user group by marking the assignment as inactive and removed.
+ * @param appId - The ID of the application to unassign.
+ * @param groupId - The ID of the user group to unassign the application from.
+ * @returns Promise<void>
+ */
 export const unassignAppFromGroup = async (appId: string, groupId: string) => {
   const appExists = await Applications.exists({ _id: appId, is_deleted: false });
   if (!appExists) {
@@ -64,6 +76,11 @@ export const unassignAppFromGroup = async (appId: string, groupId: string) => {
   }
 };
 
+/**
+ * Retrieves the list of user group IDs to which a given application is currently assigned.
+ * @param appId - The ID of the application to query.
+ * @returns Promise<string[]> - A list of group IDs the application is actively assigned to.
+ */
 export const getAppAssignedGroups = async (appId: string) => {
   const appExists = await Applications.exists({ _id: appId, is_deleted: false });
   if (!appExists) {

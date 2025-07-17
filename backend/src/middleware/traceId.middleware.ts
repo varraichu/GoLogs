@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { runWithTraceId } from '../utils/trace.util';
 
+// Middleware to generate and attach a trace ID to each request
 const traceMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const traceId = uuidv4();
 

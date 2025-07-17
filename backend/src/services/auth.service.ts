@@ -56,6 +56,14 @@ export class AuthService {
     return generateToken(userPayload);
   }
 
+  /**
+   * Handles the Google OAuth login process by exchanging the authorization code for tokens,
+   * verifying the ID token, validating the user's email domain, creating or retrieving the user,
+   * determining admin status, and issuing a JWT.
+   * @param code - The authorization code received from Google OAuth.
+   * @returns Promise<GoogleOauthResult> - The result of the login process, including success status,
+   * JWT token (if successful), and optional redirect URL or error message.
+   */
   async processGoogleOauth(code: string): Promise<GoogleOauthResult> {
     const frontendUrl = config.get<string>('FRONTEND_URL');
 
@@ -134,6 +142,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * Handles developer login by validating the user's email, checking admin group membership,
+   * and generating a JWT token for authentication.
+   * @param email - The email address of the user attempting to log in.
+   * @returns Promise<DevLoginResult> - The result of the login process, including success status,
+   * JWT token (if successful), or an error message.
+   */
   async processDevLogin(email: string): Promise<DevLoginResult> {
     try {
       const user = await User.findOne({ email });

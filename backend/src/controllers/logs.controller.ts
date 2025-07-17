@@ -1,4 +1,3 @@
-// File: controllers/logs.controller.ts
 import { Response } from 'express';
 import { IAuthRequest } from '../middleware/auth.middleware';
 import logger from '../config/logger';
@@ -21,6 +20,7 @@ interface SortCriteria {
   direction: 'asc' | 'desc';
 }
 
+// Parses sort query parameter into an array of SortCriteria objects.
 const parseSortCriteria = (sort: string | undefined): SortCriteria[] => {
   return sort
     ? sort.split(',').map((item) => {
@@ -33,6 +33,11 @@ const parseSortCriteria = (sort: string | undefined): SortCriteria[] => {
     : [{ field: 'timestamp', direction: 'desc' }];
 };
 
+/**
+ * Fetches paginated logs with filters and sorting.
+ * @param req Auth request with query filters
+ * @returns JSON with log entries and pagination info
+ */
 export const getAllLogs = async (req: IAuthRequest, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
@@ -70,6 +75,11 @@ export const getAllLogs = async (req: IAuthRequest, res: Response) => {
   });
 };
 
+/**
+ * Fetches paginated user-specific logs with filters.
+ * @param req Auth request with userId and filters
+ * @returns JSON with user's logs and pagination data
+ */
 export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId } = req.params as UserIdParams;
   const page = parseInt(req.query.page as string) || 1;
@@ -109,6 +119,11 @@ export const getUserLogs = async (req: IAuthRequest, res: Response): Promise<voi
   });
 };
 
+/**
+ * Updates the Time-To-Live (TTL) value for logs.
+ * @param req Body with newTTLInDays
+ * @returns Success message with updated TTL days
+ */
 export const updateLogTTL = async (req: IAuthRequest, res: Response) => {
   const { newTTLInDays } = req.body as UpdateLogTTLInput;
 
@@ -124,6 +139,11 @@ export const updateLogTTL = async (req: IAuthRequest, res: Response) => {
   });
 };
 
+/**
+ * Retrieves the current TTL (retention) setting for logs.
+ * @param req Auth request
+ * @returns TTL value in days or not found message
+ */
 export const getLogTTL = async (req: IAuthRequest, res: Response): Promise<void> => {
   const ttlInDays = await getLogTTLService();
 
@@ -138,6 +158,11 @@ export const getLogTTL = async (req: IAuthRequest, res: Response): Promise<void>
   });
 };
 
+/**
+ * Exports filtered logs of a user to a downloadable CSV.
+ * @param req Params with userId and query filters
+ * @returns Sends CSV file with matching user logs
+ */
 export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
   const { userId } = req.params as UserIdParams;
   const limit = parseInt(req.query.limit as string) || 20;
@@ -170,6 +195,11 @@ export const exportUserLogs = async (req: IAuthRequest, res: Response) => {
   res.send(csv);
 };
 
+/**
+ * Exports admin logs (across users/apps) as CSV.
+ * @param req Query filters
+ * @returns Sends CSV file with matching logs
+ */
 export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 20;
   const sort = req.query.sort as string | undefined;
@@ -200,6 +230,7 @@ export const exportAdminLogs = async (req: IAuthRequest, res: Response) => {
   res.send(csv);
 };
 
+// Fetches cached log summary for a specific user.
 export const getCachedLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
   const { userId } = req.params as UserIdParams;
 
@@ -208,12 +239,14 @@ export const getCachedLogSummary = async (req: IAuthRequest, res: Response): Pro
   res.status(200).json({ message, data });
 };
 
+// Fetches all cached log summaries for admin.
 export const getAllCachedLogSummary = async (req: IAuthRequest, res: Response): Promise<void> => {
   const summaries = await getAllCachedLogSummaryService();
 
   res.status(200).json({ message: 'Admin summaries fetched', data: summaries });
 };
 
+// Refreshes the log graph data.
 export const refreshLogGraph = async (req: IAuthRequest, res: Response) => {
   await refreshLogGraphService();
   res.status(200).json({ message: 'Log graph refresh' });

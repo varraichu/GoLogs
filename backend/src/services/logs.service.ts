@@ -59,6 +59,11 @@ interface ExportAdminLogsOptions {
   };
 }
 
+/**
+ * Retrieves paginated logs with application information for admin users.
+ * @param options - Pagination, sorting, and filtering options.
+ * @returns A paginated result set containing logs and pagination metadata.
+ */
 export const fetchPaginatedLogsWithAppInfo = async ({
   page,
   limit,
@@ -94,6 +99,11 @@ export const fetchPaginatedLogsWithAppInfo = async ({
   };
 };
 
+/**
+ * Retrieves paginated logs with application information for a specific user.
+ * @param options - User ID and pagination, sorting, and filtering options.
+ * @returns A paginated result set containing logs and pagination metadata.
+ */
 export const fetchUserLogsWithAppInfo = async ({
   userId,
   page,
@@ -148,6 +158,10 @@ export const fetchUserLogsWithAppInfo = async ({
   };
 };
 
+/**
+ * Updates the TTL (time to live) for log documents by modifying the index on the `ingested_at` field.
+ * @param newTTLInDays - The new TTL duration in days.
+ */
 export const updateLogTTLService = async (newTTLInDays: number): Promise<void> => {
   const newTTLInSeconds = newTTLInDays * 24 * 60 * 60;
   const LogModel = mongoose.model('Logs');
@@ -165,6 +179,10 @@ export const updateLogTTLService = async (newTTLInDays: number): Promise<void> =
   await collection.createIndex({ ingested_at: 1 }, { expireAfterSeconds: newTTLInSeconds });
 };
 
+/**
+ * Retrieves the current TTL value (in days) for log documents based on the `ingested_at` index.
+ * @returns The TTL value in days, or null if not set.
+ */
 export const getLogTTLService = async (): Promise<number | null> => {
   const indexes = await Log.collection.indexes();
   const ttlIndex = indexes.find((idx) => idx.name === 'ingested_at_1');
@@ -176,6 +194,11 @@ export const getLogTTLService = async (): Promise<number | null> => {
   return Math.floor(ttlIndex.expireAfterSeconds / (24 * 60 * 60));
 };
 
+/**
+ * Exports user-specific logs as a CSV string based on filtering and sorting criteria.
+ * @param options - User ID, export limit, filters, and sorting criteria.
+ * @returns A CSV string containing the exported logs.
+ */
 export const exportUserLogsService = async ({
   userId,
   limit,
@@ -195,6 +218,11 @@ export const exportUserLogsService = async ({
   return parser.parse(logs);
 };
 
+/**
+ * Exports admin-accessible logs as a CSV string based on filtering and sorting criteria.
+ * @param options - Export limit, filters, and sorting criteria.
+ * @returns A CSV string containing the exported logs.
+ */
 export const exportAdminLogsService = async ({
   limit,
   sortCriteria,
@@ -212,6 +240,11 @@ export const exportAdminLogsService = async ({
   return parser.parse(logs);
 };
 
+/**
+ * Retrieves cached log summaries for applications accessible by the user.
+ * @param userId - The ID of the user.
+ * @returns An object containing a message and the filtered summaries.
+ */
 export const getCachedLogSummaryService = async (userId: string) => {
   const appIds = await getUserAccessibleAppIds(userId);
 
@@ -226,14 +259,27 @@ export const getCachedLogSummaryService = async (userId: string) => {
   return { message: 'User summary fetched', data: summaries };
 };
 
+/**
+ * Retrieves all cached log summaries without filtering.
+ * @returns An array of all log summaries.
+ */
 export const getAllCachedLogSummaryService = async () => {
   return await LogsSummary.find({});
 };
 
+/**
+ * Triggers a refresh of the log summary by executing the update summary utility.
+ */
 export const refreshLogGraphService = async (): Promise<void> => {
   await updateLogSummary();
 };
 
+/**
+ * Fetches a log summary for all applications within a specified date range.
+ * @param startDate - The start date of the range.
+ * @param endDate - The end date of the range.
+ * @returns An aggregated summary of logs for the given period.
+ */
 export const fetchAllAppsLogSummary = async (startDate: Date, endDate: Date) => {
   const effectiveStartDate = startDate || new Date(Date.now() - 24 * 60 * 60 * 1000);
   const effectiveEndDate = endDate || new Date();
@@ -242,7 +288,11 @@ export const fetchAllAppsLogSummary = async (startDate: Date, endDate: Date) => 
   return await Log.aggregate(pipeline);
 };
 
-// Helper function to get user's accessible app IDs
+/**
+ * Helper function to retrieve the list of application IDs accessible to a user based on group memberships.
+ * @param userId - The ID of the user.
+ * @returns An array of accessible application IDs.
+ */
 const getUserAccessibleAppIds = async (userId: string): Promise<mongoose.Types.ObjectId[]> => {
   const userGroups = await UserGroupMembers.find({
     user_id: userId,

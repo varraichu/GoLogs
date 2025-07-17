@@ -7,6 +7,10 @@ import logger from '../config/logger';
 import { buildLogSummaryAggregation } from '../aggregations/logs.aggregation';
 dotenv.config();
 
+/**
+ * Generates and updates the log summary for the past 24 hours by aggregating logs
+ * and replacing existing summary records in the database.
+ */
 export const updateLogSummary = async () => {
   try {
     // console.log('[LogSummary] Starting summary generation...');
