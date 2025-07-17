@@ -4,6 +4,10 @@ require('dotenv').config();
 
 const serviceAccount = require('../../credentials/service-account-key.json'); // adjust path
 
+/**
+ * Creates and returns a Google Directory API client authenticated with a service account.
+ * @returns Admin - An authenticated instance of the Google Admin Directory API client.
+ */
 export const getDirectoryClient = () => {
   const auth = new google.auth.JWT({
     email: serviceAccount.client_email,

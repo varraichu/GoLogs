@@ -13,6 +13,12 @@ import {
 } from '../aggregations/userGroup.aggregation';
 import { CreateUserGroupInput, UpdateUserGroupInput } from '../schemas/userGroup.validator';
 
+/**
+ * Updates the application access for a user group by replacing its existing app assignments.
+ * @param groupId - The ID of the user group to update.
+ * @param appIds - An array of application IDs to assign to the group.
+ * @throws Error if the user group does not exist.
+ */
 export const updateUserGroupAppAccessService = async (groupId: string, appIds: string[]) => {
   const groupExists = await UserGroup.exists({ _id: groupId });
   if (!groupExists) throw new Error('Group not found');
@@ -30,6 +36,12 @@ export const updateUserGroupAppAccessService = async (groupId: string, appIds: s
   }
 };
 
+/**
+ * Creates a new user group with the provided details and assigns members by email.
+ * Prevents creation if a group with the same name already exists.
+ * @param data - The input data for creating the user group, including name, description, and member emails.
+ * @returns An object containing either an error message or the created group's detailed data.
+ */
 export const createUserGroupService = async (data: CreateUserGroupInput) => {
   const { name, description, memberEmails } = data;
 
@@ -58,6 +70,10 @@ export const createUserGroupService = async (data: CreateUserGroupInput) => {
   return { data: detailedGroup[0] };
 };
 
+/**
+ * Retrieves all non-deleted user groups with their detailed information.
+ * @returns An array of detailed user group objects.
+ */
 export const getAllUserGroupsService = async () => {
   const groups = await UserGroup.find({ is_deleted: false }).select('_id');
   const groupIds = groups.map((g) => g._id as mongoose.Types.ObjectId);
@@ -70,6 +86,11 @@ export const getAllUserGroupsService = async () => {
   return detailedGroups;
 };
 
+/**
+ * Retrieves paginated user group information based on provided filters.
+ * @param options - The filtering and pagination options including search term, status, page number, limit, and application IDs.
+ * @returns A paginated result set of user groups.
+ */
 export const getAllUserGroupInfoService = async (options: {
   search: string;
   status: string;
@@ -79,6 +100,12 @@ export const getAllUserGroupInfoService = async (options: {
 }) => {
   return await getPaginatedUserGroupsAggregation(options);
 };
+
+/**
+ * Retrieves detailed information for a user group by its ID.
+ * @param groupId - The ID of the user group to fetch.
+ * @returns An object containing the group's detailed data, or an error if not found.
+ */
 
 export const getUserGroupByIdService = async (groupId: string) => {
   const detailedGroup = await getDetailedUserGroupsAggregation([
@@ -92,6 +119,14 @@ export const getUserGroupByIdService = async (groupId: string) => {
   return { data: detailedGroup[0] };
 };
 
+/**
+ * Updates the details and membership of a user group.
+ * Prevents renaming or self-removal from the super admin group.
+ * @param groupId - The ID of the user group to update.
+ * @param updateData - The data containing fields to update and member emails to add or remove.
+ * @param userEmail - (Optional) The email of the current user performing the update.
+ * @returns An object containing either an error message or the updated group's detailed data.
+ */
 export const updateUserGroupService = async (
   groupId: string,
   updateData: UpdateUserGroupInput,
@@ -182,6 +217,12 @@ export const updateUserGroupService = async (
   return { data: detailedGroup[0] };
 };
 
+/**
+ * Marks a user group as deleted and deactivates its members and application assignments.
+ * Prevents deletion of the super admin group.
+ * @param groupId - The ID of the user group to delete.
+ * @returns An object indicating success or an error message.
+ */
 export const deleteUserGroupService = async (groupId: string) => {
   const group = await UserGroup.findById(groupId);
 
@@ -204,6 +245,13 @@ export const deleteUserGroupService = async (groupId: string) => {
   return { success: true };
 };
 
+/**
+ * Toggles the active status of a user group and its related users and application assignments.
+ * Does not allow changes to the super admin group.
+ * @param groupId - The ID of the user group to update.
+ * @param is_active - The desired active status.
+ * @returns An object containing a status message or an error message.
+ */
 export const toggleGroupStatusService = async (groupId: string, is_active: boolean) => {
   const group = await UserGroup.findById(groupId);
 
@@ -225,6 +273,11 @@ export const toggleGroupStatusService = async (groupId: string, is_active: boole
   return { message: `User group successfully set to ${is_active ? 'Active' : 'Inactive'}` };
 };
 
+/**
+ * Retrieves the list of users associated with a given user group.
+ * @param groupId - The ID of the user group.
+ * @returns An array of user group members.
+ */
 export const userGroupUsersService = async (groupId: string) => {
   return await getUserGroupMembersAggregation(groupId);
 };
