@@ -69,31 +69,20 @@ const buildSortObject = (sortCriteria: SortCriteria[]): Record<string, 1 | -1> =
 const buildSearchConditions = (search: string): any[] => {
   const searchConditions: any[] = [];
 
-  if (!search?.trim()) {
-    return searchConditions;
-  }
+  // 1. Trim leading/trailing whitespace, but preserve internal
+  const trimmedSearch = search?.trim();
 
-  const keywords = search.trim().split(/\s+/).filter(Boolean);
+  if (!trimmedSearch) return searchConditions;
 
-  if (keywords.length === 1) {
-    const escaped = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = { $regex: escaped, $options: 'i' };
+  // 2. Escape regex chars
+  const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    searchConditions.push({
-      $or: [{ message: regex }, { log_type: regex }, { 'application.name': regex }],
-    });
-  } else {
-    const keywordRegexConditions = keywords.map((kw) => {
-      const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = { $regex: escaped, $options: 'i' };
+  // 3. Regex with internal spaces preserved
+  const regex = { $regex: escaped, $options: 'i' };
 
-      return {
-        $or: [{ message: regex }, { log_type: regex }, { 'application.name': regex }],
-      };
-    });
-
-    searchConditions.push(...keywordRegexConditions);
-  }
+  searchConditions.push({
+    $or: [{ message: regex }, { log_type: regex }, { 'application.name': regex }],
+  });
 
   return searchConditions;
 };
@@ -101,31 +90,20 @@ const buildSearchConditions = (search: string): any[] => {
 const buildUserSearchConditions = (search: string): any[] => {
   const searchConditions: any[] = [];
 
-  if (!search?.trim()) {
-    return searchConditions;
-  }
+  // 1. Trim leading/trailing whitespace, but preserve internal
+  const trimmedSearch = search?.trim();
 
-  const keywords = search.trim().split(/\s+/).filter(Boolean);
+  if (!trimmedSearch) return searchConditions;
 
-  if (keywords.length === 1) {
-    const escaped = keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = { $regex: escaped, $options: 'i' };
+  // 2. Escape regex chars
+  const escaped = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    searchConditions.push({
-      $or: [{ message: regex }, { log_type: regex }],
-    });
-  } else {
-    const keywordRegexConditions = keywords.map((kw) => {
-      const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = { $regex: escaped, $options: 'i' };
+  // 3. Regex with internal spaces preserved
+  const regex = { $regex: escaped, $options: 'i' };
 
-      return {
-        $or: [{ message: regex }, { log_type: regex }],
-      };
-    });
-
-    searchConditions.push(...keywordRegexConditions);
-  }
+  searchConditions.push({
+    $or: [{ message: regex }, { log_type: regex }, { 'application.name': regex }],
+  });
 
   return searchConditions;
 };

@@ -18,12 +18,14 @@ import config from 'config';
 
 const app = express();
 
-app.use(cors({
-  origin: config.get('FRONTEND_URL'),
-  credentials: true
-}))
+app.use(
+  cors({
+    origin: config.get('FRONTEND_URL'),
+    credentials: true,
+  })
+);
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
 app.use(traceMiddleware);
 app.use(requestLogger);

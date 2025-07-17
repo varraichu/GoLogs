@@ -232,7 +232,7 @@ export const toggleApplicationStatusService = async (appId: string, is_active: b
 
 export const getAppCriticalLogsService = async (appId: string) => {
   const pipeline = getAppCriticalLogsPipeline(appId);
-  const logStats = await Logs.aggregate(pipeline); 
+  const logStats = await Logs.aggregate(pipeline);
 
   const totalLogs = logStats.reduce((sum: number, log: any) => sum + log.count, 0);
 
