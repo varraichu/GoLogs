@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 
+/**
+ * Escapes special characters in a string to safely use it in a MongoDB regex.
+ * @param text - The input text to be escaped.
+ * @returns The escaped text.
+ */
 const escapeRegex = (text: string) => {
   return text.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&');
 };
@@ -15,6 +20,13 @@ interface PaginationOptions {
   error_rate_threshold?: number;
 }
 
+/**
+ * Builds a MongoDB aggregation pipeline to retrieve paginated and filtered applications.
+ * Applies search, status filtering, group-based filtering, and access control.
+ * Includes log count and health status evaluation (healthy, warning, critical).
+ * @param options - Options to filter, paginate, and evaluate application health.
+ * @returns An aggregation pipeline array.
+ */
 export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOptions) => {
   const {
     page,
@@ -172,6 +184,12 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
   return pipeline;
 };
 
+/**
+ * Builds a MongoDB aggregation pipeline to retrieve detailed application information.
+ * Includes related group names and total log count.
+ * @param appIds - An array of application IDs to fetch.
+ * @returns An aggregation pipeline array.
+ */
 export const getDetailedApplicationsPipeline = (appIds: mongoose.Types.ObjectId[]) => {
   return [
     {
@@ -230,6 +248,11 @@ export const getDetailedApplicationsPipeline = (appIds: mongoose.Types.ObjectId[
   ];
 };
 
+/**
+ * Builds a MongoDB aggregation pipeline to count logs by type for a given application.
+ * @param appId - The application ID to retrieve log counts for.
+ * @returns An aggregation pipeline array that groups logs by type.
+ */
 export const getAppCriticalLogsPipeline = (appId: string) => {
   return [
     { $match: { app_id: new mongoose.Types.ObjectId(appId) } },

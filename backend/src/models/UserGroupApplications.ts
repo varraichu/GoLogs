@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Defines the schema for user group applications, linking applications to user groups with status fields
+
 export interface IUserGroupApplication extends Document {
   app_id: mongoose.Types.ObjectId;
   group_id: mongoose.Types.ObjectId;

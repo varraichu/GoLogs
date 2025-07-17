@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Defines the schema for user settings, including thresholds and durations for notifications
+
 export interface ISettings extends Document {
   user_id: mongoose.Types.ObjectId;
   error_rate_threshold: number;
