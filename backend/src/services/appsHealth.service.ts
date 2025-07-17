@@ -20,9 +20,9 @@ type CriticalApp = {
  * Retrieves health data for applications accessible to a given user, including:
  * - Applications exceeding error/warning thresholds in the last minute.
  * - Applications that have been silent beyond the configured threshold.
- * 
+ *
  * Admin users get all apps; non-admins get apps via group associations.
- * 
+ *
  * @param userId - The MongoDB ObjectId of the user requesting the data.
  * @returns Promise<object> - An object containing critical and silent app summaries.
  * @throws Error if user settings are not found.
