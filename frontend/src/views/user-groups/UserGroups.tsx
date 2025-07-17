@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { useEffect, useState, useRef } from 'preact/hooks';
+import config from '../../config/config';
 import 'ojs/ojbutton';
 import 'ojs/ojdialog';
 import 'oj-c/form-layout';
@@ -184,7 +185,7 @@ const UserGroups = (props: { path?: string }) => {
       loadGroups();
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to save user group.');
-      if (groupData.name === 'Admin Group') {
+      if (groupData.name === `${config.ADMIN_USER_GROUP}`) {
         handleCloseEditor();
       }
     }

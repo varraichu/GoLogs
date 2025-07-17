@@ -4,7 +4,8 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
-  flex: 1 1 calc(33.33% - 24px); /* 3 per row minus gap */
+  flex: 1 1 calc(33.33% - 24px);
+  /* 3 per row minus gap */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -16,13 +17,15 @@
 /* Responsive adjustments */
 @media (max-width: 992px) {
   .application-card {
-    flex: 1 1 calc(50% - 24px); /* 2 cards per row */
+    flex: 1 1 calc(50% - 24px);
+    /* 2 cards per row */
   }
 }
 
 @media (max-width: 600px) {
   .application-card {
-    flex: 1 1 100%; /* 1 card per row */
+    flex: 1 1 100%;
+    /* 1 card per row */
   }
 }
 
@@ -101,6 +104,7 @@
 }
 
 .group-chip,
+.admin-chip,
 .more-chip {
   font-size: 0.75rem;
   padding: 4px 8px;
@@ -111,6 +115,11 @@
 .group-chip {
   color: rgb(25, 85, 160);
   background-color: rgb(220, 235, 255);
+}
+
+.admin-chip {
+  color: rgb(221, 67, 61);
+  background-color: rgb(255, 220, 220);
 }
 
 .more-chip {

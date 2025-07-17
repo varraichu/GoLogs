@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { UserGroup } from '../../../services/usergroups.services';
+import config from '../../../config/config';
 import '../../../styles/usergroup-cards.css';
 
 interface UserGroupCardProps {
@@ -11,7 +12,7 @@ interface UserGroupCardProps {
 }
 
 export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewUsers }: UserGroupCardProps) => {
-  const isAdminGroup = group.name === 'Admin Group';
+  const isAdminGroup = group.name === `${config.ADMIN_USER_GROUP}`;
 
   return (
     <div class="oj-panel user-group-card"

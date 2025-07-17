@@ -3,6 +3,7 @@ import RegExpValidator = require('ojs/ojvalidator-regexp');
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
 import { UserGroup, Application } from '../../../services/usergroups.services';
 import { useMemo } from 'preact/hooks';
+import config from '../../../config/config';
 
 type UserOption = { value: string; text: string; };
 type AppOption = { value: string; text: string; disabled: boolean; };
@@ -32,7 +33,7 @@ interface GroupEditorDialogProps {
 export const GroupEditorDialog = ({ isOpen, isLoading, errors, onClose, onSave, onCancel, editingGroup, name, setName, description, setDescription, nameInputRef, descriptionInputRef, allUsers, selectedUserEmails, setSelectedUserEmails, availableApps, stagedAppIds, setStagedAppIds }: GroupEditorDialogProps) => {
     if (!isOpen) return null;
 
-    const isAdminGroup = editingGroup?.name === 'Admin Group';
+    const isAdminGroup = editingGroup?.name === `${config.ADMIN_USER_GROUP}`;
     const allUsersDataProvider = new ArrayDataProvider(allUsers, { keyAttributes: 'value' });
     const appDataProvider = useMemo(() => {
         const appOptions: AppOption[] = availableApps.filter(app => app.is_active).map(app => ({

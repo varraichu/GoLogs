@@ -12,6 +12,7 @@ import 'ojs/ojinputsearch';
 import { useToast } from '../../context/ToastContext'
 import Toast from '../../components/Toast'
 import SearchBar from '../../components/SearchBar';
+import config from '../../config/config';
 
 import 'ojs/ojselector'
 import 'ojs/ojlistitemlayout'
@@ -349,10 +350,14 @@ const Applications = (props: { path?: string }) => {
 
   const fetchAppUserGroups = async (appId: string, groups: UserGroup[]) => {
     try {
+      const adminGroup = groups.find(g => g.name === config.ADMIN_USER_GROUP);
+      const adminGroupId = adminGroup ? String(adminGroup._id) : null;
+
       const result = await applicationsService.fetchAppUserGroups(appId);
       const validIds = (result.groupIds || [])
         .map(String)
-        .filter((id: string) => groups.some((g) => String(g._id) === id));
+        .filter((id: string) => groups.some((g) => String(g._id) === id))
+        .filter((id: string) => id !== adminGroupId);
 
       setAssignedGroupIds(new Set(validIds));
       setInitialAssignedGroupIds(new Set(validIds));
