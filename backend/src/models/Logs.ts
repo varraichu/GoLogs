@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Defines the schema for application logs, including message, type, timestamp, and auto-expiry after 30 days.
+
 export interface ILog extends Document {
   app_id: mongoose.Types.ObjectId;
   message: string;

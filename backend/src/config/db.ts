@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 import logger from './logger';
 import config from 'config';
 
+/**
+ * Connects to MongoDB using config URI.
+ * Logs success or exits on failure.
+ */
 export const connectDB = async () => {
   try {
     await mongoose.connect(config.get('mongodb.uri') as string);

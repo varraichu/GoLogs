@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Defines the schema for users, including username, email, profile picture, and pinned applications
+
 export interface IUser extends Document {
   username: string;
   email: string;

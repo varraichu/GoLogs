@@ -19,6 +19,10 @@ export interface IAuthRequest<
   };
 }
 
+/**
+ * Verifies JWT and attaches user info to request.
+ * @param req - expects token cookie; calls next() if valid else 401/403
+ */
 export const protect = (req: IAuthRequest, res: Response, next: NextFunction) => {
   const token = req.cookies.token;
   if (!token) {
@@ -40,6 +44,10 @@ export const protect = (req: IAuthRequest, res: Response, next: NextFunction) =>
   }
 };
 
+/**
+ * Confirms user is in the Admin group.
+ * @param req - requires authenticated user; 403 if not admin
+ */
 export const isAdmin = async (req: IAuthRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
     res.status(401).json({ message: 'Not authorized' });
@@ -82,6 +90,10 @@ export const isAdmin = async (req: IAuthRequest, res: Response, next: NextFuncti
   }
 };
 
+/**
+ * Grants access if user is target or in Admin group.
+ * @param getTargetUserId - callback to extract userId from request; calls next() or blocks
+ */
 export const isSelfOrAdmin = (getTargetUserId: (req: IAuthRequest) => string) => {
   return async (req: IAuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {

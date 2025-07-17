@@ -5,6 +5,7 @@ import 'dayjs/locale/es';
 import { getTraceId } from '../utils/trace.util';
 const { combine, timestamp, printf } = winston.format;
 
+// Returns current timestamp in configured format.
 const timezoned = () => {
   const date_format = config.get('date_format');
   if (date_format == 'ABSOLUTE') {
@@ -16,11 +17,13 @@ const timezoned = () => {
   return dayjs().format('YYYY-MM-DDTHH:mm:ss.SSS');
 };
 
+// Defines log message format including timestamp, level, trace ID, and message.
 const logFormat = printf(({ level, message, timestamp }) => {
   const traceId = getTraceId();
   return `[${timestamp}] [${level.toUpperCase()}] [${traceId}] ${message}`;
 });
 
+// Winston logger setup with console and file transports.
 const logger = winston.createLogger({
   level: config.get('logger.level'),
   format: combine(

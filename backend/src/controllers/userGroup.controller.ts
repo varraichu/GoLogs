@@ -19,6 +19,7 @@ import {
   updateUserGroupAppAccessService,
 } from '../services/userGroup.service';
 
+// Updates application access for a user group using the group ID and app IDs.
 export const updateUserGroupAppAccess = async (req: Request, res: Response): Promise<void> => {
   const { groupId } = req.params;
   const { appIds } = req.body;
@@ -33,6 +34,7 @@ export const updateUserGroupAppAccess = async (req: Request, res: Response): Pro
   return;
 };
 
+// Creates a new user group with the provided name, description, and member emails.
 export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   const { name, description, memberEmails } = req.body as CreateUserGroupInput;
 
@@ -47,12 +49,14 @@ export const createUserGroup = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Fetches all user groups for the authenticated user.
 export const getAllUserGroups = async (req: IAuthRequest, res: Response) => {
   const groups = await getAllUserGroupsService();
   res.status(200).json(groups);
   return;
 };
 
+// Fetches all user group information with optional filters.
 export const getAllUserGroupInfo = async (req: IAuthRequest, res: Response) => {
   const { search = '', status = 'all', page = '1', limit = '6', appIds = '' } = req.query;
 
@@ -69,6 +73,7 @@ export const getAllUserGroupInfo = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Fetches a user group by its ID.
 export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
   const result = await getUserGroupByIdService(groupId);
@@ -82,6 +87,7 @@ export const getUserGroupById = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Updates a user group by its ID with new data.
 export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
   const updateData = req.body as UpdateUserGroupInput;
@@ -104,6 +110,7 @@ export const updateUserGroup = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Deletes a user group by its ID.
 export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
   const result = await deleteUserGroupService(groupId);
@@ -118,6 +125,7 @@ export const deleteUserGroup = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Toggles the status of a user group (active/inactive) by its ID.
 export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params as UserGroupParams;
   const { is_active } = req.body as userGroupStatusInput;
@@ -133,6 +141,7 @@ export const toggleGroupStatus = async (req: IAuthRequest, res: Response) => {
   return;
 };
 
+// Fetches all users in a specific user group by its ID.
 export const userGroupUsers = async (req: IAuthRequest, res: Response) => {
   const { groupId } = req.params;
   const users = await userGroupUsersService(groupId);

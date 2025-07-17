@@ -3,6 +3,7 @@ import { getDirectoryClient } from '../utils/googleDirectory.util';
 import { admin_directory_v1 } from 'googleapis';
 import { IAuthRequest } from '../middleware/auth.middleware';
 
+// Fetches a list of all users in the Google Workspace directory.
 export const searchDirectory = async (req: IAuthRequest, res: Response) => {
   const directory = getDirectoryClient();
 

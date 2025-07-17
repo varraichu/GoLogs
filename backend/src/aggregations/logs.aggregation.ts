@@ -1,4 +1,3 @@
-// File: aggregations/logs.aggregation.ts
 import mongoose from 'mongoose';
 
 interface SortCriteria {
@@ -33,6 +32,9 @@ interface UserLogsOptions {
   };
 }
 
+/**
+ * Builds sort object for MongoDB from given sort criteria.
+ */
 const buildSortObject = (sortCriteria: SortCriteria[]): Record<string, 1 | -1> => {
   const sortObj: Record<string, 1 | -1> = {};
 
@@ -66,6 +68,11 @@ const buildSortObject = (sortCriteria: SortCriteria[]): Record<string, 1 | -1> =
   return sortObj;
 };
 
+/**
+ * Constructs search conditions for admin-level log filtering.
+ * @param search - Raw user input string to search logs.
+ * @returns An array of `$match` compatible conditions for search keywords.
+ */
 const buildSearchConditions = (search: string): any[] => {
   const searchConditions: any[] = [];
 
@@ -98,6 +105,11 @@ const buildSearchConditions = (search: string): any[] => {
   return searchConditions;
 };
 
+/**
+ * Constructs search conditions for user-specific log filtering.
+ * @param search - Raw user input string to search logs.
+ * @returns An array of `$match` compatible conditions based on keywords.
+ */
 const buildUserSearchConditions = (search: string): any[] => {
   const searchConditions: any[] = [];
 
@@ -130,6 +142,15 @@ const buildUserSearchConditions = (search: string): any[] => {
   return searchConditions;
 };
 
+/**
+ * Builds a paginated logs aggregation pipeline for admin users.
+ * @param options - Options including pagination, sort, filters.
+ * @param options.skip - Number of documents to skip.
+ * @param options.limit - Max number of documents to return.
+ * @param options.sortCriteria - Sort fields and directions.
+ * @param options.filters - Filters like log type, date range, app name, search.
+ * @returns Object containing `pipeline` for data and `countPipeline` for total count.
+ */
 export const buildPaginatedLogsAggregation = ({
   skip,
   limit,
@@ -138,7 +159,6 @@ export const buildPaginatedLogsAggregation = ({
 }: PaginatedLogsOptions) => {
   const sortObj = buildSortObject(sortCriteria);
 
-  // Base filters before join
   const preLookupMatch: any = {};
 
   if (filters.log_type) {
@@ -153,7 +173,6 @@ export const buildPaginatedLogsAggregation = ({
     if (filters.endDate) preLookupMatch.timestamp.$lte = new Date(filters.endDate);
   }
 
-  // Post-lookup match: after application is joined
   const postLookupMatch: any = {
     'application.is_active': true,
   };
@@ -164,7 +183,6 @@ export const buildPaginatedLogsAggregation = ({
       : filters.app_name;
   }
 
-  // Search conditions
   const searchConditions = buildSearchConditions(filters.search || '');
 
   const basePipeline = [
@@ -205,6 +223,16 @@ export const buildPaginatedLogsAggregation = ({
   return { pipeline, countPipeline };
 };
 
+/**
+ * Builds a paginated logs aggregation pipeline for non-admin users.
+ * @param options - Options including accessible app IDs, pagination, sort, filters.
+ * @param options.appIds - List of accessible application ObjectIds.
+ * @param options.skip - Number of documents to skip.
+ * @param options.limit - Max number of documents to return.
+ * @param options.sortCriteria - Sort fields and directions.
+ * @param options.filters - Filters like log type, date range, app name, search.
+ * @returns Object containing `pipeline` for data and `countPipeline` for total count.
+ */
 export const buildUserLogsAggregation = ({
   appIds,
   skip,
@@ -228,7 +256,6 @@ export const buildUserLogsAggregation = ({
     if (filters.endDate) match.timestamp.$lte = new Date(filters.endDate);
   }
 
-  // Add search conditions to match
   const searchConditions = buildUserSearchConditions(filters.search || '');
   if (searchConditions.length > 0) {
     if (searchConditions.length === 1) {
@@ -282,6 +309,10 @@ export const buildUserLogsAggregation = ({
   return { pipeline, countPipeline };
 };
 
+/**
+ * Builds pipeline to summarize logs by app and type for a date range.
+ * @returns Aggregation pipeline that outputs log counts per log type per app.
+ */
 export const buildLogSummaryAggregation = (startDate: Date, endDate: Date) => {
   const match = {
     timestamp: { $gte: startDate, $lte: endDate },
@@ -298,18 +329,16 @@ export const buildLogSummaryAggregation = (startDate: Date, endDate: Date) => {
       },
     },
     { $unwind: '$application' },
-    // Count per log_type per app
     {
       $group: {
         _id: {
           app_id: '$app_id',
           app_name: '$application.name',
-          log_type: { $toLower: '$log_type' }, // normalize
+          log_type: { $toLower: '$log_type' },
         },
         count: { $sum: 1 },
       },
     },
-    // Group all log_types under each app
     {
       $group: {
         _id: {
@@ -325,13 +354,11 @@ export const buildLogSummaryAggregation = (startDate: Date, endDate: Date) => {
         total: { $sum: '$count' },
       },
     },
-    // Flatten logTypePairs into fields
     {
       $addFields: {
         logTypes: { $arrayToObject: '$logTypePairs' },
       },
     },
-    // Final projection with flattened fields
     {
       $project: {
         _id: 0,

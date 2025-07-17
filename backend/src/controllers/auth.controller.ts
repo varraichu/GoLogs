@@ -9,12 +9,14 @@ import { generateToken } from '../utils/jwt.util';
 import { GoogleOauthCallbackInput } from '../schemas/auth.validator';
 import { IAuthRequest } from 'src/middleware/auth.middleware';
 
+// Google OAuth client setup
 const googleClient = new OAuth2Client({
   clientId: config.get<string>('google.client_id'),
   clientSecret: config.get<string>('google.client_secret'),
   redirectUri: config.get<string>('google.redirect_uri'),
 });
 
+// Handles Google OAuth callback, verifies token, and logs in user.
 export const googleOauthHandler = async (req: Request, res: Response) => {
   const frontendUrl = config.get<string>('FRONTEND_URL');
 
@@ -103,6 +105,7 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
   }
 };
 
+// Logs out the user by clearing the cookie.
 export const logoutHandler = (req: Request, res: Response) => {
   res.clearCookie('token', {
     httpOnly: true,
@@ -112,6 +115,7 @@ export const logoutHandler = (req: Request, res: Response) => {
   res.status(200).json({ message: 'Logged out' });
 };
 
+// Fetches self user data for the authenticated user.
 export const selfData = async (req: IAuthRequest, res: Response) => {
   const userId = req.user?._id;
   const user = await User.findById(userId);
@@ -130,32 +134,4 @@ export const selfData = async (req: IAuthRequest, res: Response) => {
   };
 
   res.status(200).json({ user: userObj });
-};
-
-// This is for development purposes only, allowing login without OAuth
-export const devLoginHandler = async (req: Request, res: Response): Promise<void> => {
-  const { email } = req.body;
-  console.log('🚀 Dev login hit:', email);
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    res.status(404).json({ message: 'User not found' });
-    return;
-  }
-
-  const adminGroup = await UserGroup.findOne({ name: 'Admin Group', is_deleted: false });
-  const isAdmin = await UserGroupMembers.exists({
-    user_id: user._id,
-    group_id: adminGroup?._id,
-    is_active: true,
-  });
-
-  const token = generateToken({
-    _id: user._id,
-    email: user.email,
-    isAdmin: !!isAdmin,
-  });
-
-  res.status(200).json({ token });
-  return;
 };
