@@ -13,6 +13,7 @@ import SearchBar from '../../components/SearchBar';
 import '../../styles/applications-page.css';
 import { UserApplicationsList } from './components/UserApplicationsList';
 import { UserApplicationFilters } from './components/UserApplicationFilters';
+import { useUser } from '../../context/UserContext'
 
 interface Application {
     _id: string;
@@ -27,11 +28,19 @@ interface Application {
     health_status: 'healthy' | 'warning' | 'critical';
 }
 
-const UserApplications = (props: { path?: string }) => {
+interface UserApplicationsProps {
+    path: string;
+  userId?: string // This prop is no longer needed but kept for backward compatibility
+}
+
+
+const UserApplications = ({path:propPath, userId: propUserId }: UserApplicationsProps) => {
+    const { user } = useUser();
     const [applications, setApplications] = useState<Application[]>([]);
     const [isLoadingPage, setIsLoadingPage] = useState(true);
-    const [userId, setUserId] = useState("");
     const [opened, setOpened] = useState(false);
+    
+    const userId = user?._id || propUserId;
 
     const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -51,26 +60,6 @@ const UserApplications = (props: { path?: string }) => {
 
     useEffect(() => {
         fetchApplications();
-    }, []);
-
-    useEffect(() => {
-        const fetchUserId = async () => {
-            try {
-                const res = await fetch('http://localhost:3001/api/oauth/me', {
-                    method: 'GET',
-                    credentials: 'include', // VERY IMPORTANT: this sends the auth cookie
-                });
-
-                if (!res.ok) throw new Error("Not authenticated");
-
-                const data = await res.json();
-                setUserId(data.user._id);
-            } catch (err) {
-                console.error("Failed to fetch user info", err);
-            }
-        };
-
-        fetchUserId();
     }, []);
 
     useEffect(() => {

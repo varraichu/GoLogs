@@ -37,6 +37,15 @@ export interface Application {
     health_status: 'healthy' | 'warning' | 'critical';
 }
 
+
+interface User {
+    _id: string
+    username: string
+    email: string
+    picture: string
+    isAdmin: boolean
+}
+
 class DashboardService {
     private baseUrl = `${config.API_BASE_URL}`;
 
@@ -46,26 +55,15 @@ class DashboardService {
         };
     }
 
-    /** 🔐 Get user info from backend using cookie */
-    private async getUser(): Promise<{ _id: string; isAdmin: boolean }> {
-        const res = await fetch(`${this.baseUrl}/oauth/me`, {
-            credentials: 'include',
-        });
 
-        if (!res.ok) {
-            throw new Error('User not authenticated');
-        }
+    public async fetchLogSummary(user: User): Promise<SummaryResponse> {
+        // const user = await this.getUser();
+        const { _id: userId, isAdmin } = user;
 
-        const data = await res.json();
-        return data.user;
-    }
 
-    public async fetchLogSummary(): Promise<SummaryResponse> {
-        const user = await this.getUser();
-
-        const endpoint = user.isAdmin
+        const endpoint = isAdmin
             ? `${this.baseUrl}/logs/admin-cached-summary/`
-            : `${this.baseUrl}/logs/cached-summary/${user._id}`;
+            : `${this.baseUrl}/logs/cached-summary/${userId}`;
 
         const res = await fetch(endpoint, {
             method: 'GET',
@@ -100,8 +98,8 @@ class DashboardService {
         return data;
     }
 
-    public async fetchApplications(): Promise<{ applications: Application[]; userId: string }> {
-        const user = await this.getUser();
+    public async fetchApplications(user: User): Promise<{ applications: Application[]; userId: string }> {
+        // const user = await this.getUser();
         const { _id: userId, isAdmin } = user;
 
         let rawApplications: Application[] = [];

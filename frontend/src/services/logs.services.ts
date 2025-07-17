@@ -38,6 +38,14 @@ export interface LogFilters {
   search: string;
 }
 
+interface User {
+  _id: string
+  username: string
+  email: string
+  picture: string
+  isAdmin: boolean
+}
+
 class LogsService {
   private baseUrl = `${config.API_BASE_URL}`;
 
@@ -47,20 +55,6 @@ class LogsService {
     };
   }
 
-  /** 🔐 Fetch current authenticated user from cookie */
-  private async getUser(): Promise<{ _id: string; isAdmin: boolean }> {
-    const res = await fetch(`${this.baseUrl}/oauth/me`, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (!res.ok) {
-      throw new Error('User not authenticated');
-    }
-
-    const data = await res.json();
-    return data.user;
-  }
 
   private buildSortQueryString(sortCriteria?: SortCriteria[]): string {
     if (!sortCriteria || sortCriteria.length === 0) return '';
@@ -73,10 +67,10 @@ class LogsService {
   async fetchLogs(
     page: number,
     limit: number = 10,
+    user: User,
     sortCriteria?: SortCriteria[],
-    filters?: LogFilters
+    filters?: LogFilters,
   ): Promise<LogsResponse> {
-    const user = await this.getUser();
     const { _id: userId, isAdmin } = user;
 
     let baseEndpoint = `${this.baseUrl}/logs`;
@@ -134,23 +128,17 @@ class LogsService {
 
   async getExportUrl(
     limit: number = 10,
+    user: User,
     filters?: LogFilters,
     sortCriteria?: SortCriteria[]
   ): Promise<string> {
-    const user = await this.getUser();
     const { _id: userId, isAdmin } = user;
 
-    // let baseEndpoint = `${this.baseUrl}/logs`;
-
-    // if (!isAdmin) {
-    //   baseEndpoint += `/${userId}`;
-    // }
 
     let exportEndpoint = `${this.baseUrl}/logs/export`; // Always use export endpoint
     if (!isAdmin) {
       exportEndpoint += `/${userId}`
     }
-    // baseEndpoint += `/${userId}`;
 
     const params = new URLSearchParams();
     params.append('limit', String(limit));

@@ -22,8 +22,10 @@ import 'oj-c/dialog'
 import { downloadCSV } from '../../services/downloadCSV'
 import { log } from 'console'
 import "ojs/ojdrawerlayout";
+import { useUser } from '../../context/UserContext';
 
 const Logs = (props: { path?: string }) => {
+  const { user } = useUser();
   const params = new URLSearchParams(window.location.search);
   const log_type: string | null = params.get('log-type');
 
@@ -83,14 +85,18 @@ const Logs = (props: { path?: string }) => {
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
     fetchLogs(pagination.page)
+    // console.log("User in logs: ", user);
   }, [pagination.page, sortCriteria, filters])
 
   const exportFunc = async () => {
     try {
       setIsExporting(true)
       setExportDialog(false) // close the dialog first (or keep if async behavior preferred)
-
-      const url = await logsService.getExportUrl(pagination.total, filters, sortCriteria)
+      if (!user) {
+        addNewToast('error', 'Error', 'User not authenticated');
+        return;
+      }
+      const url = await logsService.getExportUrl(pagination.total, user, filters, sortCriteria)
 
       const response = await fetch(url, {
         method: 'GET',
@@ -130,7 +136,11 @@ const Logs = (props: { path?: string }) => {
       // Pass sort criteria to backend
       console.log('sort criteria: ', sortCriteria)
       console.log('filtera: ', filters)
-      const data = await logsService.fetchLogs(page, pagination.limit, sortCriteria, filters)
+      if (!user) {
+        addNewToast('error', 'Error', 'User not authenticated');
+        return;
+      }
+      const data = await logsService.fetchLogs(page, pagination.limit, user, sortCriteria, filters)
 
       const formattedLogs = (data.logs || []).map((log: LogEntry, idx) => ({
         rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,

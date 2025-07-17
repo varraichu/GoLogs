@@ -4,6 +4,7 @@ import { ojChart } from "ojs/ojchart";
 import { useEffect, useState } from 'preact/hooks';
 import { dashboardService, AppLogSummary } from '../../../services/dashboard.services';
 import MutableArrayDataProvider = require("ojs/ojmutablearraydataprovider");
+import { useUser } from '../../../context/UserContext';
 
 type ChartItem = {
     id: number;
@@ -13,12 +14,17 @@ type ChartItem = {
 };
 
 const LogGraph = () => {
+    const { user } = useUser();
     const [dataProvider, setDataProvider] = useState<MutableArrayDataProvider<string, ChartItem>>();
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const fetchData = async () => {
         try {
-            const res = await dashboardService.fetchLogSummary();
+            if (!user) {
+                console.log('User not authenticated');
+                return;
+            }
+            const res = await dashboardService.fetchLogSummary(user);
             const rawData: AppLogSummary[] = res.data;
 
             const chartData = rawData.flatMap((app: AppLogSummary) => {

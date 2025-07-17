@@ -4,15 +4,21 @@ import { h } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import ArrayDataProvider = require('ojs/ojarraydataprovider')
 import { logsService, LogEntry } from "../../../services/logs.services"
-import { route } from 'preact-router'
+import { route } from 'preact-router';
+import { useUser } from '../../../context/UserContext';
 
 const DashboardRecentLogs = (props:{setActiveItem:(str:string)=>void}) => {
+  const { user } = useUser();
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [dataProvider, setDataProvider] = useState<any>(null)
 
   useEffect(() => {
+    if (!user) {
+        console.log('User not authenticated');
+        return;
+      }
     // Fetch only 5 most recent logs
-    logsService.fetchLogs(1, 5, [{ attribute: 'timestamp', direction: 'descending' }])
+    logsService.fetchLogs(1, 5, user, [{ attribute: 'timestamp', direction: 'descending' }])
       .then((data) => {
         const formatted = (data.logs || []).map((log: LogEntry, idx: number) => ({
           rowNumber: idx + 1,
