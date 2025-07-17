@@ -77,10 +77,6 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
             }
 
             setApplications(prev => prev.map(app => (app._id === appId ? { ...app, isPinned: false } : app)));
-            // const app = applications.find(a => a._id === appId);
-            // const appName = app?.name || 'Application';
-            // setErrorDialogMessage(`Unpinned: ${appName}`);
-            // setShowErrorDialog(true);
         } catch (error) {
             console.error('Error unpinning application:', error);
             setErrorDialogMessage(error instanceof Error ? error.message : 'An unknown error occurred');
@@ -142,8 +138,7 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
           id="errorDialog"
           dialogTitle={
             errorDialogMessage.startsWith("App(s)") || 
-            errorDialogMessage.startsWith("Pinned") ||  
-            errorDialogMessage.startsWith("Unpinned")
+            errorDialogMessage.startsWith("Pinned")  
               ? "Success"
               : "Error"
           }
