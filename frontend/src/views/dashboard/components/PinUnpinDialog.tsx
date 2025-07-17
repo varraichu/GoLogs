@@ -16,6 +16,11 @@ export const handleCheckboxChange = async (
   setShowErrorDialog: (show: boolean) => void,
   applications: Application[]
 ) => {
+  const app = applications.find(a => a._id === appId);
+  if (app?.isPinned) {
+    return;
+  }
+
   const wasSelected = selectedAppIds.includes(appId);
   const wasOriginallyPinned = applications.find(app => app._id === appId)?.isPinned;
 
@@ -126,7 +131,7 @@ export const PinUnpinDialog = ({
   return (
     <oj-dialog
       id="pinDialog"
-      dialogTitle="Pin/Unpin Applications"
+      dialogTitle="Pin Applications"
       initialVisibility="show"
       onojClose={onCancel}
       style="--dialog-width: 400px;"
@@ -144,9 +149,10 @@ export const PinUnpinDialog = ({
                 <input
                   type="checkbox"
                   class="oj-checkbox-input"
-                  checked={selectedAppIds.includes(app._id)}
+                  checked={app.isPinned || selectedAppIds.includes(app._id)}
+                  disabled={app.isPinned}
                   onChange={() => handleCheckboxChange(app._id)}
-                  style="margin-right: 8px;"
+                  style={{ marginRight: '8px' }}
                 />
                 <span class="oj-typography-body-md" style="flex-grow: 1;">
                   {app.name

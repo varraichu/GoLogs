@@ -77,10 +77,10 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
             }
 
             setApplications(prev => prev.map(app => (app._id === appId ? { ...app, isPinned: false } : app)));
-            const app = applications.find(a => a._id === appId);
-            const appName = app?.name || 'Application';
-            setErrorDialogMessage(`Unpinned: ${appName}`);
-            setShowErrorDialog(true);
+            // const app = applications.find(a => a._id === appId);
+            // const appName = app?.name || 'Application';
+            // setErrorDialogMessage(`Unpinned: ${appName}`);
+            // setShowErrorDialog(true);
         } catch (error) {
             console.error('Error unpinning application:', error);
             setErrorDialogMessage(error instanceof Error ? error.message : 'An unknown error occurred');
@@ -115,7 +115,6 @@ export const PinnedAppsSection = ({ applications, userId, setApplications }: Pin
         </oj-button>
 
       </div>
-
 
       {/* Pinned Applications Cards */}
       <div class="oj-flex oj-flex-direction-col" style={{ gap: "16px" }}>
