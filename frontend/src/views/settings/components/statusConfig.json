@@ -25,7 +25,7 @@
   },
   {
     "title": "Silent Apps (No Logs Threshold)",
-    "description": "Hours wihtout logs to trigger alert",
+    "description": "Hours without logs to trigger alert",
     "iconClass": "oj-ux-ico-notification-off",
     "iconColorClass": "oj-text-color-neutral",
     "titleColorClass": "oj-text-color-neutral",

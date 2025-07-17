@@ -203,7 +203,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
         <h3 class="oj-flex">
           <span class="oj-ux-ico-database oj-text-color-secondary oj-typography-heading-sm"></span>
           <span class="oj-typography-heading-sm oj-text-color-secondary">
-            Database Configuration
+            Database Retention
           </span>
         </h3>
         <div class="oj-web-applayout-max-width oj-web-applayout-content oj-panel oj-bg-neutral-20 oj-flex">
