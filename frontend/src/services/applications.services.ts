@@ -67,26 +67,6 @@ class ApplicationsService {
     }
   }
 
-  private async getUserIdFromSession(): Promise<string | null> {
-    try {
-      const res = await fetch(`${config.API_BASE_URL}/oauth/me`, {
-        method: 'GET',
-        credentials: 'include', // 🔐 Ensures cookies are sent with the request
-      });
-
-      if (!res.ok) {
-        console.error('Failed to fetch user info');
-        return null;
-      }
-
-      const data = await res.json();
-      return data.user?._id || null;
-    } catch (err) {
-      console.error('Error fetching user session:', err);
-      return null;
-    }
-  }
-
   /**
    * Fetch all applications
    */
@@ -127,8 +107,8 @@ class ApplicationsService {
     return data;
   }
 
-  async fetchUserApplications(): Promise<ApplicationsResponse> {
-    const userId = await this.getUserIdFromSession();
+  async fetchUserApplications(userId: string): Promise<ApplicationsResponse> {
+    // const userId = await this.getUserIdFromSession();
     if (!userId) {
       throw new Error('User ID not found in token');
     }
@@ -150,21 +130,17 @@ class ApplicationsService {
 
   async fetchApplicationsByRole(
     filters: { search?: string; groupIds?: string[]; status?: string },
-    pagination: { page: number; limit: number }
+    pagination: { page: number; limit: number },
+    userId: string,
+    isAdmin: boolean,
   ): Promise<ApplicationsResponse> {
-    const res = await fetch(`${config.API_BASE_URL}/oauth/me`, {
-      method: 'GET',
-      credentials: 'include', // 🔐 Ensures cookies are sent with the request
-    });
-
-    const data = await res.json();
 
     try {
 
-      if (data.user.isAdmin) {
+      if (isAdmin) {
         return await this.fetchApplications(filters, pagination);
       } else {
-        return await this.fetchUserApplications();
+        return await this.fetchUserApplications(userId);
       }
     } catch (err) {
       console.error('Error decoding JWT or fetching applications:', err);

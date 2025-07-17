@@ -10,6 +10,7 @@ import Toast from '../../../components/Toast';
 
 import applicationsService, { Application, UserGroup } from '../../../services/applications.services';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
+import { useUser } from '../../../context/UserContext'
 interface filters {
   apps: string[];
   logTypes: string[];
@@ -23,6 +24,10 @@ interface LogFiltersProps {
 }
 
 const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
+  const { user } = useUser();
+  const userId = user?._id || '';
+  const isAdmin = user?.isAdmin || false;
+
   const [applications, setApplications] = useState<Application[]>([]);
 
   const [appOptions, setAppOptions] = useState<{ value: string, label: string }[]>([]);
@@ -106,7 +111,7 @@ const LogFilters = ({ filters, onFilterChange }: LogFiltersProps) => {
   const fetchApplications = async () => {
     try {
       const data = await applicationsService.fetchApplicationsByRole(
-        userFilters, pagination
+        userFilters, pagination, userId, isAdmin
       );
       const apps = data.applications || [];
       setApplications(apps);

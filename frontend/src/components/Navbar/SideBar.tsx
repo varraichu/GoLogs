@@ -37,11 +37,13 @@ export function SideBar({
   setActiveItem,
 }: Props) {
 
-
   useEffect(() => {
     const p = window.location.pathname
     if (p === '/') route('/dashboard')
     setActiveItem(mapping[p] || 'dashboard')
+    console.log('SideBar received pictureUrl:', pictureUrl)
+    console.log('pictureUrl exists:', !!pictureUrl)
+    console.log('username exists:', !!username)
   }, [])
 
   const navigate = (path: string, id: string) => {
@@ -49,18 +51,42 @@ export function SideBar({
     route(path === '/' ? '/dashboard' : path)
   }
 
-  const handleSignOut = async (e: Event) => {
-    e.preventDefault()
-
-    await fetch('http://localhost:3001/api/oauth/logout', {
-      method: 'POST',
-      credentials: 'include'
-    })
-
-    setIsAuthenticated?.(false)
-    window.history.replaceState({}, '', window.location.origin + '/')
+  // Helper function to render avatar
+  const renderAvatar = (size: 'xs' | 'sm') => {
+    const className = size === 'xs' 
+      ? "oj-md-padding-4x-vertical oj-md-padding-3x-horizontal oj-align-items-center oj-flex-item sidebar-avatar-collapsed"
+      : "oj-sm-margin-end-5x oj-sm-padding-2x"
+    
+    // console.log('Rendering avatar with:', { pictureUrl, username, size })
+    
+    if (pictureUrl) {
+      return (
+        <oj-avatar
+          size={size}
+          src={pictureUrl}
+          class={className}
+          slot={size === 'sm' ? 'leading' : undefined}
+        />
+      )
+    } else if (username) {
+      return (
+        <oj-avatar
+          size={size}
+          initials={username[0]}
+          class={className}
+          slot={size === 'sm' ? 'leading' : undefined}
+        />
+      )
+    } else {
+      return (
+        <oj-avatar
+          size={size}
+          class={className}
+          slot={size === 'sm' ? 'leading' : undefined}
+        />
+      )
+    }
   }
-
 
   return (
     <div
@@ -69,22 +95,10 @@ export function SideBar({
     >
       {/* Profile */}
       {collapsed ? (
-        <oj-avatar
-          size="xs"
-          src={pictureUrl || undefined}
-          initials={!pictureUrl && username ? username[0] : undefined}
-          // shape='circle'
-          class="oj-md-padding-4x-vertical oj-md-padding-3x-horizontal oj-align-items-center oj-flex-item sidebar-avatar-collapsed"
-        />
+        renderAvatar('xs')
       ) : (
         <div class="oj-flex oj-align-items-center oj-md-padding-2x">
-          <oj-avatar
-            size="sm"
-            class="oj-sm-margin-end-5x oj-sm-padding-2x "
-            src={pictureUrl || undefined}
-            initials={!pictureUrl && username ? username[0] : undefined}
-            slot="leading"
-          ></oj-avatar>
+          {renderAvatar('sm')}
           <div style="display: flex; flex-direction: column;" class="oj-sm-gap-1x oj-sm-padding-2x">
             <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[0]}</div>
             <div class="oj-typography-body-md oj-text-color-primary">{username?.split(' ')[1]}</div>
@@ -109,7 +123,6 @@ export function SideBar({
           <ul>
             <li
               id="dashboard"
-              // class={activeItem === 'dashboard' ? 'selected-red' : ''}
               onClick={() => navigate('/dashboard', 'dashboard')}
             >
               <span class="oj-ux-ico-layout-mosaic" />
@@ -117,7 +130,6 @@ export function SideBar({
             {isAdmin && (
               <li
                 id="usergroups"
-                // class={activeItem === 'usergroups' ? 'selected-red' : ''}
                 onClick={() => navigate('/usergroups', 'usergroups')}
               >
                 <span class="oj-ux-ico-group-avatar" />
@@ -125,7 +137,6 @@ export function SideBar({
             )}
             <li
               id="applications"
-              // class={activeItem === 'applications' ? 'selected-red' : ''}
               onClick={() =>
                 navigate(isAdmin ? '/applications' : '/user-applications', 'applications')
               }
@@ -134,14 +145,12 @@ export function SideBar({
             </li>
             <li
               id="logs"
-              // class={activeItem === 'logs' ? 'selected-red' : ''}
               onClick={() => navigate('/logs', 'logs')}
             >
               <span class="oj-ux-ico-log" />
             </li>
             <li
               id="settings"
-              // class={activeItem === 'settings' ? 'selected-red' : ''}
               onClick={() => navigate('/settings', 'settings')}
             >
               <span class="oj-ux-ico-settings" />
@@ -158,7 +167,6 @@ export function SideBar({
           <ul>
             <oj-list-item-layout
               id="dashboard"
-              // class={activeItem === 'dashboard' ? 'sidebar-active' : ''}
               onClick={() => navigate('/dashboard', 'dashboard')}
             >
               <span slot="leading" class="oj-ux-ico-layout-mosaic" />
@@ -167,7 +175,6 @@ export function SideBar({
             {isAdmin && (
               <oj-list-item-layout
                 id="usergroups"
-                // class={activeItem === 'usergroups' ? 'sidebar-active' : ''}
                 onClick={() => navigate('/usergroups', 'usergroups')}
               >
                 <span slot="leading" class="oj-ux-ico-group-avatar" />
@@ -176,7 +183,6 @@ export function SideBar({
             )}
             <oj-list-item-layout
               id="applications"
-              // class={activeItem === 'applications' ? 'sidebar-active' : ''}
               onClick={() =>
                 navigate(isAdmin ? '/applications' : '/user-applications', 'applications')
               }
@@ -186,7 +192,6 @@ export function SideBar({
             </oj-list-item-layout>
             <oj-list-item-layout
               id="logs"
-              // class={activeItem === 'logs' ? 'sidebar-active' : ''}
               onClick={() => navigate('/logs', 'logs')}
             >
               <span slot="leading" class="oj-ux-ico-log" />
@@ -194,7 +199,6 @@ export function SideBar({
             </oj-list-item-layout>
             <oj-list-item-layout
               id="settings"
-              // class={activeItem === 'settings' ? 'sidebar-active' : ''}
               onClick={() => navigate('/settings', 'settings')}
             >
               <span slot="leading" class="oj-ux-ico-settings" />

@@ -11,19 +11,22 @@ import * as ResponsiveUtils from "ojs/ojresponsiveutils";
 import "ojs/ojtoolbar";
 import "ojs/ojmenu";
 import "ojs/ojbutton";
+import { useUser } from '../context/UserContext';
 
 type Props = {
   appName: string,
   userLogin: string,
   setIsAuthenticated?: (value: boolean) => void
   setStartOpen: () => void
-  setActiveItem: (str:string)=>void
+  setActiveItem: (str: string) => void
 };
 
 export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen, setActiveItem }: Props) {
   const mediaQueryRef = useRef<MediaQueryList>(window.matchMedia(ResponsiveUtils.getFrameworkQuery("sm-only")!));
 
   const [isSmallWidth, setIsSmallWidth] = useState(mediaQueryRef.current.matches);
+
+  const { logout } = useUser();
 
   useEffect(() => {
     mediaQueryRef.current.addEventListener("change", handleMediaQueryChange);
@@ -43,14 +46,9 @@ export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen, s
   }
   const handleSignOut = async (e: Event) => {
     e.preventDefault()
-
-    await fetch('http://localhost:3001/api/oauth/logout', {
-      method: 'POST',
-      credentials: 'include'
-    })
-
-    setIsAuthenticated?.(false)
+    await logout() // 👈 this clears user + updates state
     window.history.replaceState({}, '', window.location.origin + '/')
+    // route('/')     // 👈 optional: redirect to root after logout
   }
 
 
@@ -69,7 +67,7 @@ export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen, s
           </oj-c-button>
 
           <h1 class="oj-typography-heading-md oj-text-color-primary">
-            <a href="/dashboard" style="color: inherit; text-decoration: none;" onClick={()=>{setActiveItem("dashboard")}}>
+            <a href="/dashboard" style="color: inherit; text-decoration: none;" onClick={() => { setActiveItem("dashboard") }}>
               <span class="oj-text-color-danger">Go</span>Logs
             </a>
           </h1>

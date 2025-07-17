@@ -11,8 +11,10 @@ import { PinnedAppsSection } from "./components/PinnedAppsSection";
 import { PinUnpinDialog, handleCheckboxChange, savePinnedApps } from "./components/PinUnpinDialog";
 
 import dashboardService, { Application } from "../../services/dashboard.services";
+import { useUser } from '../../context/UserContext';
 
 const Dashboard = (props: { path?: string; userId?: string, setActiveItem: (str: string) => void }) => {
+    const { user } = useUser();
     const [applications, setApplications] = useState<Application[]>([]);
     const [userId, setUserId] = useState("");
     const [showPinDialog, setShowPinDialog] = useState(false);
@@ -24,7 +26,11 @@ const Dashboard = (props: { path?: string; userId?: string, setActiveItem: (str:
     useEffect(() => {
         const loadApplications = async () => {
             try {
-                const { applications: fetchedApplications, userId: fetchedUserId } = await dashboardService.fetchApplications();
+                if (!user) {
+                    console.log('User not authenticated');
+                    return;
+                }
+                const { applications: fetchedApplications, userId: fetchedUserId } = await dashboardService.fetchApplications(user);
                 setApplications(fetchedApplications);
                 setUserId(fetchedUserId);
             } catch (error) {
