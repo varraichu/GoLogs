@@ -34,8 +34,11 @@ import { ApplicationFilters } from './components/ApplicationFilters';
 
 import applicationsService, { Application, UserGroup } from '../../services/applications.services'
 import '../../styles/applications-page.css';
+import { useUser } from '../../context/UserContext'
 
 const Applications = (props: { path?: string }) => {
+  const { user } = useUser();
+  const userId = user?._id || '';
   const [applications, setApplications] = useState<Application[]>([])
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [opened, setOpened] = useState(false);
@@ -50,7 +53,6 @@ const Applications = (props: { path?: string }) => {
   const [initialAssignedGroupIds, setInitialAssignedGroupIds] = useState<any>(new Set([]))
   const [confirmDeleteDialogId, setConfirmDeleteDialogId] = useState<string | null>(null)
   const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
-
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
   const [editingState, setEditingState] = useState<boolean>(false)
   const [selectedItem, setSelectedItem] = useState('active')
