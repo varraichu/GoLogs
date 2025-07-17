@@ -18,4 +18,6 @@ const applicationSchema: Schema<IApplication> = new Schema({
   is_active: { type: Boolean, default: true },
 });
 
+applicationSchema.index({ name: 1 });
+
 export default mongoose.model<IApplication>('Applications', applicationSchema);

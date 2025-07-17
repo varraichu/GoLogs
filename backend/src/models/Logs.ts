@@ -22,4 +22,6 @@ const logSchema: Schema<ILog> = new Schema({
   },
 });
 
+logSchema.index({ app_id: 1 });
+
 export default mongoose.model<ILog>('Logs', logSchema);
