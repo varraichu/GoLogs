@@ -82,6 +82,7 @@ export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: Appli
           </span>
           {app.groupNames
             .slice(0, 2)
+            .filter(group => group !== config.ADMIN_USER_GROUP)
             .map((group, index) => (
               <span key={index} class="group-chip">
                 {group}
