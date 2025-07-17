@@ -15,7 +15,7 @@ export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewU
 
   return (
     <div class="oj-panel user-group-card"
-      style={{ maxWidth: "50%" }}>
+      style={{ maxWidth: "100%" }}>
       <div>
         <div class="user-group-header">
           <div class="user-group-title-container">

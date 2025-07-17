@@ -185,7 +185,6 @@ export const getPaginatedUserGroupsAggregation = async (options: {
                   $match: {
                     'applicationDetails.is_active': true,
                     'applicationDetails.is_deleted': false,
-
                   },
                 },
                 {

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import config from 'config';
 import User from '../models/Users';
+import Settings from '../models/Settings';
 import UserGroup from '../models/UserGroups';
 import UserGroupMembers from '../models/UserGroupMembers';
 import { generateToken } from '../utils/jwt.util';
@@ -58,6 +59,14 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
         username: payload.name || payload.email.split('@')[0],
         picture_url: payload.picture,
       });
+
+      await Settings.create({
+        user_id: user._id,
+        error_rate_threshold: 10,
+        warning_rate_threshold: 25,
+        silent_duration: 12,
+      });
+
     } else if (adminGroup) {
       let isAdminGroupMember = await UserGroupMembers.findOne({
         group_id: adminGroup._id,
@@ -82,7 +91,7 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.redirect(`${config.get('FRONTEND_URL')}/dashboard`);
@@ -98,9 +107,9 @@ export const logoutHandler = (req: Request, res: Response) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  })
-  res.status(200).json({ message: 'Logged out' })
+    sameSite: 'lax',
+  });
+  res.status(200).json({ message: 'Logged out' });
 };
 
 export const selfData = async (req: IAuthRequest, res: Response) => {
@@ -117,8 +126,8 @@ export const selfData = async (req: IAuthRequest, res: Response) => {
     email: user.email,
     username: user.username,
     picture: user.picture_url,
-    isAdmin: req.user?.isAdmin
-  }
+    isAdmin: req.user?.isAdmin,
+  };
 
   res.status(200).json({ user: userObj });
 };
