@@ -18,6 +18,7 @@ export const createSettingsSchema = object({
       .min(20, 'Must be at least 20 logs per hour')
       .max(150, 'Must be at most 150 logs per hour'),
 
+
     silent_duration: number({
       required_error: 'Silent duration is required',
     })
