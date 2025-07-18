@@ -60,7 +60,7 @@ export const PinnedAppCard = ({ app, onUnpin }: PinnedAppCardProps) => {
                     <span style={{ padding: '1px 6px', fontSize: '0.7rem', borderRadius: '12px', fontWeight: 400, backgroundColor: healthColor.background, color: healthColor.text, border: `1px solid ${healthColor.border}`, textTransform: 'capitalize', marginTop: '2px' }}>
                         {app.health_status}
                     </span>
-                    <span style={{ padding: "1px 6px", fontWeight: 400, color: app.is_active ? "#065f46" : "#991b1b", fontSize: "0.7rem", backgroundColor: app.is_active ? "#e6ffed" : "#ffebeb", borderRadius: "4px", lineHeight: "1.2", flexShrink: 0, marginTop: '2px' }}>
+                    <span style={{ padding: "1px 6px", fontWeight: 400, color: app.is_active ? "#065f46" : "#991b1b", fontSize: "0.7rem", backgroundColor: app.is_active ? "#e6ffed" : "#ffebeb", borderRadius: "4px", lineHeight: "1.2", flexShrink: 0, marginTop: '1px' }}>
                         {app.is_active ? "Active" : "Inactive"}
                     </span>
                 </div>
