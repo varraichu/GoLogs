@@ -97,13 +97,27 @@ mkdir credentials
 
 Place your Google Service Account key file inside this folder and name it service-account-key.json. This is required for certain backend functions.
 
-Configure the Demo Application (Optional):
-If you want to adjust the log generation behavior of the demo application, you can edit the index.ts file in the demo-app directory.
+## Configure the Demo Application (Optional)
 
-// demo-app/index.ts
-// Modify these values to change log output
-const LOGS_PER_INTERVAL = 10;
-const INTERVAL_SECONDS = 5;
+You can adjust the demo application's log generation behavior through environment variables in the **root `.env` file**.
+
+### Available Environment Variables
+
+- **`LOG_COUNT`**  
+  Controls how many logs are generated per interval.
+
+- **`APP_NAME`**  
+  Sets the name of the application (used to tag logs).
+
+### Example `.env` Configuration
+
+```env
+LOG_COUNT=10
+APP_NAME=DemoApp
+
+## Important
+Before generating logs, make sure an application with the same name as APP_NAME already exists in your MongoDB database.
+Otherwise, the demo app will not be able to associate logs with it, and log generation will fail.
 
 Usage
 Once the setup is complete, you can start all the services using Docker Compose.
