@@ -168,9 +168,7 @@ export const getUserApplicationsService = async (options: FilterOptions) => {
     limit,
     search,
     status,
-    accessibleAppIds,
-    warning_rate_threshold,
-    error_rate_threshold,
+    accessibleAppIds
   });
 
   const result = await Applications.aggregate(pipeline);
