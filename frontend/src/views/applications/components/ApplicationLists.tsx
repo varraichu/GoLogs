@@ -8,6 +8,7 @@ interface ApplicationsListProps {
   onToggleStatus: (appId: string, isActive: boolean) => void;
   onEdit: (app: Application) => void;
   onDelete: (appId: string) => void;
+  togglingAppId: string | null;
 }
 
 export const ApplicationsList = ({
@@ -15,6 +16,7 @@ export const ApplicationsList = ({
   onToggleStatus,
   onEdit,
   onDelete,
+  togglingAppId,
 }: ApplicationsListProps) => {
 
   return (
@@ -36,6 +38,7 @@ export const ApplicationsList = ({
             onToggleStatus={onToggleStatus}
             onEdit={onEdit}
             onDelete={onDelete}
+            togglingAppId={togglingAppId}
           />
         ))
       )}

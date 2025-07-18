@@ -58,6 +58,9 @@ const Applications = (props: { path?: string }) => {
   const [editingState, setEditingState] = useState<boolean>(false)
   const [selectedItem, setSelectedItem] = useState('active')
 
+  const [togglingAppId, setTogglingAppId] = useState<string | null>(null);
+
+
   const [errors, setErrors] = useState<{ name?: string; description?: string }>({})
   const [dataProvider, setDataProvider] = useState<any>(null)
   // REMOVED: const [searchTerm, setSearchTerm] = useState('')
@@ -222,6 +225,8 @@ const Applications = (props: { path?: string }) => {
 
     const applicationData = { name: transformedName, description }
 
+    setShowDialog(false);
+    setIsLoadingPage(true);
     try {
       let result
       if (editingApplication) {
@@ -253,20 +258,23 @@ const Applications = (props: { path?: string }) => {
         console.error('Failed to assign groups:', error)
       }
 
-      setShowDialog(false)
       setErrors({})
       fetchApplications()
     } catch (error) {
       addNewToast('error', 'Failed to save application', String(error))
       console.error('Failed to save application', error)
+    } finally {
+      setIsLoadingPage(false);
     }
   }
 
   const deleteGroup = async () => {
     try {
       if (!confirmDeleteDialogId) return;
-
-      const result = await applicationsService.deleteApplication(confirmDeleteDialogId);
+      const dialogId = confirmDeleteDialogId;
+      setConfirmDeleteDialogId(null);
+      setIsLoadingPage(true);
+      const result = await applicationsService.deleteApplication(dialogId);
       const data = await result.json().catch(() => ({}));
 
       if (!result.ok) {
@@ -284,19 +292,24 @@ const Applications = (props: { path?: string }) => {
       }
 
       fetchApplications();
-      setConfirmDeleteDialogId(null);
+      // setConfirmDeleteDialogId(null);
     } catch (error) {
       addNewToast('error', 'Failed to delete application', String(error));
       console.error('Failed to delete application', error);
+    } finally {
+      setIsLoadingPage(false);
+
     }
   };
 
 
   const handleToggleApplicationStatus = async (appId: string, isActive: boolean) => {
+    setTogglingAppId(appId);
     try {
       const result = await applicationsService.toggleApplicationStatus(appId, isActive)
       if (result.ok) {
-        fetchApplications()
+        fetchApplications();
+        addNewToast('confirmation', 'Success', 'Application status updated.');
       } else {
         addNewToast(
           'error',
@@ -307,6 +320,8 @@ const Applications = (props: { path?: string }) => {
     } catch (error) {
       console.error('Error toggling status:', error)
       addNewToast('error', 'Failed to toggle status', String(error))
+    } finally {
+      setTogglingAppId(null);
     }
   }
 
@@ -324,31 +339,6 @@ const Applications = (props: { path?: string }) => {
       setIsLoadingPage(false);
     }
   };
-
-  // const fetchAppUserGroups = async (appId: string) => {
-  //   // setIsLoadingPage(true);
-  //   try {
-  //     const result = await applicationsService.fetchAppUserGroups(appId);
-  //     const validIds = (result.groupIds || [])
-  //       .map(String)
-  //       .filter((id: string) => userGroups.some((g) => String(g._id) === id));
-
-  //     setAssignedGroupIds(new Set(validIds));
-  //     setInitialAssignedGroupIds(new Set(validIds));
-
-  //     if (setAppUserGroups) {
-  //       const assignedNames = userGroups
-  //         .filter((g) => validIds.includes(String(g._id)))
-  //         .map((g) => g.name);
-  //       setAppUserGroups(assignedNames);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching App usergroups:', error);
-  //     addNewToast('error', 'Failed to fetch app user groups', String(error));
-  //   } finally {
-  //     setIsLoadingPage(false);
-  //   }
-  // };
 
   const fetchAppUserGroups = async (appId: string, groups: UserGroup[]) => {
     try {
@@ -454,6 +444,7 @@ const Applications = (props: { path?: string }) => {
                 onToggleStatus={handleToggleApplicationStatus}
                 onEdit={openDialog}
                 onDelete={confirmDeleteGroup}
+                togglingAppId={togglingAppId}
               />
             )}
 
