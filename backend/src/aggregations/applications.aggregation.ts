@@ -124,6 +124,7 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
             as: 'logStats',
           },
         },
+
         {
           $lookup: {
             from: 'logs',
@@ -132,16 +133,44 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
               {
                 $match: {
                   $expr: {
-                    $and: [{ $eq: ['$app_id', '$$appId'] }, { $gte: ['$timestamp', oneHourAgo] }],
+                    $and: [
+                      { $eq: ['$app_id', '$$appId'] },
+                      { $gte: ['$timestamp', oneHourAgo] },
+                      { $eq: ['$log_type', 'error'] } 
+                    ],
                   },
                 },
               },
-              { $count: 'recentLogs' },
+              { $count: 'count' },
             ],
-            as: 'recentLogStats',
+            as: 'recentErrorStats',
           },
         },
+
+        {
+          $lookup: {
+            from: 'logs',
+            let: { appId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$app_id', '$$appId'] },
+                      { $gte: ['$timestamp', oneHourAgo] },
+                      { $eq: ['$log_type', 'warn'] } 
+                    ],
+                  },
+                },
+              },
+              { $count: 'count' },
+            ],
+            as: 'recentWarningStats',
+          },
+        },
+
         { $sort: { created_at: -1 } },
+
         {
           $project: {
             _id: 1,
@@ -155,18 +184,14 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
             health_status: {
               $let: {
                 vars: {
-                  recent_logs: {
-                    $ifNull: [{ $arrayElemAt: ['$recentLogStats.recentLogs', 0] }, 0],
-                  },
+                  error_logs: { $ifNull: [{ $arrayElemAt: ['$recentErrorStats.count', 0] }, 0] },
+                  warning_logs: { $ifNull: [{ $arrayElemAt: ['$recentWarningStats.count', 0] }, 0] },
                 },
                 in: {
                   $switch: {
                     branches: [
-                      { case: { $gte: ['$$recent_logs', error_rate_threshold] }, then: 'critical' },
-                      {
-                        case: { $gte: ['$$recent_logs', warning_rate_threshold] },
-                        then: 'warning',
-                      },
+                      { case: { $gte: ['$$error_logs', error_rate_threshold] }, then: 'critical' },
+                      { case: { $gte: ['$$warning_logs', warning_rate_threshold] }, then: 'warning' },
                     ],
                     default: 'healthy',
                   },
