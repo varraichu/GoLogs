@@ -90,7 +90,7 @@ export const savePinnedApps = async (
     if (appsToPin.length > 0) {
       const pinnedNames = applications
         .filter(app => appsToPin.includes(app._id))
-        .map(app => app.name)
+        .map(app => app.name.replace(/\./g, ' '))
         .join(', ');
       setErrorDialogMessage(`Pinned: ${pinnedNames}`);
       setShowErrorDialog(true);

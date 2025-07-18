@@ -16,6 +16,8 @@ const userGroupApplicationSchema: Schema<IUserGroupApplication> = new Schema({
   is_removed: { type: Boolean, default: false },
 });
 
+userGroupApplicationSchema.index({ app_id: 1, group_id: 1 }, { unique: true });
+
 export default mongoose.model<IUserGroupApplication>(
   'UserGroupApplications',
   userGroupApplicationSchema

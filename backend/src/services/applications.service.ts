@@ -249,10 +249,7 @@ export const deleteApplicationService = async (appId: string) => {
   await app.save();
   await UserGroupApplications.updateMany({ app_id: appId }, { is_active: false });
 
-   await Users.updateMany(
-        {}, 
-        { $pull: { pinned_apps: new mongoose.Types.ObjectId(appId) } }
-    );
+  await Users.updateMany({}, { $pull: { pinned_apps: new mongoose.Types.ObjectId(appId) } });
 
   return {
     success: true,

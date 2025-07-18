@@ -160,6 +160,8 @@ const UserGroups = (props: { path?: string }) => {
 
   const handleSave = async () => {
     if (!(await validateForm())) return;
+    setShowDialog(false);
+    setIsLoadingPage(true);
     const groupData = {
       name,
       description,
@@ -193,23 +195,30 @@ const UserGroups = (props: { path?: string }) => {
 
   const handleDelete = async () => {
     if (!confirmDeleteDialogId) return;
+    const dialogId = confirmDeleteDialogId;
+    setConfirmDeleteDialogId(null);
+    setIsLoadingPage(true);
     try {
-      await deleteUserGroup(confirmDeleteDialogId);
+      await deleteUserGroup(dialogId);
       addNewToast('confirmation', 'Success', 'Group deleted successfully.');
-      setConfirmDeleteDialogId(null);
       loadGroups();
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to delete group.');
+    } finally {
+      setIsLoadingPage(false);
     }
   };
 
   const handleToggleStatus = async (groupId: string, isActive: boolean) => {
+    setIsLoadingPage(true);
     try {
       await toggleGroupStatus(groupId, isActive);
       addNewToast('confirmation', 'Success', 'Group status updated.');
       loadGroups();
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to update status.');
+    } finally {
+      setIsLoadingPage(false);
     }
   };
 
@@ -262,7 +271,6 @@ const UserGroups = (props: { path?: string }) => {
                   gap: '24px',
                 }}
               >
-                {/* <div class="oj-flex oj-flex-wrap" style={{ gap: '24px' }}> */}
                 {groups.length > 0 ? (
                   groups.map((group) => (
                     <UserGroupCard
@@ -366,7 +374,6 @@ const UserGroups = (props: { path?: string }) => {
         <oj-dialog dialogTitle={`Users in ${selectedGroupForUsers.name}`} initialVisibility="show" onojClose={() => setShowUsersDialog(false)}>
           <div class="oj-dialog-body">
             {selectedGroupForUsers.users?.length > 0 ? (
-              // <ul>{selectedGroupForUsers.users.map(user => <li key={user._id}>{user.username}</li>)}</ul>
               <ul>
                 {selectedGroupForUsers.users
                   .filter(user => user) // ensure not null

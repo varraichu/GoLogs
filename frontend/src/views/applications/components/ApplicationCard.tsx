@@ -9,6 +9,7 @@ interface ApplicationCardProps {
   onToggleStatus: (appId: string, isActive: boolean) => void;
   onEdit: (app: Application) => void;
   onDelete: (appId: string) => void;
+  togglingAppId: string | null;
 }
 
 const getHealthStatusStyle = (status: string) => {
@@ -23,7 +24,7 @@ const getHealthStatusStyle = (status: string) => {
   }
 };
 
-export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: ApplicationCardProps) => {
+export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete, togglingAppId }: ApplicationCardProps) => {
   return (
     <div class="oj-panel application-card">
       <div class="application-header">
@@ -51,6 +52,7 @@ export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete }: Appli
         </div>
         <oj-switch
           value={app.is_active}
+          disabled={togglingAppId === app._id}
           onvalueChanged={(e) => onToggleStatus(app._id, e.detail.value as boolean)}
         />
       </div>

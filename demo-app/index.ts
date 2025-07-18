@@ -12,7 +12,7 @@ interface LogEntry {
 
 // --- Configuration ---
 const LOG_FILE_PATH: string = path.join(__dirname, 'logs', 'app.log');
-const LOGS_PER_SECOND: number = 10;
+const LOGS_PER_SECOND = Number(process.env.LOG_COUNT) || 10;
 const TOTAL_DURATION_SECONDS: number = 1;
 const LOG_TYPES: LogEntry['log_type'][] = ['info', 'warn', 'error', 'debug'];
 
@@ -75,38 +75,6 @@ function generateLogLine(index: number): string {
 
   return JSON.stringify(log) + '\n';
 }
-
-// function generateLogLine(index: number): string {
-//   const goodMessages = [
-//     `Synthetic log entry #${index}: User successfully logged in using OAuth2 provider.`,
-//     `Synthetic log entry #${index}: Background sync completed. 253 records updated.`,
-//     `Synthetic log entry #${index}: Health check passed. All dependent services responded within threshold.`,
-//     `Synthetic log entry #${index}: Scheduled job 'cleanupOldSessions' executed in 1.24s.`,
-//     `Synthetic log entry #${index}: Configuration loaded successfully from environment variables.`,
-//     `Synthetic log entry #${index}: Uploaded file processed and stored at /uploads/reports/2025-07/report.csv.`,
-//     `Synthetic log entry #${index}: API key rotation completed successfully for client_id abc123.`,
-//   ];
-
-//   const badMessages = [
-//     `Synthetic log entry #${index}: Failed to connect to MongoDB after 3 attempts. Retrying in 5 seconds.`,
-//     `Synthetic log entry #${index}: Memory usage exceeded 85%. Potential leak in worker process.`,
-//     `Synthetic log entry #${index}: Unhandled exception in payment processor: TypeError: amount.toFixed is not a function.`,
-//     `Synthetic log entry #${index}: Slow query detected on collection 'logs' (execution time: 4200ms).`,
-//     `Synthetic log entry #${index}: Authentication failed for user 'admin@example.com'. Invalid credentials.`,
-//     `Synthetic log entry #${index}: File upload rejected due to unsupported MIME type: application/x-msdownload.`,
-//     `Synthetic log entry #${index}: Timeout while waiting for response from external API: https://payments.example.com/charge.`,
-//   ];
-
-//   const randomLogType = LOG_TYPES[Math.floor(Math.random() * LOG_TYPES.length)];
-
-//   const allMessages = [...goodMessages, ...badMessages];
-//   const log: LogEntry = {
-//     message: allMessages[Math.floor(Math.random() * allMessages.length)],
-//     timestamp: new Date().toISOString(),
-//     log_type: randomLogType, // Can be 'info', 'warn', 'error', etc.
-//   };
-//   return JSON.stringify(log) + '\n';
-// }
 
 // Insert log into DB
 async function insertLogToDB(log: LogEntry) {

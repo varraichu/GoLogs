@@ -68,7 +68,6 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
         warning_rate_threshold: 25,
         silent_duration: 12,
       });
-
     } else if (adminGroup) {
       let isAdminGroupMember = await UserGroupMembers.findOne({
         group_id: adminGroup._id,

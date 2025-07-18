@@ -155,10 +155,10 @@ export const buildPaginatedLogsAggregation = ({
     'application.is_active': true,
   };
 
-  if (filters.app_name) {
-    postLookupMatch['application.name'] = Array.isArray(filters.app_name)
-      ? { $in: filters.app_name }
-      : filters.app_name;
+  if (Array.isArray(filters.app_name) && filters.app_name.length > 0) {
+    postLookupMatch['application.name'] = { $in: filters.app_name };
+  } else if (typeof filters.app_name === 'string' && filters.app_name.trim() !== '') {
+    postLookupMatch['application.name'] = filters.app_name;
   }
 
   const searchConditions = buildSearchConditions(filters.search || '');
@@ -244,10 +244,10 @@ export const buildUserLogsAggregation = ({
   }
 
   const appMatch: any = { 'application.is_active': true };
-  if (filters.app_name) {
-    appMatch['application.name'] = Array.isArray(filters.app_name)
-      ? { $in: filters.app_name }
-      : filters.app_name;
+  if (Array.isArray(filters.app_name) && filters.app_name.length > 0) {
+    appMatch['application.name'] = { $in: filters.app_name };
+  } else if (typeof filters.app_name === 'string' && filters.app_name.trim() !== '') {
+    appMatch['application.name'] = filters.app_name;
   }
 
   const basePipeline = [

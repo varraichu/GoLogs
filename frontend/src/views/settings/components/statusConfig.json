@@ -8,7 +8,8 @@
     "descriptionColorClass": "oj-text-color-danger",
     "backgroundClass": "oj-bg-danger-30",
     "selectBgClass": "oj-bg-warning",
-    "max":20,
+    "max": 100,
+    "min": 10,
     "value": "error_rate_threshold"
   },
   {
@@ -20,20 +21,22 @@
     "descriptionColorClass": "oj-text-color-warning",
     "backgroundClass": "oj-bg-warning-30",
     "selectBgClass": "oj-bg-warning",
-    "max":50,
+    "max": 150,
+    "min": 20,
     "value": "warning_rate_threshold"
   },
   {
     "title": "Silent Apps (No Logs Threshold)",
-    "description": "Hours wihtout logs to trigger alert",
+    "description": "Hours without logs to trigger alert",
     "iconClass": "oj-ux-ico-notification-off",
     "iconColorClass": "oj-text-color-neutral",
     "titleColorClass": "oj-text-color-neutral",
     "descriptionColorClass": "oj-text-color-neutral",
     "backgroundClass": "oj-bg-neutral-30",
     "selectBgClass": "oj-bg-warning",
-    "max":24,
+    "max": 24,
+    "min": 1,
     "unitLabel": "hours",
-    "value":"silent_duration"
+    "value": "silent_duration"
   }
 ]

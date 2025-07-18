@@ -60,6 +60,7 @@ services:
     - POSTGRES_PASSWORD
     - POSTGRES_DB
     - APP_NAME=${APP1_NAME}
+    - LOG_COUNT=${LOG_COUNT1}
     restart: unless-stopped
     networks:
       - logging_net
@@ -88,6 +89,7 @@ services:
     - POSTGRES_PASSWORD
     - POSTGRES_DB
     - APP_NAME=${APP2_NAME}
+    - LOG_COUNT=${LOG_COUNT2}
     restart: unless-stopped
     networks:
       - logging_net
@@ -115,6 +117,7 @@ services:
     - POSTGRES_PASSWORD
     - POSTGRES_DB
     - APP_NAME=${APP3_NAME}
+    - LOG_COUNT=${LOG_COUNT3}
     restart: unless-stopped
     networks:
       - logging_net

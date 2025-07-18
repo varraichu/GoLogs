@@ -26,11 +26,16 @@ import { useUser } from '../../context/UserContext';
 
 const Logs = (props: { path?: string }) => {
   const { user } = useUser();
+
+  const [rawSearch, setRawSearch] = useState('')
+
+
   const params = new URLSearchParams(window.location.search);
   const log_type: string | null = params.get('log-type');
 
   const [adminLogs, setAdminLogs] = useState<LogEntry[]>([])
   const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [isSearching, setIsSearching] = useState(false)
   const [dataProvider, setDataProvider] = useState<any>(null)
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -49,7 +54,6 @@ const Logs = (props: { path?: string }) => {
     { attribute: 'timestamp', direction: 'descending' },
   ])
 
-  // const [frontendSortCriteria, setFrontendSortCriteria] = useState<{ key: string, direction: 'ascending' | 'descending' } | null>(null);
   const [filters, setFilters] = useState<{
     apps: string[]
     logTypes: string[]
@@ -81,17 +85,20 @@ const Logs = (props: { path?: string }) => {
   const [showLogDialog, setShowLogDialog] = useState(false)
   const [selectedLog, setSelectedLog] = useState<any>(null)
 
+  // Add a ref to track if we're in the middle of a fetch to prevent infinite loops
+  const isFetching = useRef(false)
 
   // Fetch logs when page or sort criteria changes
   useEffect(() => {
-    fetchLogs(pagination.page)
-    // console.log("User in logs: ", user);
-  }, [pagination.page, sortCriteria, filters])
+    if (!isFetching.current) {
+      fetchLogs(pagination.page)
+    }
+  }, [pagination.page, sortCriteria, filters, filters.search])
 
   const exportFunc = async () => {
     try {
       setIsExporting(true)
-      setExportDialog(false) // close the dialog first (or keep if async behavior preferred)
+      setExportDialog(false)
       if (!user) {
         addNewToast('error', 'Error', 'User not authenticated');
         return;
@@ -109,7 +116,6 @@ const Logs = (props: { path?: string }) => {
 
       const blob = await response.blob()
 
-      // Trigger file download
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
       link.download = `Logs.${exportFormat || 'csv'}`
@@ -117,33 +123,37 @@ const Logs = (props: { path?: string }) => {
       link.click()
       document.body.removeChild(link)
 
-      // Optional: show success toast
       console.log('Download triggered successfully.')
       addNewToast("confirmation", "Exported Successfully", "Logs Exported Successfully as " + `Logs.${exportFormat || 'csv'}`)
     } catch (err) {
       console.error('Export failed:', err)
-      // useToast("error",)
       addNewToast("error", "Failed to Export Logs", err as string || "Internal Server error")
-      // Optional: show error toast or dialog
     } finally {
-      setIsExporting(false) // Hide progress bar
+      setIsExporting(false)
     }
   }
 
   const fetchLogs = async (page: number) => {
+
+    if (isFetching.current) {
+      return; // Prevent concurrent fetches
+    }
+
+    isFetching.current = true;
     setIsLoading(true)
+
     try {
-      // Pass sort criteria to backend
-      console.log('sort criteria: ', sortCriteria)
-      console.log('filtera: ', filters)
+
       if (!user) {
         addNewToast('error', 'Error', 'User not authenticated');
         return;
       }
+
       const data = await logsService.fetchLogs(page, pagination.limit, user, sortCriteria, filters)
+      console.log('API response:', data)
 
       const formattedLogs = (data.logs || []).map((log: LogEntry, idx) => ({
-        rowNumber: (pagination.page - 1) * pagination.limit + idx + 1,
+        rowNumber: (data.pagination?.page - 1 || 0) * pagination.limit + idx + 1,
         ...log,
         app_name: log.app_name.replace(/\./g, ' '),
         timestamp: new Date(log.timestamp).toLocaleString(),
@@ -151,37 +161,62 @@ const Logs = (props: { path?: string }) => {
       }))
 
       setAdminLogs(formattedLogs || [])
-      setPagination(
-        data.pagination || {
-          total: 0,
-          page: 1,
-          limit: 10,
-          totalPages: 1,
-          hasNextPage: false,
-          hasPrevPage: false,
-        }
-      )
 
-      // Create a simple data provider without frontend sorting
-      // since sorting is handled by the backend
+      // Validate and set pagination - ensure page doesn't exceed available pages
+      const newPagination = data.pagination || {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      }
+
+      // If current page is greater than total pages, reset to page 1
+      if (newPagination.page > newPagination.totalPages && newPagination.totalPages > 0) {
+        newPagination.page = 1;
+        // Refetch with corrected page
+        setTimeout(() => {
+          isFetching.current = false;
+          fetchLogs(1);
+        }, 100);
+        return;
+      }
+
+      setPagination(newPagination)
+
       const baseProvider = new ArrayDataProvider(formattedLogs || [], { keyAttributes: '_id' })
       setDataProvider(baseProvider)
+
     } catch (error: any) {
+      console.error('fetchLogs error:', error)
       addNewToast('error', 'Error', error.message || 'Failed to fetch logs.')
-      console.error('Failed to fetch logs', error)
+
+      // Reset pagination on error
+      setPagination(prev => ({
+        ...prev,
+        page: 1,
+        total: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      }))
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
+      setIsSearching(false);
+      isFetching.current = false;
     }
   }
 
+
   const goToNextPage = () => {
-    if (pagination.hasNextPage && !isLoading) {
+    if (pagination.hasNextPage && !isLoading && !isFetching.current) {
       setPagination((prev) => ({ ...prev, page: prev.page + 1 }))
     }
   }
 
   const goToPrevPage = () => {
-    if (pagination.hasPrevPage && !isLoading) {
+    if (pagination.hasPrevPage && !isLoading && !isFetching.current) {
       setPagination((prev) => ({ ...prev, page: prev.page - 1 }))
     }
   }
@@ -191,10 +226,6 @@ const Logs = (props: { path?: string }) => {
 
     if (!header || !direction) return
 
-    // Update frontend indicator
-    // setFrontendSortCriteria({ key: header, direction });
-
-    // Backend sort
     const newSort = { attribute: header, direction }
     setSortCriteria((prev) => {
       const others = prev.filter((c) => c.attribute !== header)
@@ -220,22 +251,23 @@ const Logs = (props: { path?: string }) => {
   }
 
   const getDir = (field: string) => {
-    // console.log("field: ", field);
     return sortCriteria.find((c) => c.attribute === field)?.direction
   }
 
+
   const handleSearchChange = (value: string) => {
-    // Update the filters state immediately for UI feedback
-    setFilters((prev) => ({ ...prev, search: value }))
+    // console.log('Search value:', value, 'Length:', value.length)
+    setIsSearching(true)
+    setRawSearch(value)
 
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current)
     }
 
     debounceTimeout.current = setTimeout(() => {
+      setFilters((prev) => ({ ...prev, search: value }))
       setPagination((prev) => ({ ...prev, page: 1 }))
-
-    }, 300) // 300ms delay - adjust as needed
+    }, 400)
   }
 
 
@@ -254,15 +286,14 @@ const Logs = (props: { path?: string }) => {
   }
 
   return (
-
     <div
       class="oj-flex oj-sm-justify-content-center oj-sm-flex-direction-column oj-sm-padding-6x"
       style="height: 100%; min-height: 0; flex: 1 1 0;"
     >
-
       <div class="oj-flex oj-sm-12 oj-sm-justify-content-space-between oj-sm-align-items-center">
         <h1 class="oj-typography-heading-md">Logs</h1>
       </div>
+
       <div class="oj-flex oj-sm-margin-4x-bottom oj-sm-align-items-center" style="width: 100%; gap: 12px;">
         <SearchBar value={filters.search} onChange={handleSearchChange} placeholder="Search logs" />
         <LogExports
@@ -276,19 +307,19 @@ const Logs = (props: { path?: string }) => {
           label={opened ? "Close Filters" : "Apply Filters"}
           chroming={opened ? "outlined" : "callToAction"}
         >
-          {
-            opened ? (<span slot="startIcon" class="oj-ux-ico-filter-alt-off"></span>) : (<span slot="startIcon" class="oj-ux-ico-filter-alt"></span>)
-
-          }
+          {opened ? (
+            <span slot="startIcon" class="oj-ux-ico-filter-alt-off"></span>
+          ) : (
+            <span slot="startIcon" class="oj-ux-ico-filter-alt"></span>
+          )}
         </oj-button>
       </div>
 
       <oj-drawer-layout endOpened={opened} class="oj-sm-flex-1" style="width: 100%; overflow-x: hidden;">
         <div class="oj-flex oj-sm-flex-1 oj-sm-overflow-hidden" style="min-width: 0;">
           <div class="oj-flex-item oj-panel oj-panel-shadow-xs oj-sm-padding-4x" style="width: 100%;">
-
             <LogsTable
-              isLoading={isLoading}
+              isLoading={isLoading || isSearching}
               dataProvider={dataProvider}
               sortCriteria={sortCriteria}
               getDir={getDir}
@@ -296,8 +327,6 @@ const Logs = (props: { path?: string }) => {
               selectedRows={selectedRows}
               handleRowSelect={handleRowSelect}
             />
-
-
 
             {pagination && (
               <div
@@ -307,20 +336,24 @@ const Logs = (props: { path?: string }) => {
                 <oj-button
                   chroming="callToAction"
                   onojAction={goToPrevPage}
-                  disabled={!pagination.hasPrevPage || isLoading}
+                  disabled={!pagination.hasPrevPage || isLoading || isFetching.current}
                 >
                   <span slot="startIcon" class="oj-ux-ico-arrow-left"></span>
                   Previous
                 </oj-button>
 
                 <span class="oj-typography-body-md oj-text-color-primary">
-                  Page {pagination.page} of {pagination.totalPages}
+                  {pagination.total > 0 ? (
+                    `Page ${pagination.page} of ${pagination.totalPages}`
+                  ) : (
+                    'No results found'
+                  )}
                 </span>
 
                 <oj-button
                   chroming="callToAction"
                   onojAction={goToNextPage}
-                  disabled={!pagination.hasNextPage || isLoading}
+                  disabled={!pagination.hasNextPage || isLoading || isFetching.current}
                 >
                   Next
                   <span slot="endIcon" class="oj-ux-ico-arrow-right"></span>
@@ -334,10 +367,8 @@ const Logs = (props: { path?: string }) => {
           <div class="oj-flex oj-flex-direction-col oj-sm-align-items-center oj-sm-padding-4x-start">
             <h6>Filter Logs</h6>
           </div>
-
           <div class="oj-flex">
             <LogFilters filters={filters} onFilterChange={handleFilterChange} />
-
           </div>
         </div>
       </oj-drawer-layout>
@@ -350,8 +381,7 @@ const Logs = (props: { path?: string }) => {
         export={exportFunc}
         exportFormat={exportFormat}
         setExportFormat={setExportFormat}
-      ></LogExportsDialog>
-
+      />
 
       {showLogDialog && selectedRows && (
         <LogDetailsModal

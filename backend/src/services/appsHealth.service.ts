@@ -18,11 +18,11 @@ type CriticalApp = {
 
 /**
  * Retrieves health data for applications accessible to a given user, including:
- * - Applications exceeding error/warning thresholds in the last minute.
+ * - Applications exceeding error/warning thresholds in the last Hour.
  * - Applications that have been silent beyond the configured threshold.
- * 
+ *
  * Admin users get all apps; non-admins get apps via group associations.
- * 
+ *
  * @param userId - The MongoDB ObjectId of the user requesting the data.
  * @returns Promise<object> - An object containing critical and silent app summaries.
  * @throws Error if user settings are not found.
@@ -74,16 +74,16 @@ export async function getAppsHealthData(userId: mongoose.Types.ObjectId) {
   }
 
   const accessibleAppIds = apps.map((a) => a._id);
-  const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   const silentCutoff = new Date(Date.now() - silent_duration * 60 * 60 * 1000);
 
   // --- AGGREGATION 1: Find Critical Apps (Errors & Warnings) ---
-  // This pipeline is efficient because it only scans logs from the last minute.
+  // This pipeline is efficient because it only scans logs from the last Hour.
   const criticalApps: CriticalApp[] = await Logs.aggregate([
     {
       $match: {
         app_id: { $in: accessibleAppIds },
-        timestamp: { $gte: oneMinuteAgo },
+        timestamp: { $gte: oneHourAgo },
         log_type: { $in: ['error', 'warn'] },
       },
     },
@@ -210,7 +210,7 @@ export async function getAppsHealthData(userId: mongoose.Types.ObjectId) {
         app_id: '$_id',
         app_name: '$name',
         last_seen: { $ifNull: ['$last_log_timestamp', null] },
-        minutes_ago: {
+        Hours_ago: {
           $cond: {
             if: { $not: ['$last_log_timestamp'] },
             then: 'Never',
@@ -218,7 +218,7 @@ export async function getAppsHealthData(userId: mongoose.Types.ObjectId) {
               $floor: {
                 $divide: [
                   { $subtract: [new Date(), '$last_log_timestamp'] },
-                  1000 * 60, // ms to minutes
+                  1000 * 60, // ms to Minutes
                 ],
               },
             },

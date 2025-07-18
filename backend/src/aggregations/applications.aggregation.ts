@@ -39,7 +39,7 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
     error_rate_threshold = 20,
   } = options;
 
-  const oneMinuteAgo = new Date(Date.now() - 60000);
+  const oneHourAgo = new Date(Date.now() - 3600000);
   const pipeline: any[] = [];
   const matchStage: any = { is_deleted: false };
 
@@ -132,7 +132,7 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
               {
                 $match: {
                   $expr: {
-                    $and: [{ $eq: ['$app_id', '$$appId'] }, { $gte: ['$timestamp', oneMinuteAgo] }],
+                    $and: [{ $eq: ['$app_id', '$$appId'] }, { $gte: ['$timestamp', oneHourAgo] }],
                   },
                 },
               },
