@@ -9,9 +9,10 @@ interface UserGroupCardProps {
   onDelete: (id: string) => void;
   onToggleStatus: (id: string, isActive: boolean) => void;
   onViewUsers: (group: UserGroup) => void;
+  togglingGroupId: string | null;
 }
 
-export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewUsers }: UserGroupCardProps) => {
+export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewUsers, togglingGroupId }: UserGroupCardProps) => {
   const isAdminGroup = group.name === `${config.ADMIN_USER_GROUP}`;
 
   return (
@@ -28,7 +29,7 @@ export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewU
           <oj-switch
             value={group.is_active}
             onvalueChanged={(e) => onToggleStatus(group._id, e.detail.value as boolean)}
-            disabled={isAdminGroup}
+            disabled={togglingGroupId === group._id && isAdminGroup}
           />
         </div>
 

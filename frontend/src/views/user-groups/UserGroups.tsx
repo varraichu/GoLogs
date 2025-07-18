@@ -62,7 +62,7 @@ const UserGroups = (props: { path?: string }) => {
   const [stagedAppIds, setStagedAppIds] = useState<Set<string>>(new Set());
   const [selectedAppIds, setSelectedAppIds] = useState<Set<string>>(new Set());
   const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
-
+  const [togglingGroupId, setTogglingGroupId] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
 
   // --- Data Loading ---
@@ -210,7 +210,8 @@ const UserGroups = (props: { path?: string }) => {
   };
 
   const handleToggleStatus = async (groupId: string, isActive: boolean) => {
-    setIsLoadingPage(true);
+    setTogglingGroupId(groupId);
+    // setIsLoadingPage(true);
     try {
       await toggleGroupStatus(groupId, isActive);
       addNewToast('confirmation', 'Success', 'Group status updated.');
@@ -218,7 +219,8 @@ const UserGroups = (props: { path?: string }) => {
     } catch (error: any) {
       addNewToast('error', 'Error', error.message || 'Failed to update status.');
     } finally {
-      setIsLoadingPage(false);
+      // setIsLoadingPage(false);
+      setTogglingGroupId(null);
     }
   };
 
@@ -280,6 +282,7 @@ const UserGroups = (props: { path?: string }) => {
                       onDelete={setConfirmDeleteDialogId}
                       onToggleStatus={handleToggleStatus}
                       onViewUsers={handleViewUsers}
+                      togglingGroupId={togglingGroupId}
                     />
                   ))
                 ) : (
