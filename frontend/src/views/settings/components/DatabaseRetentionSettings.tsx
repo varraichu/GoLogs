@@ -4,7 +4,7 @@ import 'ojs/ojbutton'
 import 'ojs/ojselectsingle'
 import 'oj-c/message-toast'
 import { useToast } from '../../../context/ToastContext'
-import { getStatusBanner } from './StatusBanner'
+import { getStatusBanner, StatusBannerProps } from './StatusBanner'
 import * as statusConfig from './statusConfig.json'
 import MutableArrayDataProvider = require('ojs/ojmutablearraydataprovider')
 import * as settingsService from './settings.service'
@@ -131,7 +131,7 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
             'Failed to update retention',
             data.message || 'Error updating retention'
           )
-        } 
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
         addNewToast('error', 'Failed to update retention', msg)
@@ -207,9 +207,9 @@ const DatabaseRetentionSettings = ({ isAdmin, userId }: DatabaseRetentionSetting
             <span class="oj-ux-ico-warning oj-text-color-secondary oj-typography-heading-sm"></span>
             <span class="oj-typography-heading-sm oj-text-color-secondary">Alert Thresholds</span>
           </h3>
-          {statusConfig.map((config, index) =>
+          {statusConfig.map((config) =>
             getStatusBanner({
-              ...config,
+              ...config as StatusBannerProps,
               selectValue: settings[config.value as keyof typeof settings],
               onSelectChange: (event) => handleStatusChange(config, event),
             })

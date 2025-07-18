@@ -63,7 +63,7 @@ export function AppsHealthCard({ title, description, total, apps, color, setActi
                     <span class={`${iconClass} ${textClass} oj-sm-margin-2x-end`} style={{ fontSize: '24px' }} role="img" aria-label={title}></span>
                 </div>
                 <div class={`${textClass} oj-typography-heading-lg`}>{total}</div>
-                <div class={`${textClass} oj-typography-body-xs`}>in the last minute</div>
+                <div class={`${textClass} oj-typography-body-xs`}>in the last hour</div>
                 {/* Details Section: List of applications - this section will grow to fill space */}
                 <div class="oj-sm-margin-4x-top oj-flex-grow-1">
                     {apps.length > 0 ? (
