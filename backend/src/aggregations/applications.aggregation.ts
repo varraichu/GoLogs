@@ -171,14 +171,12 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
           $lookup: {
             from: 'settings',
             pipeline: [
-              // Match the specific user ID passed into the function
               { $match: { user_id: new mongoose.Types.ObjectId(userId) } },
               { $limit: 1 }
             ],
             as: 'userSettings'
           }
         },
-        // NEW: Add a 'settings' field for easier access, with a default
         {
           $addFields: {
             settings: { $ifNull: [{ $arrayElemAt: ['$userSettings', 0] }, {}] }

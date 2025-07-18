@@ -97,7 +97,7 @@ export const ApplicationCard = ({ app, onToggleStatus, onEdit, onDelete, togglin
       </div>
 
       <div class="application-footer">
-        <div class="oj-typography-body-xs oj-text-color-secondary">
+        <div style={{ fontSize: '11px', color: '#6c757d' }}>
           Created {new Date(app.created_at).toLocaleString()}
         </div>
         <div class="oj-flex" style={{ gap: '12px' }}>
