@@ -8,15 +8,15 @@ export const createSettingsSchema = object({
       required_error: 'Error rate threshold is required',
     })
       .int('Must be a whole number')
-      .min(1, 'Must be at least 1 log per minute')
-      .max(20, 'Must be at most 20 logs per minute'),
+      .min(10, 'Must be at least 1 log per minute')
+      .max(100, 'Must be at most 20 logs per minute'),
 
     warning_rate_threshold: number({
       required_error: 'Warning rate threshold is required',
     })
       .int('Must be a whole number')
-      .min(1, 'Must be at least 1 log per minute')
-      .max(50, 'Must be at most 50 logs per minute'),
+      .min(20, 'Must be at least 1 log per minute')
+      .max(150, 'Must be at most 50 logs per minute'),
 
     silent_duration: number({
       required_error: 'Silent duration is required',

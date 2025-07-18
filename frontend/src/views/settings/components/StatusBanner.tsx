@@ -44,7 +44,7 @@ const integerValidator = {
   }
 }
 
-type StatusBannerProps = {
+export type StatusBannerProps = {
   title: string;
   description: string;
   iconClass: string;
@@ -53,13 +53,14 @@ type StatusBannerProps = {
   descriptionColorClass: string;
   backgroundClass: string;
   selectBgClass: string;
-//   selectData: any; // Replace `any` with the actual type of your data provider if available
+  //   selectData: any; // Replace `any` with the actual type of your data provider if available
   selectValue: any; // Replace with the correct type of your value
   onSelectChange: (event: CustomEvent) => void;
   selectLabel?: string;
   unitLabel?: string;
   max: number;
-  value:string;
+  min: number;
+  value: string;
 };
 export function getStatusBanner({
   title,
@@ -70,12 +71,13 @@ export function getStatusBanner({
   descriptionColorClass,
   backgroundClass,
   selectBgClass,
-//   selectData,
+  //   selectData,
   selectValue,
   onSelectChange,
   selectLabel = 'Retention Period',
-  unitLabel = 'logs / min',
+  unitLabel = 'logs / hour',
   max,
+  min,
   value
 
 }: StatusBannerProps) {
@@ -96,17 +98,17 @@ export function getStatusBanner({
       </div>
 
       <div className={`oj-flex-item oj-sm-align-self-center oj-lg-3 ${selectBgClass} oj-flex oj-sm-justify-content-space-between`}>
-        <oj-c-input-number 
-            class="oj-flex-item oj-sm-8"
-            id={value}
-            labelHint={`min=1, max=${max}`}
-            value={selectValue}
-            onvalueChanged={onSelectChange}
-            min={1}
-            max={max}
-            step={1}
-            inputMode="numeric"
-            validators={[integerValidator]}
+        <oj-c-input-number
+          class="oj-flex-item oj-sm-8"
+          id={value}
+          labelHint={`min=${min}, max=${max}`}
+          value={selectValue}
+          onvalueChanged={onSelectChange}
+          min={min}
+          max={max}
+          step={1}
+          inputMode="numeric"
+          validators={[integerValidator]}
         ></oj-c-input-number>
         {/* <oj-select-single
           class="oj-flex-item oj-sm-8"
