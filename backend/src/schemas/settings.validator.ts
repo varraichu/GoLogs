@@ -8,15 +8,15 @@ export const createSettingsSchema = object({
       required_error: 'Error rate threshold is required',
     })
       .int('Must be a whole number')
-      .min(10, 'Must be at least 1 log per minute')
-      .max(100, 'Must be at most 20 logs per minute'),
+      .min(10, 'Must be at least 10 log per hour')
+      .max(100, 'Must be at most 100 logs per hour'),
 
     warning_rate_threshold: number({
       required_error: 'Warning rate threshold is required',
     })
       .int('Must be a whole number')
-      .min(20, 'Must be at least 1 log per minute')
-      .max(150, 'Must be at most 50 logs per minute'),
+      .min(20, 'Must be at least 20 log per hour')
+      .max(150, 'Must be at most 50 logs per hour'),
 
     silent_duration: number({
       required_error: 'Silent duration is required',
@@ -40,13 +40,13 @@ export const updateSettingsSchema = object({
   body: object({
     error_rate_threshold: number()
       .int('error_rate_threshold must be a whole number')
-      .min(1, 'error_rate_threshold must be at least 1 log per minute')
-      .max(20, 'error_rate_threshold must be at most 20 logs per minute')
+      .min(10, 'error_rate_threshold must be at least 1 log per hour')
+      .max(100, 'error_rate_threshold must be at most 100 logs per hour')
       .optional(),
     warning_rate_threshold: number()
       .int('warning_rate_threshold must be a whole number')
-      .min(1, 'warning_rate_threshold must be at least 1 log per minute')
-      .max(50, 'warning_rate_threshold must be at most 50 logs per minute')
+      .min(20, 'warning_rate_threshold must be at least 20 log per hour')
+      .max(150, 'warning_rate_threshold must be at most 150 logs per hour')
       .optional(),
     silent_duration: number()
       .int('silent_duration must be a whole number')
