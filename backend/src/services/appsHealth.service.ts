@@ -210,7 +210,7 @@ export async function getAppsHealthData(userId: mongoose.Types.ObjectId) {
         app_id: '$_id',
         app_name: '$name',
         last_seen: { $ifNull: ['$last_log_timestamp', null] },
-        Hours_ago: {
+        minutes_ago: {
           $cond: {
             if: { $not: ['$last_log_timestamp'] },
             then: 'Never',
