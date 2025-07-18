@@ -16,8 +16,7 @@ interface PaginationOptions {
   status?: 'active' | 'inactive';
   groupIds?: string[];
   accessibleAppIds?: mongoose.Types.ObjectId[];
-  warning_rate_threshold?: number;
-  error_rate_threshold?: number;
+  userId?: string; 
 }
 
 /**
@@ -35,8 +34,7 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
     status,
     groupIds,
     accessibleAppIds,
-    warning_rate_threshold = 10,
-    error_rate_threshold = 20,
+    userId,
   } = options;
 
   const oneHourAgo = new Date(Date.now() - 3600000);
@@ -169,6 +167,24 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
           },
         },
 
+        {
+          $lookup: {
+            from: 'settings',
+            pipeline: [
+              // Match the specific user ID passed into the function
+              { $match: { user_id: new mongoose.Types.ObjectId(userId) } },
+              { $limit: 1 }
+            ],
+            as: 'userSettings'
+          }
+        },
+        // NEW: Add a 'settings' field for easier access, with a default
+        {
+          $addFields: {
+            settings: { $ifNull: [{ $arrayElemAt: ['$userSettings', 0] }, {}] }
+          }
+        },
+
         { $sort: { created_at: -1 } },
 
         {
@@ -186,12 +202,14 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
                 vars: {
                   error_logs: { $ifNull: [{ $arrayElemAt: ['$recentErrorStats.count', 0] }, 0] },
                   warning_logs: { $ifNull: [{ $arrayElemAt: ['$recentWarningStats.count', 0] }, 0] },
+                    error_threshold: { $ifNull: ['$settings.error_rate_threshold', 20] },
+                    warning_threshold: { $ifNull: ['$settings.warning_rate_threshold', 10]}
                 },
                 in: {
                   $switch: {
                     branches: [
-                      { case: { $gte: ['$$error_logs', error_rate_threshold] }, then: 'critical' },
-                      { case: { $gte: ['$$warning_logs', warning_rate_threshold] }, then: 'warning' },
+                      { case: { $gte: ['$$error_logs', '$$error_threshold'] }, then: 'critical' },
+                      { case: { $gte: ['$$warning_logs', '$$warning_threshold'] }, then: 'warning' },
                     ],
                     default: 'healthy',
                   },
