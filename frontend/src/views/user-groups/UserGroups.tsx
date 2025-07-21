@@ -144,6 +144,7 @@ const UserGroups = (props: { path?: string }) => {
   const handleCloseEditor = () => {
     setShowDialog(false);
     setEditingGroup(null);
+    setIsLoadingPage(false);
   };
 
   const validateForm = async (): Promise<boolean> => {

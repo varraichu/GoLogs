@@ -29,7 +29,7 @@ export const UserGroupCard = ({ group, onEdit, onDelete, onToggleStatus, onViewU
           <oj-switch
             value={group.is_active}
             onvalueChanged={(e) => onToggleStatus(group._id, e.detail.value as boolean)}
-            disabled={togglingGroupId === group._id && isAdminGroup}
+            disabled={togglingGroupId === group._id || isAdminGroup}
           />
         </div>
 
