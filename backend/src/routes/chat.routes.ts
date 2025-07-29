@@ -7,7 +7,7 @@ import { isAdmin, protect } from '../middleware/auth.middleware';
 const router = Router();
 const chatController = new ChatController();
 
-router.post('/', isAdmin, validate(chatSchema), async (req, res, next) => {
+router.post('/',protect, isAdmin, validate(chatSchema), async (req, res, next) => {
   await chatController.handleChatQuery(req, res, next);
 });
 
