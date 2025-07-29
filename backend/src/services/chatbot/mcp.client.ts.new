@@ -1,0 +1,186 @@
+import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING;
+
+if (!GEMINI_API_KEY) {
+  throw new Error('GEMINI_API_KEY is not set');
+}
+
+if (!MONGODB_CONNECTION_STRING) {
+  throw new Error('MONGODB_CONNECTION_STRING is not set');
+}
+
+interface ToolDef {
+  name: string;
+  description: string;
+  input_schema: any;
+}
+
+export class MCPClient {
+  private mcp: Client;
+  private model: GenerativeModel;
+  private genAI: GoogleGenerativeAI;
+  private tools: ToolDef[] = [];
+  private transport: StdioClientTransport | null = null;
+  private isConnected: boolean = false;
+  private chat: any = null;
+
+  constructor() {
+    this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY as string);
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+    this.mcp = new Client({ name: 'mcp-client-cli', version: '1.0.0' });
+  }
+
+  async connect() {
+    try {
+      const mongoUri = process.env.MONGODB_CONNECTION_STRING;
+      if (!mongoUri) {
+        throw new Error('MONGODB_URI is not set in environment');
+      }
+
+      this.transport = new StdioClientTransport({
+        command: 'npx',
+        args: ['-y', 'mongodb-mcp-server', '--connectionString', mongoUri],
+      });
+
+      await this.mcp.connect(this.transport);
+
+      const toolsResult = await this.mcp.listTools();
+      this.tools = toolsResult.tools.map((tool: any) => ({
+        name: tool.name,
+        description: tool.description || '',
+        input_schema: tool.inputSchema,
+      }));
+
+      console.log(
+        'Connected to Mongo MCP Server with tools:',
+        this.tools.map((t) => t.name)
+      );
+      this.isConnected = true;
+    } catch (e) {
+      console.error('Failed to connect to MongoDB MCP server:', e);
+      throw e;
+    }
+  }
+
+  private async callTool(name: string, args: any) {
+    try {
+      const result = await this.mcp.callTool({
+        name,
+        arguments: args,
+      });
+      return result.content;
+    } catch (error) {
+      console.error(`Error calling tool ${name}:`, error);
+      throw error;
+    }
+  }
+
+  async processQuery(query: string) {
+    if (!this.isConnected) {
+      await this.connect();
+    }
+
+    if (!this.chat) {
+      this.chat = this.model.startChat({
+        history: [
+          {
+            role: 'user',
+            parts: [{text: `You are an AI assistant that helps query MongoDB databases through MCP tools. Available tools:\n${
+              this.tools.map(t => `${t.name}: ${t.description}`).join('\n')
+            }\n\nFollow this protocol:\n
+1. ALWAYS check schema before querying
+2. Use exact field names from schema
+3. Show each step clearly
+4. Mark SUCCESS when found or COMPLETED when exhausted
+
+Current database: gologs`}],
+          },
+          {
+            role: 'model',
+            parts: [{text: 'I understand my role and will follow the protocol strictly. I will always check schemas first and use exact field names.'}],
+          },
+        ],
+      });
+    }
+
+    const finalText: string[] = [];
+    let iterationCount = 0;
+    const MAX_ITERATIONS = 5;
+    let searchComplete = false;
+
+    while (!searchComplete && iterationCount < MAX_ITERATIONS) {
+      iterationCount++;
+      console.log(`Starting iteration ${iterationCount}`);
+
+      try {
+        // Send query to Gemini
+        const result = await this.chat.sendMessage({
+          role: 'user',
+          parts: [{text: query}],
+        });
+        
+        const response = await result.response;
+        const text = response.text();
+        
+        if (text.includes('tool:')) {
+          // Extract tool name and args from the response
+          const toolMatch = text.match(/tool: (\w+)\nargs: ({[\s\S]+})/);
+          if (toolMatch) {
+            const [_, toolName, argsStr] = toolMatch;
+            const args = JSON.parse(argsStr);
+            
+            const toolResult = await this.callTool(toolName, args);
+            
+            finalText.push(`[Calling tool ${toolName} with args ${JSON.stringify(args)}]`);
+            finalText.push(`Result: ${JSON.stringify(toolResult)}`);
+            
+            // Send tool result back to the model
+            await this.chat.sendMessage({
+              role: 'user',
+              parts: [{text: `Tool ${toolName} returned: ${JSON.stringify(toolResult)}`}],
+            });
+          } else {
+            finalText.push(text);
+          }
+        } else {
+          finalText.push(text);
+          if (text.includes('SUCCESS') || text.includes('COMPLETED')) {
+            searchComplete = true;
+          }
+        }
+
+        if (!searchComplete && iterationCount < MAX_ITERATIONS) {
+          await this.chat.sendMessage({
+            role: 'user',
+            parts: [{text: 'Continue searching. Remember to check schema first. What should we try next?'}],
+          });
+        }
+      } catch (error) {
+        console.error('Error in chat iteration:', error);
+        finalText.push(`Error: ${error.message}`);
+        break;
+      }
+    }
+
+    if (iterationCount >= MAX_ITERATIONS) {
+      finalText.push('\nREACHED MAXIMUM ITERATIONS: Search stopped after trying multiple approaches.');
+    }
+
+    return finalText.join('\n');
+  }
+
+  async cleanup() {
+    if (this.isConnected && this.transport) {
+      await this.mcp.close();
+      this.isConnected = false;
+      this.chat = null;
+    }
+  }
+}

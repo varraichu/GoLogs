@@ -16,7 +16,7 @@ interface PaginationOptions {
   status?: 'active' | 'inactive';
   groupIds?: string[];
   accessibleAppIds?: mongoose.Types.ObjectId[];
-  userId?: string; 
+  userId?: string;
 }
 
 /**
@@ -27,15 +27,7 @@ interface PaginationOptions {
  * @returns An aggregation pipeline array.
  */
 export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOptions) => {
-  const {
-    page,
-    limit,
-    search,
-    status,
-    groupIds,
-    accessibleAppIds,
-    userId,
-  } = options;
+  const { page, limit, search, status, groupIds, accessibleAppIds, userId } = options;
 
   const oneHourAgo = new Date(Date.now() - 3600000);
   const pipeline: any[] = [];
@@ -134,7 +126,7 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
                     $and: [
                       { $eq: ['$app_id', '$$appId'] },
                       { $gte: ['$timestamp', oneHourAgo] },
-                      { $eq: ['$log_type', 'error'] } 
+                      { $eq: ['$log_type', 'error'] },
                     ],
                   },
                 },
@@ -156,7 +148,7 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
                     $and: [
                       { $eq: ['$app_id', '$$appId'] },
                       { $gte: ['$timestamp', oneHourAgo] },
-                      { $eq: ['$log_type', 'warn'] } 
+                      { $eq: ['$log_type', 'warn'] },
                     ],
                   },
                 },
@@ -170,17 +162,14 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
         {
           $lookup: {
             from: 'settings',
-            pipeline: [
-              { $match: { user_id: new mongoose.Types.ObjectId(userId) } },
-              { $limit: 1 }
-            ],
-            as: 'userSettings'
-          }
+            pipeline: [{ $match: { user_id: new mongoose.Types.ObjectId(userId) } }, { $limit: 1 }],
+            as: 'userSettings',
+          },
         },
         {
           $addFields: {
-            settings: { $ifNull: [{ $arrayElemAt: ['$userSettings', 0] }, {}] }
-          }
+            settings: { $ifNull: [{ $arrayElemAt: ['$userSettings', 0] }, {}] },
+          },
         },
 
         { $sort: { created_at: -1 } },
@@ -199,15 +188,20 @@ export const getPaginatedFilteredApplicationsPipeline = (options: PaginationOpti
               $let: {
                 vars: {
                   error_logs: { $ifNull: [{ $arrayElemAt: ['$recentErrorStats.count', 0] }, 0] },
-                  warning_logs: { $ifNull: [{ $arrayElemAt: ['$recentWarningStats.count', 0] }, 0] },
-                    error_threshold: { $ifNull: ['$settings.error_rate_threshold', 20] },
-                    warning_threshold: { $ifNull: ['$settings.warning_rate_threshold', 10]}
+                  warning_logs: {
+                    $ifNull: [{ $arrayElemAt: ['$recentWarningStats.count', 0] }, 0],
+                  },
+                  error_threshold: { $ifNull: ['$settings.error_rate_threshold', 20] },
+                  warning_threshold: { $ifNull: ['$settings.warning_rate_threshold', 10] },
                 },
                 in: {
                   $switch: {
                     branches: [
                       { case: { $gte: ['$$error_logs', '$$error_threshold'] }, then: 'critical' },
-                      { case: { $gte: ['$$warning_logs', '$$warning_threshold'] }, then: 'warning' },
+                      {
+                        case: { $gte: ['$$warning_logs', '$$warning_threshold'] },
+                        then: 'warning',
+                      },
                     ],
                     default: 'healthy',
                   },

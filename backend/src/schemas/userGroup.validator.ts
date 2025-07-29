@@ -6,7 +6,10 @@ export const createUserGroupSchema = object({
     name: string({ required_error: 'Name is required' })
       .min(5, 'Name must be at least 5 characters long')
       .max(20, 'Name must be at most 20 characters long')
-      .regex(/^[A-Za-z0-9 _-]+$/, 'Only letters, numbers, spaces, hyphens and underscores are allowed'),
+      .regex(
+        /^[A-Za-z0-9 _-]+$/,
+        'Only letters, numbers, spaces, hyphens and underscores are allowed'
+      ),
     description: string({ required_error: 'Description is required' })
       .min(10, 'Description must be at least 10 characters long')
       .max(100, 'Description must be at most 100 characters long'),
@@ -35,7 +38,10 @@ export const updateUserGroupSchema = object({
     name: string()
       .min(5, 'Name must be at least 5 characters long')
       .max(20, 'Name must be at most 20 characters long')
-      .regex(/^[A-Za-z0-9 _-]+$/, 'Only letters, numbers, spaces, hyphens and underscores are allowed')
+      .regex(
+        /^[A-Za-z0-9 _-]+$/,
+        'Only letters, numbers, spaces, hyphens and underscores are allowed'
+      )
       .optional(),
     description: string()
       .min(10, 'Description must be at least 10 characters long')
