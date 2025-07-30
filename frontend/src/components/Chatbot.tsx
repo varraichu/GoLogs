@@ -57,6 +57,7 @@ export function Chatbot({ isOpen, onClose }: Props) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify({ query: inputValue }),
             });
 

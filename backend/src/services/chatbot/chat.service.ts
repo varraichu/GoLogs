@@ -7,8 +7,8 @@ export class ChatService {
     this.mcpClient = new MCPClient();
   }
 
-  async processQuery(query: string) {
-    return await this.mcpClient.processQuery(query);
+  async processQuery(query: string, userId: string | undefined, isAdmin: boolean) {
+    return await this.mcpClient.processQuery(query, userId, isAdmin);
   }
 
   async cleanup() {

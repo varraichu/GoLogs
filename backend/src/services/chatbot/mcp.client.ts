@@ -55,6 +55,7 @@ export class MCPClient {
       console.log(
         'Connected to Mongo MCP Server with tools:',
         this.tools.map((t) => `${t.name}: ${t.description}`).join('\n')
+        // this.tools.map((t) => `${t.name}`).join('\n')
       );
 
       this.isConnected = true;
@@ -200,15 +201,24 @@ export class MCPClient {
     }
   }
 
-  async processQuery(query: string) {
+  async processQuery(query: string, userId: string | undefined, isAdmin: boolean) {
     if (!this.isConnected) {
       await this.connect();
     }
 
+    console.log('User ID:', userId);
+    console.log('Is Adminiana:', isAdmin);
+
+    const allowedUserTools = ['find', 'count', 'aggregate'];
+
+    const filteredTools = isAdmin
+      ? this.tools // Admins get access to all tools
+      : this.tools.filter((tool) => allowedUserTools.includes(tool.name));
+
     // Initialize model with function declarations
     this.model = this.genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      tools: [{ functionDeclarations: this.tools }], // Correct format for Gemini
+      tools: [{ functionDeclarations: filteredTools }], // Correct format for Gemini
     });
 
     const initialPrompt = `You are an AI assistant connected to a MongoDB database via MCP tools. You must decide which is the appropriate tool to use based on the query and the available tools.

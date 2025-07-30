@@ -7,17 +7,13 @@ import { isAdmin, protect } from '../middleware/auth.middleware';
 const router = Router();
 const chatController = new ChatController();
 
-// router.post(
-//   '/',
-//   protect,
-//   isAdmin,
-//   validate(chatSchema),
-//   async (req, res, next) => {
-//     await chatController.handleChatQuery(req, res, next);
-//   }
-// );
-
-router.post('/', validate(chatSchema), chatController.handleChatQuery.bind(chatController));
+// Protected chat route - requires authentication
+router.post(
+  '/',
+  protect,
+  validate(chatSchema),
+  chatController.handleChatQuery.bind(chatController)
+);
 
 // Cleanup handler for graceful shutdown
 process.on('SIGTERM', async () => {
