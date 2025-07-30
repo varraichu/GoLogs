@@ -9,6 +9,7 @@ import { h } from "preact";
 import { useState, useRef, useEffect } from "preact/hooks";
 import "ojs/ojbutton";
 import "ojs/ojinputtext";
+import { query } from "express";
 
 type Message = {
     id: string;
@@ -56,7 +57,7 @@ export function Chatbot({ isOpen, onClose }: Props) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ message: inputValue }),
+                body: JSON.stringify({ query: inputValue }),
             });
 
             if (!response.ok) {
@@ -64,6 +65,7 @@ export function Chatbot({ isOpen, onClose }: Props) {
             }
 
             const data = await response.json();
+            console.log('repsons:', data);
 
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
@@ -154,38 +156,79 @@ export function Chatbot({ isOpen, onClose }: Props) {
                             justifyContent: message.isUser ? 'flex-end' : 'flex-start'
                         }}
                     >
-                        <div style={{
-                            maxWidth: '80%',
-                            padding: '8px 12px',
-                            borderRadius: '16px',
-                            fontSize: '14px',
-                            lineHeight: '1.4',
-                            background: message.isUser
-                                ? 'var(--oj-core-color-brand-primary)'
-                                : 'var(--oj-core-bg-color-2)',
-                            color: message.isUser
-                                ? 'white'
-                                : 'var(--oj-core-text-color-primary)',
-                            wordWrap: 'break-word'
-                        }}>
+                        <div
+                            style={{
+                                maxWidth: '75%',
+                                padding: '10px 14px',
+                                borderRadius: message.isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                                background: message.isUser
+                                    ? '#757575ff'
+                                    : '#f1f3f5',
+                                color: message.isUser ? '#ffffff' : '#333',
+                                fontSize: '14px',
+                                lineHeight: '1.4',
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                                wordWrap: 'break-word',
+                                border: message.isUser ? 'none' : '1px solid #e0e0e0'
+                            }}
+                        >
                             {message.text}
                         </div>
                     </div>
                 ))}
 
+
                 {isLoading && (
                     <div style={{
                         display: 'flex',
-                        justifyContent: 'flex-start'
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-end',
+                        gap: '8px'
                     }}>
+                        {/* Bot Avatar */}
                         <div style={{
-                            padding: '8px 12px',
-                            borderRadius: '16px',
-                            background: 'var(--oj-core-bg-color-2)',
-                            color: 'var(--oj-core-text-color-secondary)',
-                            fontSize: '14px'
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: 'var(--oj-core-color-brand-primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '14px',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            flexShrink: '0'
                         }}>
-                            Typing...
+                            🤖
+                        </div>
+
+                        <div style={{
+                            padding: '10px 14px',
+                            borderRadius: '18px 18px 18px 4px',
+                            background: '#f8f9fa',
+                            color: '#666',
+                            fontSize: '14px',
+                            border: '1px solid #e9ecef',
+                            position: 'relative'
+                        }}>
+                            <span style={{
+                                display: 'inline-block',
+                                animation: 'pulse 1.5s ease-in-out infinite'
+                            }}>
+                                Typing...
+                            </span>
+
+                            {/* Message tail */}
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '0',
+                                left: '-4px',
+                                width: '0',
+                                height: '0',
+                                borderStyle: 'solid',
+                                borderWidth: '0 8px 8px 0',
+                                borderColor: 'transparent #f8f9fa transparent transparent'
+                            }} />
                         </div>
                     </div>
                 )}
@@ -218,8 +261,9 @@ export function Chatbot({ isOpen, onClose }: Props) {
                     chroming="callToAction"
                     size="sm"
                     title="Send message"
+                    style={{ backgroundColor: 'var(--oj-core-color-brand-primary)' }}
                 >
-                    <span slot="startIcon" class="oj-ux-ico-arrow-n"></span>
+                    <span slot="startIcon" class="oj-ux-ico-send-message"></span>
                 </oj-c-button>
             </div>
         </div>

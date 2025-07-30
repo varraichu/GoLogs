@@ -1,186 +1,341 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import dotenv from 'dotenv';
+import {
+  spawn,
+  ChildProcess
+} from "child_process";
+import {
+  Client
+} from "@modelcontextprotocol/sdk/client/index.js";
+import {
+  StdioClientTransport
+} from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+  GoogleGenerativeAI
+} from "@google/generative-ai";
+import readline from "readline/promises";
+import dotenv from "dotenv";
 
 dotenv.config();
+import fs from "fs";
+import path from "path";
+import { ObjectId } from "mongodb";
+import mongoose from "mongoose";
+import UserGroup from "./models/UserGroup";
+import { connectToDatabase } from "./startup/db";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING;
+import Application from "./models/Application";
+import User from "./models/User";
+const userid = "68650fd57a72d0b64525da71"
+const is_admin = false; // Hardcoded for now
 
-if (!GEMINI_API_KEY) {
-  throw new Error('GEMINI_API_KEY is not set');
+function loadSchemaDescriptions(): string {
+  const modelsDir = path.join(process.cwd(), "src", "models");
+  const files = fs.readdirSync(modelsDir);
+
+  let schemaSummary = "Database Collections and Schemas:\n";
+
+  for (const file of files) {
+    const content = fs.readFileSync(path.join(modelsDir, file), "utf-8");
+    schemaSummary += \n### ${file}\n${content}\n;
+  }
+
+  return schemaSummary;
 }
 
-if (!MONGODB_CONNECTION_STRING) {
-  throw new Error('MONGODB_CONNECTION_STRING is not set');
+// --- UPDATED HELPER FUNCTION TO CLEANSE SCHEMA ---
+function cleanSchema(schema: any): any {
+  if (typeof schema !== 'object' || schema === null) {
+    return schema;
+  }
+
+  if (Array.isArray(schema)) {
+    return schema.map(cleanSchema);
+  }
+
+  const newSchema: any = {};
+  for (const key in schema) {
+    // Add 'const' to the list of skipped properties
+    if (key === '$schema' || key === 'additionalProperties' || key === 'const') {
+      continue; // Skip these properties
+    }
+    newSchema[key] = cleanSchema(schema[key]); // Recursively clean nested objects/arrays
+  }
+  return newSchema;
+}
+const getAssignedApplicationsForUser = async (userId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid userId");
+  }
+
+  // Find user groups where the user is a member
+  let userGroups = await UserGroup.find({ members: userId }).lean();
+  userGroups = userGroups.filter((g) => g.is_active === true);
+
+  if (!userGroups.length) return [];
+
+  // Collect all assigned application IDs
+  const groupAppIds = userGroups.flatMap((g) =>
+    g.assigned_applications.map((id) => id.toString())
+  );
+
+  // Fetch application details
+  const apps = await Application.find({
+    _id: { $in: groupAppIds.map((id) => new ObjectId(id)) },
+  }).lean();
+
+  return apps.map((a) => ({
+    id: a._id.toString(),
+    name: a.name,
+  }));
+};
+
+
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
+if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not set");
+
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) throw new Error("MONGO_URI is not set");
+
+let mcpProc: ChildProcess | null = null;
+
+async function launchMcpServer() {
+  mcpProc = spawn("npx", ["-y", "mongodb-mcp-server", "--connectionString", MONGO_URI!], {
+    stdio: ["pipe", "pipe", "inherit"],
+  });
+  mcpProc.on("error", (err) => console.error("MCP server failed:", err));
+  console.log("✅ MCP server started.");
 }
 
-interface ToolDef {
-  name: string;
-  description: string;
-  input_schema: any;
-}
-
-export class MCPClient {
+class MCPChatClient {
   private mcp: Client;
-  private model: GenerativeModel;
-  private genAI: GoogleGenerativeAI;
-  private tools: ToolDef[] = [];
-  private transport: StdioClientTransport | null = null;
-  private isConnected: boolean = false;
-  private chat: any = null;
+  private llm: GoogleGenerativeAI;
+  private tools: any[] = [];
 
   constructor() {
-    this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY as string);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
-    this.mcp = new Client({ name: 'mcp-client-cli', version: '1.0.0' });
+    this.llm = new GoogleGenerativeAI(GEMINI_API_KEY);
+    this.mcp = new Client({
+      name: "mongodb-mcp-client",
+      version: "1.0.0"
+    });
   }
 
   async connect() {
-    try {
-      const mongoUri = process.env.MONGODB_CONNECTION_STRING;
-      if (!mongoUri) {
-        throw new Error('MONGODB_URI is not set in environment');
-      }
+    const transport = new StdioClientTransport({
+      command: "npx",
+      args: ["-y", "mongodb-mcp-server", "--connectionString", MONGO_URI!],
+    });
 
-      this.transport = new StdioClientTransport({
-        command: 'npx',
-        args: ['-y', 'mongodb-mcp-server', '--connectionString', mongoUri],
-      });
+    await this.mcp.connect(transport);
+    console.log("✅ Connected to MCP server");
 
-      await this.mcp.connect(this.transport);
+    const toolsResult = await this.mcp.listTools();
 
-      const toolsResult = await this.mcp.listTools();
-      this.tools = toolsResult.tools.map((tool: any) => ({
+    this.tools = [{
+      functionDeclarations: toolsResult.tools.map((tool) => ({
         name: tool.name,
-        description: tool.description || '',
-        input_schema: tool.inputSchema,
-      }));
+        description: tool.description,
+        parameters: cleanSchema(tool.inputSchema), 
+      })),
+    }, ];
 
-      console.log(
-        'Connected to Mongo MCP Server with tools:',
-        this.tools.map((t) => t.name)
-      );
-      this.isConnected = true;
-    } catch (e) {
-      console.error('Failed to connect to MongoDB MCP server:', e);
-      throw e;
-    }
+    console.log("🔧 Available tools:", toolsResult.tools.map((t) => t.name).join(", "));
   }
-
-  private async callTool(name: string, args: any) {
-    try {
-      const result = await this.mcp.callTool({
-        name,
-        arguments: args,
-      });
-      return result.content;
-    } catch (error) {
-      console.error(`Error calling tool ${name}:`, error);
-      throw error;
-    }
-  }
+ 
 
   async processQuery(query: string) {
-    if (!this.isConnected) {
-      await this.connect();
-    }
+    const schemaInfo = loadSchemaDescriptions();
+    const assignedApps = await getAssignedApplicationsForUser(userid);
 
-    if (!this.chat) {
-      this.chat = this.model.startChat({
-        history: [
-          {
-            role: 'user',
-            parts: [{text: `You are an AI assistant that helps query MongoDB databases through MCP tools. Available tools:\n${
-              this.tools.map(t => `${t.name}: ${t.description}`).join('\n')
-            }\n\nFollow this protocol:\n
-1. ALWAYS check schema before querying
-2. Use exact field names from schema
-3. Show each step clearly
-4. Mark SUCCESS when found or COMPLETED when exhausted
+    // Prepare list for LLM prompt
+    const assignedAppsText = assignedApps.length
+          ? assignedApps.map(a => - ${a.name} (id: ${a.id})).join("\n")
+          : "None";
+    
+    const initialPrompt = `
+      You are an AI assistant that can query MongoDB using the following collections (with names logs, applications) and schemas in the test database:
 
-Current database: gologs`}],
-          },
-          {
-            role: 'model',
-            parts: [{text: 'I understand my role and will follow the protocol strictly. I will always check schemas first and use exact field names.'}],
-          },
-        ],
-      });
-    }
+      ${schemaInfo}
+
+      **The current user is ${is_admin ? "an admin" : "NOT an admin"}**.
+      - If NOT an admin, they can ONLY read from the \logs\ collection (using find/aggregate). They CANNOT insert, update, or delete any data.
+
+      **Assigned Applications for this user:**
+      ${assignedAppsText}
+
+      ⚠️ If the user asks for logs of an application that is NOT in the assigned list (or just a similar name), TELL them that this application is not assigned to them and DO NOT call any tools.
+
+      When calling tools:
+      - Use correct collection names & fields according to the schema given to you. Once an operation is complete, provide a final response to the user without calling more tools. If you try an operation and are unable to do it, respond to the user that you can't do it and stop making tool calls.
+      - Use MongoDB ObjectId syntax: "application_id":{"$oid":""} 
+      
+      Further instructions (IMPORTANT): 
+        -If the request requires multiple tool calls, make one tool call after the next until the operation is completed. 
+        - Display final results in a readable form, not raw JSON. Show the application name rather than id in the response if needed. 
+      User query: ${query}
+    `;
+    //console.log("Initial prompt:", initialPrompt);
+    const messages: any[] = [{
+      role: "user",
+      parts: [{
+        text: initialPrompt
+      }]
+    }, ];
 
     const finalText: string[] = [];
-    let iterationCount = 0;
-    const MAX_ITERATIONS = 5;
-    let searchComplete = false;
 
-    while (!searchComplete && iterationCount < MAX_ITERATIONS) {
-      iterationCount++;
-      console.log(`Starting iteration ${iterationCount}`);
+    const model = this.llm.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      tools: this.tools,
+    });
 
-      try {
-        // Send query to Gemini
-        const result = await this.chat.sendMessage({
-          role: 'user',
-          parts: [{text: query}],
-        });
-        
-        const response = await result.response;
-        const text = response.text();
-        
-        if (text.includes('tool:')) {
-          // Extract tool name and args from the response
-          const toolMatch = text.match(/tool: (\w+)\nargs: ({[\s\S]+})/);
-          if (toolMatch) {
-            const [_, toolName, argsStr] = toolMatch;
-            const args = JSON.parse(argsStr);
-            
-            const toolResult = await this.callTool(toolName, args);
-            
-            finalText.push(`[Calling tool ${toolName} with args ${JSON.stringify(args)}]`);
-            finalText.push(`Result: ${JSON.stringify(toolResult)}`);
-            
-            // Send tool result back to the model
-            await this.chat.sendMessage({
-              role: 'user',
-              parts: [{text: `Tool ${toolName} returned: ${JSON.stringify(toolResult)}`}],
-            });
-          } else {
-            finalText.push(text);
-          }
-        } else {
-          finalText.push(text);
-          if (text.includes('SUCCESS') || text.includes('COMPLETED')) {
-            searchComplete = true;
-          }
-        }
 
-        if (!searchComplete && iterationCount < MAX_ITERATIONS) {
-          await this.chat.sendMessage({
-            role: 'user',
-            parts: [{text: 'Continue searching. Remember to check schema first. What should we try next?'}],
-          });
-        }
-      } catch (error) {
-        console.error('Error in chat iteration:', error);
-        finalText.push(`Error: ${error.message}`);
+    let response = await model.generateContent({
+      contents: messages,
+    });
+
+    while (true) {
+      if (!response.response.candidates || response.response.candidates.length === 0) {
+        console.warn("No candidates found in the Gemini API response. Breaking loop.");
         break;
       }
+
+      const candidate = response.response.candidates[0];
+      if (!candidate.content) {
+        console.warn("Candidate content is undefined. Breaking loop.");
+        break;
+      }
+      const parts = candidate.content.parts;
+
+      let messageContent = "";
+      let toolCalls: any[] = [];
+
+      for (const part of parts) {
+        if (part.text) {
+          messageContent += part.text;
+        }
+        if (part.functionCall) {
+          toolCalls.push({
+            function: part.functionCall
+          });
+        }
+      }
+
+      if (messageContent) {
+        finalText.push(messageContent);
+        messages.push({
+          role: "model",
+          parts: [{
+            text: messageContent
+          }]
+        });
+      }
+
+      if (toolCalls.length > 0) {
+        messages.push({
+          role: "model",
+          parts: toolCalls.map(tc => ({
+            functionCall: tc.function
+          }))
+        });
+
+        for (const toolCall of toolCalls) {
+          const toolName = toolCall.function.name;
+          const toolArgs = toolCall.function.args || {};
+          console.log(⚙️ Calling MCP tool: ${toolName} with args ${JSON.stringify(toolArgs)});
+          if (!is_admin) {
+            if (toolName.includes("insert") || toolName.includes("update") || toolName.includes("delete")) {
+              console.warn(Blocked tool call ${toolName} (user is not admin));
+              finalText.push("❌ You are not allowed to modify data.");
+              continue; }
+
+            if(toolArgs.collection !== "logs"){
+              console.warn(Blocked tool call ${toolName} (user is not admin));
+              finalText.push("❌ You are not allowed to access any collection other than logs.");
+              continue;
+            }
+          
+          if ((toolName.includes("find") || toolName.includes("aggregate"))) {
+              // Restrict logs to assigned apps only
+              const assignedAppIds = assignedApps.map((a) => ({ $oid: a.id }));
+
+              if (!toolArgs.filter) toolArgs.filter = {};
+
+              if (toolArgs.filter.application_id) {
+                toolArgs.filter.$and = [
+                  { application_id: toolArgs.filter.application_id },
+                  { application_id: { $in: assignedAppIds } },
+                ];
+                delete toolArgs.filter.application_id;
+              } else {
+                toolArgs.filter.application_id = { $in: assignedAppIds };
+              }
+            console.log(⚙️ After filtering Calling MCP tool: ${toolName} with args ${JSON.stringify(toolArgs)});
+          } }
+
+          let result;
+          try {
+            result = await this.mcp.callTool({
+              name: toolName,
+              arguments: toolArgs,
+            });
+          } catch (error: any) {
+            console.error(Error calling tool ${toolName}:, error);
+            result = {
+              error: Failed to call tool ${toolName}: ${(error as Error).message}
+            };
+          }
+
+          messages.push({
+            role: "tool",
+            parts: [{
+              functionResponse: {
+                name: toolName,
+                response: result
+              }
+            }],
+          });
+
+          finalText.push([Tool ${toolName} result]: ${JSON.stringify(result)});
+        }
+
+        response = await model.generateContent({
+          contents: messages,
+        });
+        continue;
+      }
+
+      break;
     }
 
-    if (iterationCount >= MAX_ITERATIONS) {
-      finalText.push('\nREACHED MAXIMUM ITERATIONS: Search stopped after trying multiple approaches.');
-    }
-
-    return finalText.join('\n');
+    return finalText.join("\n");
   }
 
-  async cleanup() {
-    if (this.isConnected && this.transport) {
-      await this.mcp.close();
-      this.isConnected = false;
-      this.chat = null;
+  async chatLoop() {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    console.log("\n💬 Chat started! Type your query or 'quit' to exit.");
+
+    while (true) {
+      const msg = await rl.question("\nQuery: ");
+      if (msg.toLowerCase() === "quit") break;
+      const response = await this.processQuery(msg);
+      console.log("\n📝 Response:\n" + response);
     }
+
+    rl.close();
   }
 }
+
+(async () => {
+  await connectToDatabase();
+
+  await launchMcpServer();
+
+  const client = new MCPChatClient();
+  await client.connect();
+  await client.chatLoop();
+
+  // if (mcpProc) mcpProc.kill();
+})();

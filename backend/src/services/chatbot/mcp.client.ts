@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { GoogleGenerativeAI, GenerativeModel, FunctionDeclaration } from '@google/generative-ai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import dotenv from 'dotenv';
@@ -16,24 +16,16 @@ if (!MONGODB_CONNECTION_STRING) {
   throw new Error('MONGODB_CONNECTION_STRING is not set');
 }
 
-interface ToolDef {
-  name: string;
-  description: string;
-  input_schema: any;
-}
-
 export class MCPClient {
   private mcp: Client;
-  private model: GenerativeModel;
+  private model!: GenerativeModel;
   private genAI: GoogleGenerativeAI;
-  private tools: ToolDef[] = [];
+  private tools: FunctionDeclaration[] = [];
   private transport: StdioClientTransport | null = null;
   private isConnected: boolean = false;
-  private chat: any = null;
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY as string);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     this.mcp = new Client({ name: 'mcp-client-cli', version: '1.0.0' });
   }
 
@@ -52,16 +44,19 @@ export class MCPClient {
       await this.mcp.connect(this.transport);
 
       const toolsResult = await this.mcp.listTools();
+
+      // Convert MCP tools to Gemini FunctionDeclarations
       this.tools = toolsResult.tools.map((tool: any) => ({
         name: tool.name,
         description: tool.description || '',
-        input_schema: tool.inputSchema,
+        parameters: this.cleanSchema(tool.inputSchema), // Clean the schema for Gemini
       }));
 
       console.log(
         'Connected to Mongo MCP Server with tools:',
-        this.tools.map((t) => t.name)
+        this.tools.map((t) => `${t.name}: ${t.description}`).join('\n')
       );
+
       this.isConnected = true;
     } catch (e) {
       console.error('Failed to connect to MongoDB MCP server:', e);
@@ -69,12 +64,135 @@ export class MCPClient {
     }
   }
 
+  private cleanSchema(schema: any): any {
+    if (!schema || typeof schema !== 'object') {
+      return schema;
+    }
+
+    // Create a clean copy without unsupported fields
+    const cleanedSchema = { ...schema };
+
+    // Remove all unsupported JSON Schema fields
+    const unsupportedFields = [
+      'additionalProperties',
+      '$schema',
+      '$id',
+      '$ref',
+      'definitions',
+      'title',
+      'const', // Not supported by Gemini
+      'examples', // Not supported
+      'default', // Can cause issues
+      'format', // Not always supported
+      'pattern', // Regex patterns not supported
+      'minLength', // String constraints
+      'maxLength',
+      'minimum', // Number constraints
+      'maximum',
+      'exclusiveMinimum',
+      'exclusiveMaximum',
+      'multipleOf',
+      'minItems', // Array constraints
+      'maxItems',
+      'uniqueItems',
+      'minProperties', // Object constraints
+      'maxProperties',
+      'patternProperties',
+      'dependencies',
+      'if', // Conditional schemas
+      'then',
+      'else',
+      'not', // Schema negation
+      'readOnly', // Metadata
+      'writeOnly',
+      'deprecated',
+    ];
+
+    // Remove unsupported fields
+    unsupportedFields.forEach((field) => {
+      delete cleanedSchema[field];
+    });
+
+    // Convert anyOf/oneOf to simpler structure if possible
+    if (cleanedSchema.anyOf && Array.isArray(cleanedSchema.anyOf)) {
+      // Try to simplify anyOf - if all items have the same type, just use that type
+      const types = cleanedSchema.anyOf.map((item: any) => item.type).filter(Boolean);
+      if (types.length > 0 && types.every((t: string) => t === types[0])) {
+        cleanedSchema.type = types[0];
+        delete cleanedSchema.anyOf;
+      } else {
+        // Clean each anyOf item
+        cleanedSchema.anyOf = cleanedSchema.anyOf.map((item: any) => this.cleanSchema(item));
+      }
+    }
+
+    if (cleanedSchema.oneOf && Array.isArray(cleanedSchema.oneOf)) {
+      // Similar simplification for oneOf
+      const types = cleanedSchema.oneOf.map((item: any) => item.type).filter(Boolean);
+      if (types.length > 0 && types.every((t: string) => t === types[0])) {
+        cleanedSchema.type = types[0];
+        delete cleanedSchema.oneOf;
+      } else {
+        cleanedSchema.oneOf = cleanedSchema.oneOf.map((item: any) => this.cleanSchema(item));
+      }
+    }
+
+    if (cleanedSchema.allOf && Array.isArray(cleanedSchema.allOf)) {
+      cleanedSchema.allOf = cleanedSchema.allOf.map((item: any) => this.cleanSchema(item));
+    }
+
+    // Recursively clean properties
+    if (cleanedSchema.properties && typeof cleanedSchema.properties === 'object') {
+      const cleanedProperties: any = {};
+      for (const [key, value] of Object.entries(cleanedSchema.properties)) {
+        cleanedProperties[key] = this.cleanSchema(value);
+      }
+      cleanedSchema.properties = cleanedProperties;
+    }
+
+    // Clean array items
+    if (cleanedSchema.items) {
+      cleanedSchema.items = this.cleanSchema(cleanedSchema.items);
+    }
+
+    // Ensure we only keep supported schema fields
+    const supportedFields = [
+      'type',
+      'properties',
+      'required',
+      'description',
+      'enum',
+      'items',
+      'anyOf',
+      'oneOf',
+      'allOf',
+    ];
+    const finalSchema: any = {};
+
+    supportedFields.forEach((field) => {
+      if (cleanedSchema[field] !== undefined) {
+        finalSchema[field] = cleanedSchema[field];
+      }
+    });
+
+    return finalSchema;
+  }
+
   private async callTool(name: string, args: any) {
     try {
+      // Get the tool schema
+      const toolSchema = this.tools.find((t) => t.name === name)?.parameters;
+
+      // Inject "database": "gologs" if it's required but missing
+      if (toolSchema && toolSchema.required?.includes('database') && !('database' in args)) {
+        args.database = 'gologs';
+      }
+
       const result = await this.mcp.callTool({
         name,
         arguments: args,
       });
+
       return result.content;
     } catch (error) {
       console.error(`Error calling tool ${name}:`, error);
@@ -87,67 +205,20 @@ export class MCPClient {
       await this.connect();
     }
 
-    if (!this.chat) {
-      this.chat = this.model.startChat({
-        history: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: `You are an AI assistant connected to a MongoDB database via MCP tools. You MUST format tool calls EXACTLY like these examples:
+    // Initialize model with function declarations
+    this.model = this.genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      tools: [{ functionDeclarations: this.tools }], // Correct format for Gemini
+    });
 
-For finding documents:
-tool: find
-args: {
-  "database": "gologs",
-  "collection": "users",
-  "filter": {"username": "example"},
-  "projection": {"email": 1, "username": 1},
-  "sort": {"username": 1},
-  "limit": 10
-}
-
-For aggregations:
-tool: aggregate
-args: {
-  "database": "gologs",
-  "collection": "logs",
-  "pipeline": [
-    {"$match": {"severity": "error"}},
-    {"$group": {"_id": "$applicationId", "count": {"$sum": 1}}},
-    {"$sort": {"count": -1}},
-    {"$limit": 5}
-  ]
-}
-
-For counts:
-tool: count
-args: {
-  "database": "gologs",
-  "collection": "logs",
-  "query": {"level": "error", "timestamp": {"$gte": "2025-07-01"}}
-}
-
-For checking schema:
-tool: collection-schema
-args: {
-  "database": "gologs",
-  "collection": "users"
-}
-
-NEVER just talk about running a query - you must actually format and send it as shown above.
+    const initialPrompt = `You are an AI assistant connected to a MongoDB database via MCP tools. You must decide which is the appropriate tool to use based on the query and the available tools.
 
 MANDATORY WORKFLOW - You MUST follow these steps in EXACT order for EVERY collection you query:
 
 1. FIRST: Use list-collections to see available collections
 
 2. BEFORE TOUCHING ANY COLLECTION:
-   YOU MUST ALWAYS run collection-schema first:
-   tool: collection-schema
-   args: {
-     "database": "gologs",
-     "collection": "collection_name"
-   }
+   YOU MUST ALWAYS run collection-schema first for the collection you want to query
 
 3. ONLY AFTER getting the schema, you can:
    - Choose the appropriate tool (find/aggregate/count) based on the query needs
@@ -164,8 +235,6 @@ MANDATORY WORKFLOW - You MUST follow these steps in EXACT order for EVERY collec
 ❌ NEVER ASSUME FIELD NAMES OR TYPES
 ✅ ALWAYS GET SCHEMA FIRST
 
-DO NOT say "I am waiting for results" or "I executed a query" - you must actually format and send the query as shown above.
-
 CRITICAL RULES:
 - Work iteratively - if you don't find what you're looking for, try different approaches
 - Keep track of what collections and queries you've already tried
@@ -174,112 +243,133 @@ CRITICAL RULES:
 - If you've exhausted all possibilities, clearly indicate COMPLETED
 - Maintain conversation context between iterations
 
-Current database: gologs`,
-              },
-            ],
-          },
-          {
-            role: 'model',
-            parts: [
-              {
-                text: 'I understand my role and will follow the protocol strictly. I will always check schemas first and use exact field names.',
-              },
-            ],
-          },
-        ],
-      });
-    }
+Current database: gologs
+User query: ${query}`;
 
-    const finalText: string[] = [];
+    let finalOutput = '';
     let iterationCount = 0;
     const MAX_ITERATIONS = 10;
     let searchComplete = false;
 
+    // Build conversation contents array
+    const contents: any[] = [
+      {
+        role: 'user',
+        parts: [{ text: initialPrompt }],
+      },
+    ];
+
+    // Send initial message
+    let result = await this.model.generateContent({
+      contents: contents,
+    });
+
     while (!searchComplete && iterationCount < MAX_ITERATIONS) {
       iterationCount++;
-      console.log(`Starting iteration ${iterationCount}`);
+      console.log(`\n--- Iteration ${iterationCount} ---`);
 
       try {
-        console.log(`\n--- Iteration ${iterationCount} ---`);
-        console.log(`Sending query: ${query}`);
-
-        const result = await this.chat.sendMessage(query);
-        const response = await result.response;
+        const response = result.response;
         const text = response.text();
+        console.log(`Gemini response text: ${text}`);
 
-        console.log(`Gemini response: ${text}`);
-        console.log(`--- End Iteration ${iterationCount} ---\n`);
+        // Check for function calls
+        const functionCalls = response.functionCalls();
 
-        let foundTool = false;
-        const toolPattern = /tool:\s*([^\n]+)[\s\n]*args:\s*({[\s\S]+?})(?=\ntool:|$)/g;
-        let match;
+        if (functionCalls && functionCalls.length > 0) {
+          console.log('\n--- Function calls detected ---');
 
-        while ((match = toolPattern.exec(text)) !== null) {
-          foundTool = true;
-          const [_, toolName, argsStr] = match;
+          // Process each function call
+          const functionResponses = [];
 
-          try {
-            const args = JSON.parse(argsStr.trim());
+          for (const functionCall of functionCalls) {
+            console.log('Function call:', functionCall.name);
+            console.log('Args:', JSON.stringify(functionCall.args, null, 2));
 
-            console.log('\n--- MCP Tool Call ---');
-            console.log('Tool:', toolName.trim());
-            console.log('Args:', JSON.stringify(args, null, 2));
+            try {
+              const toolResult = await this.callTool(functionCall.name, functionCall.args);
+              console.log('Tool result:', JSON.stringify(toolResult, null, 2));
 
-            const toolResult = await this.callTool(toolName.trim(), args);
-
-            console.log('Response:', JSON.stringify(toolResult, null, 2));
-            console.log('--- End MCP Tool Call ---\n');
-
-            finalText.push('\n--- MCP Tool Call ---');
-            finalText.push(`Tool: ${toolName.trim()}`);
-            finalText.push(`Args: ${JSON.stringify(args, null, 2)}`);
-            finalText.push(`Response: ${JSON.stringify(toolResult, null, 2)}`);
-            finalText.push('--- End MCP Tool Call ---\n');
-
-            await this.chat.sendMessage(
-              `Tool ${toolName.trim()} returned: ${JSON.stringify(toolResult)}`
-            );
-          } catch (parseError) {
-            console.error('Error parsing tool args:', parseError);
-            finalText.push(`Error executing tool ${toolName}: Invalid arguments`);
+              functionResponses.push({
+                name: functionCall.name,
+                response: { result: toolResult }, // Wrap in result object
+              });
+            } catch (error) {
+              console.error(`Error calling function ${functionCall.name}:`, error);
+              functionResponses.push({
+                name: functionCall.name,
+                response: { error: error },
+              });
+            }
           }
-        }
 
-        if (!foundTool) {
-          finalText.push(text);
+          // Add model's function call to conversation
+          contents.push({
+            role: 'model',
+            parts: functionCalls.map((fc) => ({ functionCall: fc })),
+          });
+
+          // Send function responses back to the model
+          const parts = functionResponses.map((fr) => ({
+            functionResponse: {
+              name: fr.name,
+              response: fr.response,
+            },
+          }));
+
+          // Add function responses to conversation
+          contents.push({
+            role: 'user',
+            parts: parts,
+          });
+
+          // Generate next response
+          result = await this.model.generateContent({
+            contents: contents,
+          });
+        } else {
+          // No function calls, check if we're done
           if (text.includes('SUCCESS') || text.includes('COMPLETED')) {
             searchComplete = true;
+            finalOutput = text;
+          } else {
+            // Continue the conversation
+            contents.push({
+              role: 'model',
+              parts: [{ text }],
+            });
+            contents.push({
+              role: 'user',
+              parts: [
+                {
+                  text: 'Continue with your analysis. Use the available tools to query the database.',
+                },
+              ],
+            });
+
+            result = await this.model.generateContent({
+              contents: contents,
+            });
           }
         }
-
-        if (!searchComplete && iterationCount < MAX_ITERATIONS) {
-          await this.chat.sendMessage(
-            'Continue searching. You MUST format your response as a tool call:\ntool: [toolname]\nargs: {...}\n\nDO NOT just describe what you want to do - actually format and send the query.'
-          );
-        }
-      } catch (error: unknown) {
+      } catch (error) {
         console.error('Error in chat iteration:', error);
-        finalText.push(
-          `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`
-        );
+        finalOutput = `Error occurred: ${error}`;
         break;
       }
     }
 
-    if (iterationCount >= MAX_ITERATIONS) {
-      finalText.push(
-        '\nREACHED MAXIMUM ITERATIONS: Search stopped after trying multiple approaches.'
-      );
+    if (!finalOutput) {
+      finalOutput = `\nREACHED MAXIMUM ITERATIONS (${MAX_ITERATIONS}): Search stopped after trying multiple approaches.`;
     }
 
-    return finalText.join('\n');
+    return finalOutput;
   }
 
   async cleanup() {
     if (this.isConnected && this.transport) {
       await this.mcp.close();
       this.isConnected = false;
-      this.chat = null;
     }
   }
 }
