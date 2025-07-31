@@ -12,6 +12,7 @@ import { errorHandler } from './middleware/error.middleware';
 import assignGroupRoutes from './routes/assignGroup.routes';
 import appsHealthRoutes from './routes/appsHealth.routes';
 import chatRoutes from './routes/chat.routes';
+import promptRoutes from './routes/prompts.routes';
 import cookieParser from 'cookie-parser';
 import config from 'config';
 
@@ -39,6 +40,7 @@ app.use('/api/logs', logRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/appsHealth', appsHealthRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/prompt', promptRoutes);
 
 app.use(errorHandler);
 
