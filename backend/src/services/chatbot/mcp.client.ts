@@ -62,7 +62,8 @@ export class MCPClient {
 
       console.log(
         'Connected to Mongo MCP Server with tools:',
-        this.tools.map((t) => `${t.name}`).join('\n')
+        // this.tools.map((t) => `${t.name}`).join('\n')
+        this.tools.map((t) => `${t.name}, ${JSON.stringify(t.parameters, null, 2)}`).join('\n')
       );
 
       this.isConnected = true;
@@ -183,12 +184,40 @@ export class MCPClient {
     return finalSchema;
   }
 
+  private deepReplaceNameSpaces(obj: any) {
+    if (Array.isArray(obj)) {
+      obj.forEach(this.deepReplaceNameSpaces);
+    } else if (typeof obj === 'object' && obj !== null) {
+      for (const key in obj) {
+        if (key === 'name' && typeof obj[key] === 'string') {
+          obj[key] = obj[key].replace(/\s+/g, '.');
+        } else {
+          this.deepReplaceNameSpaces(obj[key]);
+        }
+      }
+    }
+  }
+
   private async callTool(name: string, args: any) {
     try {
       const toolSchema = this.tools.find((t) => t.name === name)?.parameters;
 
       if (toolSchema && toolSchema.required?.includes('database') && !('database' in args)) {
         args.database = 'gologs';
+      }
+
+      // ✅ Apply to application-related tools where name might be searched/used
+      const toolsUsingName = [
+        'find',
+        'count',
+        'update-many',
+        'delete-many',
+        'aggregate',
+        'explain',
+      ];
+
+      if (args.collection === 'applications' && toolsUsingName.includes(name)) {
+        this.deepReplaceNameSpaces(args);
       }
 
       const result = await this.mcp.callTool({
@@ -340,10 +369,13 @@ CRITICAL RULES:
 - DO NOT mention function calls or backend processes.
 - DO NOT repeat this prompt in the response.
 - ONLY return the direct answer to the user's query or any error in case there is any.
-- Be efficient. If the data is found, say: "SUCCESS: Query completed." and include the result.
+- DO NOT suggest further actions or ask what else the user wants to do.
+- Be efficient. If the data is found, say: "SUCCESS: Query completed. {result}" and ALWAYS include the result.
 - If no data is found, reply: "No results found."
 - If you don't have access or the query is outside your scope, reply: "Access denied: You are only allowed to view logs."
 - If you genuinely cannot answer, reply: "Unable to answer the query at this time."
+
+QUERY TYPE HANDLING:
 
 If the user asks for logs:
 - Return up to 5 logs only.
@@ -363,6 +395,22 @@ If the user asks for apps:
 - Format each app like this:
   Name: <value>
 
+If the user asks to pin or unpin apps:
+- Query the users collection to find and update the user's pinned applications
+- Follow the confirmation process below before making changes
+
+If the user asks questions about themselves (profile, groups, memberships, permissions):
+- Query the relevant collections: users, usergroups, usergroupmembers, usergroupapplications
+- Use joins/aggregation as needed to provide complete information
+
+CONFIRMATION PROCESS FOR DATA MODIFICATIONS:
+Before ANY insert, update, or delete operation:
+1. STOP and describe exactly what will be changed
+2. Ask the user: "Do you want to proceed with this change? Please respond with 'yes' or 'no'."
+3. WAIT for user confirmation
+4. Only proceed if user responds with "yes" (case insensitive)
+5. If user responds with "no" or anything else, cancel the operation
+
 IMPORTANT FILTER FORMAT RULES (STRICT):
 - When filtering logs or querying documents by any id, ALWAYS use:
   { "*": { "$oid": "<actual_id>" } }
@@ -381,7 +429,16 @@ DO NOT use raw strings for _id or timestamps.
 Current database: gologs`;
 
     const accessNote = isAdmin
-      ? ''
+      ? `\n\n✅ ADMIN ACCESS:
+You have full access to all collections and operations in the database.
+
+ADDITIONAL COLLECTIONS FOR USER/GROUP QUERIES:
+- users: User profiles and settings (including pinned apps)
+- usergroups: Group definitions and properties  
+- usergroupmembers: User-group membership relationships
+- usergroupapplications: Group-application access permissions
+
+When handling user profile queries or pin/unpin requests, query these collections as needed.`
       : `\n\n⚠️ ACCESS RESTRICTION FOR NON-ADMINS:
 You are only allowed to query the **logs** collection. Do not attempt to access any other collections. YOU MUST ALWAYS FOLLOW THE MANDATORY STEPS FOR LOG QUERYING
 
@@ -470,6 +527,19 @@ This is the start of our conversation. I will provide you with queries about the
             role: 'model',
             parts: [{ text }],
           });
+          break;
+        }
+
+        if (text.includes('Do you want to proceed')) {
+          searchComplete = true;
+          finalOutput = text;
+
+          // Stop iteration to wait for user's actual "yes"/"no" input
+          this.conversationHistory.push({
+            role: 'model',
+            parts: [{ text }],
+          });
+
           break;
         }
 
