@@ -1,21 +1,15 @@
-/**
- * @license
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates.
- * Licensed under The Universal Permissive License (UPL), Version 1.0
- * as shown at https://oss.oracle.com/licenses/upl/
- * @ignore
- */
 import { h } from "preact";
-import { useState, useRef, useEffect } from "preact/hooks";
+import { useState } from "preact/hooks";
 import "ojs/ojbutton";
 import "ojs/ojinputtext";
-import { query } from "express";
 
 type Message = {
     id: string;
     text: string;
     isUser: boolean;
     timestamp: Date;
+    saved?: boolean;
+    savedId?: string;
 };
 
 type Props = {
@@ -34,8 +28,8 @@ export function Chatbot({ isOpen, onClose }: Props) {
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
-
+    const [showSaved, setShowSaved] = useState(false);
+    const [savedPrompts, setSavedPrompts] = useState<{ _id: string; prompt: string }[]>([]);
 
     const sendMessage = async () => {
         if (!inputValue.trim() || isLoading) return;
@@ -54,19 +48,14 @@ export function Chatbot({ isOpen, onClose }: Props) {
         try {
             const response = await fetch('http://localhost:3001/api/chat', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({ query: inputValue }),
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to send message');
-            }
+            if (!response.ok) throw new Error('Failed to send message');
 
             const data = await response.json();
-            console.log('repsons:', data);
 
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
@@ -77,7 +66,6 @@ export function Chatbot({ isOpen, onClose }: Props) {
 
             setMessages(prev => [...prev, botMessage]);
         } catch (error) {
-            console.error('Error sending message:', error);
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 text: 'Sorry, I\'m having trouble connecting. Please try again later.',
@@ -93,6 +81,92 @@ export function Chatbot({ isOpen, onClose }: Props) {
     const handleInputChange = (event: any) => {
         setInputValue(event.detail.value);
     };
+
+    const savePrompt = async (text: string) => {
+        const res = await fetch('http://localhost:3001/api/prompt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ prompt: text }),
+        });
+        return res.json();
+    };
+
+    const fetchSavedPrompts = async () => {
+        const res = await fetch('http://localhost:3001/api/prompt', {
+            credentials: 'include',
+        });
+        return res.json();
+    };
+
+    const unsavePrompt = async (id: string) => {
+        const res = await fetch(`http://localhost:3001/api/prompt/${id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+        return res.json();
+    };
+
+    const toggleSave = async (msg: Message) => {
+        if (msg.saved && msg.savedId) {
+            await unsavePrompt(msg.savedId);
+            setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: false, savedId: undefined } : m));
+        } else {
+            const res = await savePrompt(msg.text);
+            setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: true, savedId: res.prompt._id } : m));
+        }
+    };
+
+    const loadSavedPrompts = async () => {
+        try {
+            const data = await fetchSavedPrompts();
+            const saved = data.prompts || [];
+            setSavedPrompts(saved);
+            setShowSaved(true);
+
+            setMessages(prev =>
+                prev.map(msg => {
+                    const match = saved.find((p: { _id: string; prompt: string }) => p.prompt === msg.text);
+                    return match ? { ...msg, saved: true, savedId: match._id } : msg;
+                })
+            );
+        } catch (error) {
+            console.error("Failed to load saved prompts", error);
+        }
+    };
+
+
+    const SavedPromptList = () => (
+        <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'white', zIndex: 1001, padding: '16px', overflowY: 'auto'
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>Saved Prompts</h3>
+                <oj-c-button onojAction={() => setShowSaved(false)} chroming="borderless">
+                    <span slot="startIcon" class="oj-ux-ico-close"></span>
+                </oj-c-button>
+            </div>
+            {savedPrompts.length === 0 ? (
+                <p>No saved prompts</p>
+            ) : (
+                savedPrompts.map(prompt => (
+                    <div key={prompt._id} style={{ margin: '8px 0', borderBottom: '1px solid #ccc', paddingBottom: '8px' }}>
+                        <span>{prompt.prompt}</span>
+                        <oj-c-button
+                            onojAction={() => unsavePrompt(prompt._id).then(() => loadSavedPrompts())}
+                            size="xs"
+                            chroming="borderless"
+                            title="Remove"
+                            style={{ marginLeft: '12px' }}
+                        >
+                            <span slot="startIcon" class="oj-ux-ico-trash"></span>
+                        </oj-c-button>
+                    </div>
+                ))
+            )}
+        </div>
+    );
 
     if (!isOpen) return null;
 
@@ -111,6 +185,8 @@ export function Chatbot({ isOpen, onClose }: Props) {
             flexDirection: 'column',
             fontFamily: 'var(--oj-core-font-family)'
         }}>
+            {showSaved && <SavedPromptList />}
+
             {/* Header */}
             <div style={{
                 padding: '16px',
@@ -129,15 +205,26 @@ export function Chatbot({ isOpen, onClose }: Props) {
                 }}>
                     Chat Assistant
                 </h3>
-                <oj-c-button
-                    display="icons"
-                    onojAction={onClose}
-                    chroming="borderless"
-                    size="sm"
-                    title="Close chat"
-                >
-                    <span slot="startIcon" class="oj-ux-ico-close"></span>
-                </oj-c-button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                    <oj-c-button
+                        display="icons"
+                        onojAction={loadSavedPrompts}
+                        chroming="borderless"
+                        size="sm"
+                        title="View saved prompts"
+                    >
+                        <span slot="startIcon" class="oj-ux-ico-star"></span>
+                    </oj-c-button>
+                    <oj-c-button
+                        display="icons"
+                        onojAction={onClose}
+                        chroming="borderless"
+                        size="sm"
+                        title="Close chat"
+                    >
+                        <span slot="startIcon" class="oj-ux-ico-close"></span>
+                    </oj-c-button>
+                </div>
             </div>
 
             {/* Messages */}
@@ -150,34 +237,42 @@ export function Chatbot({ isOpen, onClose }: Props) {
                 gap: '12px'
             }}>
                 {messages.map((message) => (
-                    <div
-                        key={message.id}
-                        style={{
-                            display: 'flex',
-                            justifyContent: message.isUser ? 'flex-end' : 'flex-start'
-                        }}
-                    >
-                        <div
-                            style={{
-                                maxWidth: '75%',
-                                padding: '10px 14px',
-                                borderRadius: message.isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                background: message.isUser
-                                    ? '#757575ff'
-                                    : '#f1f3f5',
-                                color: message.isUser ? '#ffffff' : '#333',
-                                fontSize: '14px',
-                                lineHeight: '1.4',
-                                boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
-                                wordWrap: 'break-word',
-                                border: message.isUser ? 'none' : '1px solid #e0e0e0'
-                            }}
-                        >
+                    <div key={message.id} style={{
+                        display: 'flex',
+                        justifyContent: message.isUser ? 'flex-end' : 'flex-start',
+                        gap: '8px',
+                        alignItems: 'flex-start'
+                    }}>
+                        {message.isUser && (
+                            <oj-c-button
+                                onojAction={() => toggleSave(message)}
+                                size="xs"
+                                chroming="borderless"
+                                title={message.saved ? "Unsave" : "Save"}
+                                style={{
+                                    alignSelf: 'center',
+                                    flexShrink: 0,
+                                    marginTop: '4px'
+                                }}
+                            >
+                                <span slot="startIcon" class={message.saved ? "oj-ux-ico-star-full" : "oj-ux-ico-star"}></span>
+                            </oj-c-button>
+                        )}
+
+                        <div style={{
+                            maxWidth: '75%',
+                            padding: '10px 14px',
+                            borderRadius: message.isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                            background: message.isUser ? '#757575ff' : '#f1f3f5',
+                            color: message.isUser ? '#ffffff' : '#333',
+                            fontSize: '14px',
+                            position: 'relative'
+                        }}>
                             {message.text}
                         </div>
                     </div>
-                ))}
 
+                ))}
 
                 {isLoading && (
                     <div style={{
@@ -186,7 +281,6 @@ export function Chatbot({ isOpen, onClose }: Props) {
                         alignItems: 'flex-end',
                         gap: '8px'
                     }}>
-                        {/* Bot Avatar */}
                         <div style={{
                             width: '32px',
                             height: '32px',
@@ -202,7 +296,6 @@ export function Chatbot({ isOpen, onClose }: Props) {
                         }}>
                             🤖
                         </div>
-
                         <div style={{
                             padding: '10px 14px',
                             borderRadius: '18px 18px 18px 4px',
@@ -218,8 +311,6 @@ export function Chatbot({ isOpen, onClose }: Props) {
                             }}>
                                 Typing...
                             </span>
-
-                            {/* Message tail */}
                             <div style={{
                                 position: 'absolute',
                                 bottom: '0',
@@ -233,8 +324,6 @@ export function Chatbot({ isOpen, onClose }: Props) {
                         </div>
                     </div>
                 )}
-
-                <div />
             </div>
 
             {/* Input */}
@@ -251,9 +340,7 @@ export function Chatbot({ isOpen, onClose }: Props) {
                         onvalueChanged={handleInputChange}
                         placeholder="Type your message..."
                         disabled={isLoading}
-                        style={{
-                            width: '100%'
-                        }}
+                        style={{ width: '100%' }}
                     />
                 </div>
                 <oj-c-button
