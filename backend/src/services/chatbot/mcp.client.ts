@@ -17,8 +17,6 @@ if (!MONGODB_CONNECTION_STRING) {
   throw new Error('MONGODB_CONNECTION_STRING is not set');
 }
 
-// Import your service function (adjust the import path as needed)
-
 export class MCPClient {
   private mcp: Client;
   private model!: GenerativeModel;
@@ -27,6 +25,12 @@ export class MCPClient {
   private transport: StdioClientTransport | null = null;
   private isConnected: boolean = false;
   private userAccessibleApps: { id: string; name: string }[] = [];
+
+  // Persistent chat history
+  private conversationHistory: any[] = [];
+  private isInitialized: boolean = false;
+  private currentUserId: string | undefined = undefined;
+  private currentUserIsAdmin: boolean = false;
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY as string);
@@ -53,12 +57,11 @@ export class MCPClient {
       this.tools = toolsResult.tools.map((tool: any) => ({
         name: tool.name,
         description: tool.description || '',
-        parameters: this.cleanSchema(tool.inputSchema), // Clean the schema for Gemini
+        parameters: this.cleanSchema(tool.inputSchema),
       }));
 
       console.log(
         'Connected to Mongo MCP Server with tools:',
-        // this.tools.map((t) => `${t.name}: ${t.description}`).join('\n')
         this.tools.map((t) => `${t.name}`).join('\n')
       );
 
@@ -85,30 +88,30 @@ export class MCPClient {
       '$ref',
       'definitions',
       'title',
-      'const', // Not supported by Gemini
-      'examples', // Not supported
-      'default', // Can cause issues
-      'format', // Not always supported
-      'pattern', // Regex patterns not supported
-      'minLength', // String constraints
+      'const',
+      'examples',
+      'default',
+      'format',
+      'pattern',
+      'minLength',
       'maxLength',
-      'minimum', // Number constraints
+      'minimum',
       'maximum',
       'exclusiveMinimum',
       'exclusiveMaximum',
       'multipleOf',
-      'minItems', // Array constraints
+      'minItems',
       'maxItems',
       'uniqueItems',
-      'minProperties', // Object constraints
+      'minProperties',
       'maxProperties',
       'patternProperties',
       'dependencies',
-      'if', // Conditional schemas
+      'if',
       'then',
       'else',
-      'not', // Schema negation
-      'readOnly', // Metadata
+      'not',
+      'readOnly',
       'writeOnly',
       'deprecated',
     ];
@@ -120,19 +123,16 @@ export class MCPClient {
 
     // Convert anyOf/oneOf to simpler structure if possible
     if (cleanedSchema.anyOf && Array.isArray(cleanedSchema.anyOf)) {
-      // Try to simplify anyOf - if all items have the same type, just use that type
       const types = cleanedSchema.anyOf.map((item: any) => item.type).filter(Boolean);
       if (types.length > 0 && types.every((t: string) => t === types[0])) {
         cleanedSchema.type = types[0];
         delete cleanedSchema.anyOf;
       } else {
-        // Clean each anyOf item
         cleanedSchema.anyOf = cleanedSchema.anyOf.map((item: any) => this.cleanSchema(item));
       }
     }
 
     if (cleanedSchema.oneOf && Array.isArray(cleanedSchema.oneOf)) {
-      // Similar simplification for oneOf
       const types = cleanedSchema.oneOf.map((item: any) => item.type).filter(Boolean);
       if (types.length > 0 && types.every((t: string) => t === types[0])) {
         cleanedSchema.type = types[0];
@@ -185,10 +185,8 @@ export class MCPClient {
 
   private async callTool(name: string, args: any) {
     try {
-      // Get the tool schema
       const toolSchema = this.tools.find((t) => t.name === name)?.parameters;
 
-      // Inject "database": "gologs" if it's required but missing
       if (toolSchema && toolSchema.required?.includes('database') && !('database' in args)) {
         args.database = 'gologs';
       }
@@ -205,7 +203,6 @@ export class MCPClient {
     }
   }
 
-  // New method to fetch user applications
   private async fetchUserApplications(userId: string) {
     try {
       console.log(`Fetching applications for user: ${userId}`);
@@ -213,7 +210,7 @@ export class MCPClient {
       const options = {
         userId,
         page: 1,
-        limit: 100, // Increased to get all apps (adjust as needed)
+        limit: 100,
         search: undefined,
         status: undefined,
       };
@@ -221,7 +218,6 @@ export class MCPClient {
       const result = await getUserApplicationsService(options);
 
       if (result.success) {
-        // Store accessible apps for filtering
         this.userAccessibleApps = result.applications.map((app: any) => ({
           id: app._id.toString(),
           name: app.name || app.app_name || 'Unknown App',
@@ -234,7 +230,6 @@ export class MCPClient {
           this.userAccessibleApps.map((app) => app.id)
         );
 
-        // Log each application
         result.applications.forEach((app: any, index: number) => {
           console.log(`App ${index + 1}:`, {
             id: app._id,
@@ -245,43 +240,67 @@ export class MCPClient {
         });
       } else {
         console.log('Failed to fetch applications:', result.message);
-        this.userAccessibleApps = []; // Clear accessible apps on failure
+        this.userAccessibleApps = [];
       }
 
       return result;
     } catch (error) {
       console.error('Error fetching user applications:', error);
-      this.userAccessibleApps = []; // Clear accessible apps on error
+      this.userAccessibleApps = [];
       return null;
     }
   }
 
-  async processQuery(query: string, userId: string | undefined, isAdmin: boolean) {
-    if (!this.isConnected) {
-      await this.connect();
+  // Method to clear conversation history (useful for starting fresh)
+  clearHistory() {
+    this.conversationHistory = [];
+    this.isInitialized = false;
+    console.log('Conversation history cleared');
+  }
+
+  // Method to get conversation history (for debugging or persistence)
+  getConversationHistory() {
+    return [...this.conversationHistory]; // Return a copy
+  }
+
+  // Method to check if user context has changed
+  private hasUserContextChanged(userId: string | undefined, isAdmin: boolean): boolean {
+    return this.currentUserId !== userId || this.currentUserIsAdmin !== isAdmin;
+  }
+
+  // Initialize conversation with system prompt
+  private async initializeConversation(userId: string | undefined, isAdmin: boolean) {
+    // Clear history if user context changed
+    if (this.hasUserContextChanged(userId, isAdmin)) {
+      console.log('User context changed, clearing conversation history');
+      this.clearHistory();
+      this.currentUserId = userId;
+      this.currentUserIsAdmin = isAdmin;
     }
 
-    console.log('User ID:', userId);
-    console.log('Is Admin:', isAdmin);
+    if (this.isInitialized) {
+      return; // Already initialized for this user context
+    }
+
+    console.log('Initializing conversation for user:', userId, 'isAdmin:', isAdmin);
 
     // Fetch user applications for non-admin users
     if (!isAdmin && userId) {
       await this.fetchUserApplications(userId);
     } else if (isAdmin) {
-      // Clear accessible apps for admin users (they have access to all)
       this.userAccessibleApps = [];
     }
 
     const allowedUserTools = ['find', 'count', 'aggregate', 'collection-schema'];
 
     const filteredTools = isAdmin
-      ? this.tools // Admins get access to all tools
+      ? this.tools
       : this.tools.filter((tool) => allowedUserTools.includes(tool.name));
 
     // Initialize model with function declarations
     this.model = this.genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      tools: [{ functionDeclarations: filteredTools }], // Correct format for Gemini
+      tools: [{ functionDeclarations: filteredTools }],
     });
 
     const basePrompt = `You are an AI assistant connected to a MongoDB database via MCP tools. You must decide which is the appropriate tool to use based on the query and the available tools.
@@ -344,7 +363,6 @@ If the user asks for apps:
 - Format each app like this:
   Name: <value>
 
-
 IMPORTANT FILTER FORMAT RULES (STRICT):
 - When filtering logs or querying documents by any id, ALWAYS use:
   { "*": { "$oid": "<actual_id>" } }
@@ -359,9 +377,6 @@ DO NOT use raw strings for _id or timestamps.
 
 ❌ Wrong: { "timestamp": { "$gte": "2024-01-01T00:00:00Z" } }
 ✅ Correct: { "timestamp": { "$gte": { "$date": "2024-01-01T00:00:00Z" } } }
-
-Current database: gologs
-
 
 Current database: gologs`;
 
@@ -389,24 +404,45 @@ If the user asks to see what apps they have access to, list them in the specifie
 
 DO NOT attempt to answer queries about users, user accounts, emails, roles, or permissions or CRUD operations on any document. If a query relates to those topics, STOP and respond: "Access denied: You are only allowed to view logs."`;
 
-    const initialPrompt = `${basePrompt}${accessNote}\n\nUser query: ${query}`;
+    const systemPrompt = `${basePrompt}${accessNote}
+
+This is the start of our conversation. I will provide you with queries about the database, and you should respond accordingly following all the rules above.`;
+
+    // Add system message to conversation history
+    this.conversationHistory.push({
+      role: 'user',
+      parts: [{ text: systemPrompt }],
+    });
+
+    this.isInitialized = true;
+    console.log('Conversation initialized with system prompt');
+  }
+
+  async processQuery(query: string, userId: string | undefined, isAdmin: boolean) {
+    if (!this.isConnected) {
+      await this.connect();
+    }
+
+    console.log('User ID:', userId);
+    console.log('Is Admin:', isAdmin);
+
+    // Initialize conversation if needed
+    await this.initializeConversation(userId, isAdmin);
+
+    // Add user query to conversation history
+    this.conversationHistory.push({
+      role: 'user',
+      parts: [{ text: query }],
+    });
 
     let finalOutput = '';
     let iterationCount = 0;
     const MAX_ITERATIONS = 10;
     let searchComplete = false;
 
-    // Build conversation contents array
-    const contents: any[] = [
-      {
-        role: 'user',
-        parts: [{ text: initialPrompt }],
-      },
-    ];
-
-    // Send initial message
+    // Send message with full conversation history
     let result = await this.model.generateContent({
-      contents: contents,
+      contents: this.conversationHistory,
     });
 
     while (!searchComplete && iterationCount < MAX_ITERATIONS) {
@@ -428,6 +464,12 @@ DO NOT attempt to answer queries about users, user accounts, emails, roles, or p
         ) {
           finalOutput = text;
           searchComplete = true;
+
+          // Add final response to history
+          this.conversationHistory.push({
+            role: 'model',
+            parts: [{ text }],
+          });
           break;
         }
 
@@ -450,7 +492,7 @@ DO NOT attempt to answer queries about users, user accounts, emails, roles, or p
 
               functionResponses.push({
                 name: functionCall.name,
-                response: { result: toolResult }, // Wrap in result object
+                response: { result: toolResult },
               });
             } catch (error) {
               console.error(`Error calling function ${functionCall.name}:`, error);
@@ -461,8 +503,8 @@ DO NOT attempt to answer queries about users, user accounts, emails, roles, or p
             }
           }
 
-          // Add model's function call to conversation
-          contents.push({
+          // Add model's function call to conversation history
+          this.conversationHistory.push({
             role: 'model',
             parts: functionCalls.map((fc) => ({ functionCall: fc })),
           });
@@ -475,52 +517,70 @@ DO NOT attempt to answer queries about users, user accounts, emails, roles, or p
             },
           }));
 
-          // Add function responses to conversation
-          contents.push({
+          // Add function responses to conversation history
+          this.conversationHistory.push({
             role: 'user',
             parts: parts,
           });
 
           // Generate next response
           result = await this.model.generateContent({
-            contents: contents,
+            contents: this.conversationHistory,
           });
         } else {
           // No function calls, check if we're done
           if (text.includes('SUCCESS') || text.includes('COMPLETED')) {
             searchComplete = true;
             finalOutput = text;
-          } else {
-            // Continue the conversation
-            contents.push({
+
+            // Add final response to history
+            this.conversationHistory.push({
               role: 'model',
               parts: [{ text }],
             });
-            contents.push({
+          } else {
+            // Continue the conversation
+            this.conversationHistory.push({
+              role: 'model',
+              parts: [{ text }],
+            });
+
+            const continuePrompt =
+              'Continue with your analysis. Use the available tools to query the database.';
+            this.conversationHistory.push({
               role: 'user',
-              parts: [
-                {
-                  text: 'Continue with your analysis. Use the available tools to query the database.',
-                },
-              ],
+              parts: [{ text: continuePrompt }],
             });
 
             result = await this.model.generateContent({
-              contents: contents,
+              contents: this.conversationHistory,
             });
           }
         }
       } catch (error) {
         console.error('Error in chat iteration:', error);
         finalOutput = `Error occurred: ${error}`;
+
+        // Add error to history
+        this.conversationHistory.push({
+          role: 'model',
+          parts: [{ text: finalOutput }],
+        });
         break;
       }
     }
 
     if (!finalOutput) {
       finalOutput = `\nREACHED MAXIMUM ITERATIONS (${MAX_ITERATIONS}): Search stopped after trying multiple approaches.`;
+
+      // Add timeout message to history
+      this.conversationHistory.push({
+        role: 'model',
+        parts: [{ text: finalOutput }],
+      });
     }
 
+    console.log(`Conversation history length: ${this.conversationHistory.length} messages`);
     return finalOutput;
   }
 
@@ -529,5 +589,7 @@ DO NOT attempt to answer queries about users, user accounts, emails, roles, or p
       await this.mcp.close();
       this.isConnected = false;
     }
+    // Optionally clear history on cleanup
+    // this.clearHistory();
   }
 }
