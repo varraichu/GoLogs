@@ -17,6 +17,18 @@ if (!MONGODB_CONNECTION_STRING) {
   throw new Error('MONGODB_CONNECTION_STRING is not set');
 }
 
+interface CollectionSchema {
+  name: string;
+  schema: any;
+  fields: string[];
+}
+
+interface DatabaseInfo {
+  collections: string[];
+  schemas: Map<string, CollectionSchema>;
+  lastFetched: Date;
+}
+
 export class MCPClient {
   private mcp: Client;
   private model!: GenerativeModel;
@@ -25,6 +37,10 @@ export class MCPClient {
   private transport: StdioClientTransport | null = null;
   private isConnected: boolean = false;
   private userAccessibleApps: { id: string; name: string }[] = [];
+
+  // Schema caching
+  private databaseInfo: DatabaseInfo | null = null;
+  private readonly SCHEMA_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
   // Persistent chat history
   private conversationHistory: any[] = [];
@@ -62,15 +78,175 @@ export class MCPClient {
 
       console.log(
         'Connected to Mongo MCP Server with tools:',
-        // this.tools.map((t) => `${t.name}`).join('\n')
-        this.tools.map((t) => `${t.name}, ${JSON.stringify(t.parameters, null, 2)}`).join('\n')
+        this.tools.map((t) => `${t.name}`).join(', ')
       );
 
       this.isConnected = true;
+
+      // Fetch database schema information upfront
+      await this.fetchDatabaseInfo();
     } catch (e) {
       console.error('Failed to connect to MongoDB MCP server:', e);
       throw e;
     }
+  }
+
+  private async fetchDatabaseInfo() {
+    try {
+      console.log('Fetching database schema information...');
+
+      // Add this in fetchDatabaseInfo() before list-collections
+      const dbsResult = (await this.callTool('list-databases', {})) as any[];
+      console.log('Available databases:', dbsResult);
+
+      // Get list of collections
+      // const collectionsResult = (await this.callTool('list-collections', {
+      //   database: 'gologs',
+      // })) as any[];
+
+      // console.log('Available collections:', collections);
+
+      // const collectionsResult = (await this.callTool('list-collections', {
+      //   database: 'gologs',
+      // })) as any[];
+      // const collections = collectionsResult[0]?.content || [];
+      // console.log('Raw collections result:', JSON.stringify(collectionsResult, null, 2));
+
+      const collectionsResult = (await this.callTool('list-collections', {
+        database: 'gologs',
+      })) as any[];
+      const collections = collectionsResult
+        .map((item: any) => {
+          if (item.type === 'text' && item.text.startsWith('Name: ')) {
+            // Extract collection name from 'Name: "users"' format
+            return item.text.replace('Name: ', '').replace(/"/g, '');
+          }
+          return null;
+        })
+        .filter((name: string | null) => name !== null);
+
+      // Fetch schema for each collection
+      const schemas = new Map<string, CollectionSchema>();
+
+      for (const collectionName of collections) {
+        try {
+          console.log(`Fetching schema for collection: ${collectionName}`);
+          const schemaResult = (await this.callTool('collection-schema', {
+            database: 'gologs',
+            collection: collectionName,
+          })) as any[];
+          console.log('Raw collections result:', JSON.stringify(schemaResult, null, 2));
+          const schemaText = schemaResult.find(
+            (item: any) => item.type === 'text' && item.text.trim().startsWith('{')
+          )?.text;
+
+          const schema = schemaText ? JSON.parse(schemaText) : {};
+          const fields = this.extractFieldNames(schema);
+
+          schemas.set(collectionName, {
+            name: collectionName,
+            schema,
+            fields,
+          });
+
+          console.log(`Schema cached for ${collectionName}:`, fields);
+        } catch (error) {
+          console.warn(`Failed to fetch schema for collection ${collectionName}:`, error);
+          // Continue with other collections even if one fails
+        }
+      }
+
+      this.databaseInfo = {
+        collections,
+        schemas,
+        lastFetched: new Date(),
+      };
+
+      console.log(
+        `Database info cached: ${collections.length} collections, ${schemas.size} schemas`
+      );
+    } catch (error) {
+      console.error('Failed to fetch database info:', error);
+      // Don't throw - we can still operate without cached schemas
+    }
+  }
+
+  private extractFieldNames(schema: any): string[] {
+    const fields: string[] = [];
+
+    if (schema && typeof schema === 'object') {
+      if (schema.properties) {
+        fields.push(...Object.keys(schema.properties));
+      }
+
+      // Handle nested structures if needed
+      for (const [key, value] of Object.entries(schema)) {
+        if (typeof value === 'object' && value !== null && 'properties' in value) {
+          const nestedFields = Object.keys((value as any).properties).map(
+            (field) => `${key}.${field}`
+          );
+          fields.push(...nestedFields);
+        }
+      }
+    }
+
+    return fields;
+  }
+
+  private isSchemaCacheValid(): boolean {
+    if (!this.databaseInfo) return false;
+
+    const now = new Date();
+    const timeDiff = now.getTime() - this.databaseInfo.lastFetched.getTime();
+    return timeDiff < this.SCHEMA_CACHE_TTL;
+  }
+
+  private getCollectionSchema(collectionName: string): CollectionSchema | null {
+    if (!this.databaseInfo || !this.isSchemaCacheValid()) {
+      return null;
+    }
+
+    return this.databaseInfo.schemas.get(collectionName) || null;
+  }
+
+  private generateSchemaContext(): string {
+    if (!this.databaseInfo || !this.isSchemaCacheValid()) {
+      return 'Database schema information not available. Use list-collections and collection-schema tools as needed.';
+    }
+
+    let context = 'DATABASE SCHEMA CONTEXT:\n\n';
+    context += `Available Collections: ${this.databaseInfo.collections.join(', ')}\n\n`;
+
+    for (const [collectionName, schemaInfo] of this.databaseInfo.schemas) {
+      context += `Collection: ${collectionName}\n`;
+      context += `Fields: ${schemaInfo.fields.join(', ')}\n`;
+
+      // Add important field types for common fields
+      if (schemaInfo.schema?.properties) {
+        const importantFields = ['_id', 'timestamp', 'createdAt', 'updatedAt', 'app_id', 'user_id'];
+        const fieldTypes: string[] = [];
+
+        importantFields.forEach((field) => {
+          if (schemaInfo.schema.properties[field]) {
+            const type = schemaInfo.schema.properties[field].type || 'unknown';
+            fieldTypes.push(`${field}: ${type}`);
+          }
+        });
+
+        if (fieldTypes.length > 0) {
+          context += `Key field types: ${fieldTypes.join(', ')}\n`;
+        }
+      }
+
+      context += '\n';
+    }
+
+    context +=
+      'Use this information to construct proper queries with correct field names and types.\n';
+    context +=
+      'You do NOT need to call list-collections or collection-schema unless absolutely necessary.\n\n';
+
+    return context;
   }
 
   private cleanSchema(schema: any): any {
@@ -280,6 +456,12 @@ export class MCPClient {
     }
   }
 
+  // Method to refresh schema cache manually
+  async refreshSchemaCache() {
+    console.log('Refreshing schema cache...');
+    await this.fetchDatabaseInfo();
+  }
+
   // Method to clear conversation history (useful for starting fresh)
   clearHistory() {
     this.conversationHistory = [];
@@ -299,6 +481,12 @@ export class MCPClient {
 
   // Initialize conversation with system prompt
   private async initializeConversation(userId: string | undefined, isAdmin: boolean) {
+    // Refresh schema cache if it's stale
+    if (!this.isSchemaCacheValid()) {
+      console.log('Schema cache is stale, refreshing...');
+      await this.fetchDatabaseInfo();
+    }
+
     // Clear history if user context changed
     if (this.hasUserContextChanged(userId, isAdmin)) {
       console.log('User context changed, clearing conversation history');
@@ -332,27 +520,41 @@ export class MCPClient {
       tools: [{ functionDeclarations: filteredTools }],
     });
 
-    const basePrompt = `You are an AI assistant connected to a MongoDB database via MCP tools. Decide which is the appropriate tool to use based on the query and the available tools.
+    // Generate schema context
+    const schemaContext = this.generateSchemaContext();
 
-MANDATORY WORKFLOW — Follow these steps in EXACT order for EVERY collection you query:
+    const basePrompt = `You are an AI assistant connected to a MongoDB database via MCP tools. 
 
-1. FIRST: Use list-collections to see available collections  
-2. BEFORE QUERYING ANY COLLECTION: Run collection-schema for the target collection  
-3. ONLY AFTER GETTING THE SCHEMA:  
-   - Choose the appropriate tool (find/aggregate/count)  
-   - Use exact field names and correct data types from the schema  
-4. For each new collection:
-   - STOP  
-   - Repeat from step 2  
+${schemaContext}
 
-❌ NEVER use find/aggregate/count without getting the schema  
-❌ NEVER assume field names or types  
-✅ ALWAYS get schema first
+MANDATORY WORKFLOW - You MUST follow these steps in EXACT order for EVERY collection you query:
+
+1. FIRST: Use the schema context provided above to understand the database structure
+
+2. BEFORE TOUCHING ANY COLLECTION:
+   YOU MUST ALWAYS check its schema first for the collection you want to query
+
+3. ONLY AFTER getting the schema, you can:
+   - Choose the appropriate tool (find/aggregate/count) based on the query needs
+   - Use the exact field names from the schema
+   - Use the correct data types as shown in the schema
+
+4. For each new collection you want to query:
+   - STOP
+   - Go back to step 2
+   - Get its schema FIRST
+   - Then proceed with your query
+
+OPTIMIZED WORKFLOW:
+-Only use list-collections or collection-schema if you need updated information
+
+❌ AVOID redundant schema calls - use the provided context
+✅ Use exact field names and correct data types from the schema context
+✅ Be efficient with your queries
 
 CRITICAL RULES:
-- Work iteratively — try different approaches ONLY IF needed  
 - Track tried collections and queries  
-- Don’t repeat the same queries  
+- Don't repeat the same queries  
 - If data is found: "SUCCESS: Query completed. {result}"  
 - If no data: "No results found."  
 - If no access: "Access denied: You are only allowed to view logs."  
@@ -369,6 +571,7 @@ QUERY TYPE HANDLING:
 - Return up to 5 logs unless count is specified  
 - Non-admins: Show logs only from accessible apps  
 - Format:
+SUCCESS: Logs found:
   [1]  
   App Name: <app_name>  
   Message: <value>  
@@ -469,13 +672,15 @@ This is the start of our conversation. I will provide you with queries about the
     });
 
     this.isInitialized = true;
-    console.log('Conversation initialized with system prompt');
+    console.log('Conversation initialized with system prompt and schema context');
   }
 
   async processQuery(query: string, userId: string | undefined, isAdmin: boolean) {
     if (!this.isConnected) {
       await this.connect();
     }
+
+    console.log('DB info', this.databaseInfo);
 
     console.log('User ID:', userId);
     console.log('Is Admin:', isAdmin);
