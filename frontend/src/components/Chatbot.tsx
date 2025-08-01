@@ -135,6 +135,30 @@ export function Chatbot({ isOpen, onClose }: Props) {
         }
     };
 
+    const handlePromptClick = (promptText: string) => {
+        setInputValue(promptText);
+        setShowSaved(false);
+    };
+
+    const handleRemovePrompt = async (promptId: string) => {
+        try {
+            await unsavePrompt(promptId);
+            
+            // Update saved prompts list
+            setSavedPrompts(prev => prev.filter(p => p._id !== promptId));
+            
+            // Update messages to remove saved status for this prompt
+            setMessages(prev => 
+                prev.map(msg => 
+                    msg.savedId === promptId 
+                        ? { ...msg, saved: false, savedId: undefined }
+                        : msg
+                )
+            );
+        } catch (error) {
+            console.error("Failed to remove saved prompt", error);
+        }
+    };
 
     const SavedPromptList = () => (
         <div style={{
@@ -151,14 +175,35 @@ export function Chatbot({ isOpen, onClose }: Props) {
                 <p>No saved prompts</p>
             ) : (
                 savedPrompts.map(prompt => (
-                    <div key={prompt._id} style={{ margin: '8px 0', borderBottom: '1px solid #ccc', paddingBottom: '8px' }}>
-                        <span>{prompt.prompt}</span>
+                    <div key={prompt._id} style={{ 
+                        margin: '8px 0', 
+                        borderBottom: '1px solid #ccc', 
+                        paddingBottom: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <span 
+                            onClick={() => handlePromptClick(prompt.prompt)}
+                            style={{ 
+                                cursor: 'pointer', 
+                                flex: 1,
+                                padding: '8px',
+                                borderRadius: '4px',
+                                transition: 'background-color 0.2s',
+                                // ':hover': { backgroundColor: '#f5f5f5' }
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                            {prompt.prompt}
+                        </span>
                         <oj-c-button
-                            onojAction={() => unsavePrompt(prompt._id).then(() => loadSavedPrompts())}
+                            onojAction={() => handleRemovePrompt(prompt._id)}
                             size="xs"
                             chroming="borderless"
                             title="Remove"
-                            style={{ marginLeft: '12px' }}
+                            style={{ marginLeft: '12px', flexShrink: 0 }}
                         >
                             <span slot="startIcon" class="oj-ux-ico-trash"></span>
                         </oj-c-button>
