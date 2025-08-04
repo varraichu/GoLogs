@@ -211,40 +211,49 @@ export class MCPClient {
 
   private generateSchemaContext(): string {
     if (!this.databaseInfo || !this.isSchemaCacheValid()) {
-      return 'Database schema information not available. Use list-collections and collection-schema tools as needed.';
+      return 'Database schema information not available. Please reconnect to refresh schema cache.';
     }
 
-    let context = 'DATABASE SCHEMA CONTEXT:\n\n';
-    context += `Available Collections: ${this.databaseInfo.collections.join(', ')}\n\n`;
+    let context = 'DATABASE SCHEMA CONTEXT (COMPLETE - DO NOT FETCH AGAIN):\n\n';
+    context += `Available Collections (${this.databaseInfo.collections.length}): ${this.databaseInfo.collections.join(', ')}\n\n`;
 
     for (const [collectionName, schemaInfo] of this.databaseInfo.schemas) {
       context += `Collection: ${collectionName}\n`;
-      context += `Fields: ${schemaInfo.fields.join(', ')}\n`;
+      context += `Available Fields (${schemaInfo.fields.length}): ${schemaInfo.fields.join(', ')}\n`;
 
       // Add important field types for common fields
       if (schemaInfo.schema?.properties) {
-        const importantFields = ['_id', 'timestamp', 'createdAt', 'updatedAt', 'app_id', 'user_id'];
         const fieldTypes: string[] = [];
 
-        importantFields.forEach((field) => {
-          if (schemaInfo.schema.properties[field]) {
-            const type = schemaInfo.schema.properties[field].type || 'unknown';
-            fieldTypes.push(`${field}: ${type}`);
+        Object.entries(schemaInfo.schema.properties).forEach(
+          ([field, fieldSchema]: [string, any]) => {
+            const type = fieldSchema.type || 'unknown';
+            const format = fieldSchema.format ? ` (${fieldSchema.format})` : '';
+            fieldTypes.push(`${field}: ${type}${format}`);
           }
-        });
+        );
 
         if (fieldTypes.length > 0) {
-          context += `Key field types: ${fieldTypes.join(', ')}\n`;
+          context += `Field Types: ${fieldTypes.join(', ')}\n`;
         }
+      }
+
+      if (collectionName === 'logs') {
+        context += `Common Query Fields: app_id, timestamp, log_type, message\n`;
+        context += `Example Filter: { "app_id": { "$oid": "..." }, "timestamp": { "$gte": { "$date": "..." } } }\n`;
+      } else if (collectionName === 'applications') {
+        context += `Common Query Fields: _id, name, status\n`;
+      } else if (collectionName === 'users') {
+        context += `Common Query Fields: _id, email, username\n`;
       }
 
       context += '\n';
     }
 
+    context += 'SCHEMA CACHE STATUS: ✅ CURRENT AND COMPLETE\n';
     context +=
-      'Use this information to construct proper queries with correct field names and types.\n';
-    context +=
-      'You do NOT need to call list-collections or collection-schema unless absolutely necessary.\n\n';
+      'DO NOT call list-collections or collection-schema - use this information directly.\n';
+    context += 'All field names and types are provided above for immediate use.\n\n';
 
     return context;
   }
@@ -508,10 +517,10 @@ export class MCPClient {
       this.userAccessibleApps = [];
     }
 
-    const allowedUserTools = ['find', 'count', 'aggregate', 'collection-schema'];
+    const allowedUserTools = ['find', 'count', 'aggregate']; // Removed 'collection-schema'
 
     const filteredTools = isAdmin
-      ? this.tools
+      ? this.tools.filter((tool) => !['list-collections', 'collection-schema'].includes(tool.name)) // Also filter for admin
       : this.tools.filter((tool) => allowedUserTools.includes(tool.name));
 
     // Initialize model with function declarations
@@ -527,30 +536,31 @@ export class MCPClient {
 
 ${schemaContext}
 
+CRITICAL INSTRUCTION: The database schema information above is COMPLETE and UP-TO-DATE. 
+DO NOT call list-collections or collection-schema tools - they are not available to you.
+Use ONLY the schema context provided above for all field names and data types.
+
 MANDATORY WORKFLOW - You MUST follow these steps in EXACT order for EVERY collection you query:
 
 1. FIRST: Use the schema context provided above to understand the database structure
+   - The schema context contains ALL available collections
+   - The schema context contains ALL field names for each collection
+   - The schema context contains field types for important fields
 
-2. BEFORE TOUCHING ANY COLLECTION:
-   YOU MUST ALWAYS check its schema first for the collection you want to query
-
-3. ONLY AFTER getting the schema, you can:
+2. FOR QUERYING COLLECTIONS:
+   - Use the exact field names from the schema context above
+   - Use the correct data types as shown in the schema context
    - Choose the appropriate tool (find/aggregate/count) based on the query needs
-   - Use the exact field names from the schema
-   - Use the correct data types as shown in the schema
 
-4. For each new collection you want to query:
-   - STOP
-   - Go back to step 2
-   - Get its schema FIRST
-   - Then proceed with your query
+3. AVAILABLE COLLECTIONS (from cached schema):
+   ${this.databaseInfo?.collections.join(', ') || 'Schema not available'}
 
-OPTIMIZED WORKFLOW:
--Only use list-collections or collection-schema if you need updated information
-
-❌ AVOID redundant schema calls - use the provided context
-✅ Use exact field names and correct data types from the schema context
+QUERY OPTIMIZATION:
+✅ Use exact field names from the provided schema context
+✅ Use correct data types from the provided schema context  
 ✅ Be efficient with your queries
+❌ DO NOT attempt to call list-collections or collection-schema
+❌ DO NOT ask for schema information - you already have it above
 
 CRITICAL RULES:
 - Track tried collections and queries  
@@ -696,7 +706,7 @@ This is the start of our conversation. I will provide you with queries about the
 
     let finalOutput = '';
     let iterationCount = 0;
-    const MAX_ITERATIONS = 10;
+    const MAX_ITERATIONS = 5; // Limit iterations to prevent infinite loops
     let searchComplete = false;
 
     // Send message with full conversation history
