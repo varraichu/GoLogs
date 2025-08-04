@@ -122,7 +122,20 @@ export function Header({ appName, userLogin, setIsAuthenticated, setStartOpen, s
       {isChatbotOpen && (
         <Chatbot
           isOpen={isChatbotOpen}
-          onClose={() => setIsChatbotOpen(false)}
+          onClose={() => {
+            const triggerCleanup = async () => {
+              try {
+                await fetch('http://localhost:3001/api/chat/cleanup', {
+                  method: 'POST',
+                  credentials: 'include',
+                });
+              } catch (error) {
+                console.error('Cleanup failed:', error);
+              }
+            };
+            triggerCleanup();
+            setIsChatbotOpen(false)
+          }}
         />
       )}
     </>

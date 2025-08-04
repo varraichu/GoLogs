@@ -1115,11 +1115,12 @@ This is the start of our conversation. I will provide you with queries about the
   }
 
   async cleanup() {
+    console.log('Cleaning up MCP client resources...');
     if (this.isConnected && this.transport) {
       await this.mcp.close();
       this.isConnected = false;
     }
     // Optionally clear history on cleanup
-    // this.clearHistory();
+    this.clearHistory();
   }
 }

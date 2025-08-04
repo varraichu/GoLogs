@@ -311,7 +311,11 @@ export function Chatbot({ isOpen, onClose }: Props) {
                             background: message.isUser ? '#757575ff' : '#f1f3f5',
                             color: message.isUser ? '#ffffff' : '#333',
                             fontSize: '14px',
-                            position: 'relative'
+                            position: 'relative',
+                            // KEY FIX: Add these CSS properties to preserve formatting
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            fontFamily: 'monospace' // Optional: use monospace for better log formatting
                         }}>
                             {message.text}
                         </div>

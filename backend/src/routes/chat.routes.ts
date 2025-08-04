@@ -15,6 +15,8 @@ router.post(
   chatController.handleChatQuery.bind(chatController)
 );
 
+router.post('/cleanup', protect, chatController.cleanup.bind(chatController));
+
 // Cleanup handler for graceful shutdown
 process.on('SIGTERM', async () => {
   await chatController.cleanup();
