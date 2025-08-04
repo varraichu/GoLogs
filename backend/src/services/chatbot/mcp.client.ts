@@ -482,18 +482,68 @@ export class MCPClient {
     return finalSchema;
   }
 
-  private deepReplaceNameSpaces(obj: any) {
+  private deepReplaceNameSpaces(obj: any, depth: number = 0): void {
+    const indent = '  '.repeat(depth);
+    console.log(
+      `${indent}Processing object at depth ${depth}:`,
+      typeof obj,
+      Array.isArray(obj) ? 'Array' : ''
+    );
+
     if (Array.isArray(obj)) {
-      obj.forEach(this.deepReplaceNameSpaces);
+      console.log(`${indent}Processing array with ${obj.length} items`);
+      obj.forEach((item, index) => {
+        console.log(`${indent}Processing array item ${index}`);
+        this.deepReplaceNameSpaces(item, depth + 1);
+      });
     } else if (typeof obj === 'object' && obj !== null) {
+      console.log(`${indent}Processing object with keys:`, Object.keys(obj));
+
       for (const key in obj) {
-        if (key === 'name' && typeof obj[key] === 'string') {
-          obj[key] = obj[key].replace(/\s+/g, '.');
+        console.log(`${indent}Processing key: "${key}", value type: ${typeof obj[key]}`);
+
+        if (typeof obj[key] === 'string') {
+          // Check if this is a name-related field that contains spaces
+          if (this.isNameField(key) && obj[key].includes(' ')) {
+            const originalValue = obj[key];
+            obj[key] = obj[key].replace(/\s+/g, '.');
+            console.log(`${indent}✅ REPLACED: "${originalValue}" -> "${obj[key]}" (key: ${key})`);
+          } else {
+            console.log(
+              `${indent}Skipped string: "${obj[key]}" (key: ${key}, isNameField: ${this.isNameField(key)}, hasSpaces: ${obj[key].includes(' ')})`
+            );
+          }
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          console.log(`${indent}Recursing into nested object/array for key: ${key}`);
+          this.deepReplaceNameSpaces(obj[key], depth + 1);
         } else {
-          this.deepReplaceNameSpaces(obj[key]);
+          console.log(`${indent}Skipped non-string/non-object: ${typeof obj[key]} (key: ${key})`);
         }
       }
+    } else {
+      console.log(`${indent}Skipped primitive value: ${obj} (type: ${typeof obj})`);
     }
+  }
+
+  // NEW: Helper method to identify name-related fields
+  private isNameField(key: string): boolean {
+    const nameFields = [
+      'name', // Direct name field
+      'app_name', // Application name
+      'application_name', // Full application name
+      'title', // Could be used for names
+      'label', // Could be used for names
+    ];
+
+    // Also check for nested paths that end with name-related fields
+    const keyLower = key.toLowerCase();
+    const isNameRelated = nameFields.some(
+      (field) =>
+        keyLower === field || keyLower.endsWith('_' + field) || keyLower.endsWith('.' + field)
+    );
+
+    console.log(`  isNameField("${key}") = ${isNameRelated}`);
+    return isNameRelated;
   }
 
   private async callTool(name: string, args: any) {
@@ -515,7 +565,11 @@ export class MCPClient {
       ];
 
       if (args.collection === 'applications' && toolsUsingName.includes(name)) {
+        console.log('=== NAME REPLACEMENT STARTING ===');
+        console.log('BEFORE:', JSON.stringify(args, null, 2));
         this.deepReplaceNameSpaces(args);
+        console.log('AFTER:', JSON.stringify(args, null, 2));
+        console.log('=== NAME REPLACEMENT COMPLETE ===');
       }
 
       const result = await this.mcp.callTool({
