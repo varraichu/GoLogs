@@ -95,35 +95,25 @@ export class MCPClient {
     try {
       console.log('Fetching database schema information...');
 
-      // Add this in fetchDatabaseInfo() before list-collections
+      // Get list of databases
       const dbsResult = (await this.callTool('list-databases', {})) as any[];
       console.log('Available databases:', dbsResult);
 
       // Get list of collections
-      // const collectionsResult = (await this.callTool('list-collections', {
-      //   database: 'gologs',
-      // })) as any[];
-
-      // console.log('Available collections:', collections);
-
-      // const collectionsResult = (await this.callTool('list-collections', {
-      //   database: 'gologs',
-      // })) as any[];
-      // const collections = collectionsResult[0]?.content || [];
-      // console.log('Raw collections result:', JSON.stringify(collectionsResult, null, 2));
-
       const collectionsResult = (await this.callTool('list-collections', {
         database: 'gologs',
       })) as any[];
+
       const collections = collectionsResult
         .map((item: any) => {
           if (item.type === 'text' && item.text.startsWith('Name: ')) {
-            // Extract collection name from 'Name: "users"' format
             return item.text.replace('Name: ', '').replace(/"/g, '');
           }
           return null;
         })
         .filter((name: string | null) => name !== null);
+
+      console.log('Extracted collections:', collections);
 
       // Fetch schema for each collection
       const schemas = new Map<string, CollectionSchema>();
@@ -135,24 +125,72 @@ export class MCPClient {
             database: 'gologs',
             collection: collectionName,
           })) as any[];
-          console.log('Raw collections result:', JSON.stringify(schemaResult, null, 2));
-          const schemaText = schemaResult.find(
-            (item: any) => item.type === 'text' && item.text.trim().startsWith('{')
-          )?.text;
 
-          const schema = schemaText ? JSON.parse(schemaText) : {};
+          console.log(
+            `Raw schema result for ${collectionName}:`,
+            JSON.stringify(schemaResult, null, 2)
+          );
+
+          // IMPROVED: Better schema parsing
+          let schema = {};
+          let schemaText = '';
+
+          // Try to find the JSON schema in the result
+          for (const item of schemaResult) {
+            if (item.type === 'text') {
+              const text = item.text.trim();
+
+              // Look for JSON objects in the text
+              if (text.startsWith('{') && text.endsWith('}')) {
+                schemaText = text;
+                break;
+              }
+
+              // Sometimes the schema might be embedded in other text
+              const jsonMatch = text.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                schemaText = jsonMatch[0];
+                break;
+              }
+            }
+          }
+
+          if (schemaText) {
+            try {
+              schema = JSON.parse(schemaText);
+              console.log(`Parsed schema for ${collectionName}:`, JSON.stringify(schema, null, 2));
+            } catch (parseError) {
+              console.warn(`Failed to parse JSON schema for ${collectionName}:`, parseError);
+              console.warn('Schema text was:', schemaText);
+            }
+          } else {
+            console.warn(`No valid JSON schema found for ${collectionName}`);
+            console.warn(
+              'Available items:',
+              schemaResult.map((item) => ({
+                type: item.type,
+                textStart: item.text?.substring(0, 100),
+              }))
+            );
+          }
+
+          // IMPROVED: Better field extraction
           const fields = this.extractFieldNames(schema);
+          console.log(`Extracted fields for ${collectionName}:`, fields);
 
           schemas.set(collectionName, {
             name: collectionName,
             schema,
             fields,
           });
-
-          console.log(`Schema cached for ${collectionName}:`, fields);
         } catch (error) {
           console.warn(`Failed to fetch schema for collection ${collectionName}:`, error);
-          // Continue with other collections even if one fails
+          // Still add the collection with empty schema so we know it exists
+          schemas.set(collectionName, {
+            name: collectionName,
+            schema: {},
+            fields: [],
+          });
         }
       }
 
@@ -165,32 +203,100 @@ export class MCPClient {
       console.log(
         `Database info cached: ${collections.length} collections, ${schemas.size} schemas`
       );
+
+      // LOG the final result for debugging
+      console.log('Final database info:');
+      for (const [name, info] of schemas) {
+        console.log(`  ${name}: ${info.fields.length} fields [${info.fields.join(', ')}]`);
+      }
+      // Add this right after fetchDatabaseInfo() completes
+      console.log('=== SCHEMA DEBUG ===');
+      for (const [name, schemaInfo] of this.databaseInfo.schemas) {
+        console.log(`Collection: ${name}`);
+        console.log(`Schema:`, JSON.stringify(schemaInfo.schema, null, 2));
+        console.log(`Fields:`, schemaInfo.fields);
+        console.log('---');
+      }
     } catch (error) {
       console.error('Failed to fetch database info:', error);
-      // Don't throw - we can still operate without cached schemas
     }
   }
 
   private extractFieldNames(schema: any): string[] {
     const fields: string[] = [];
 
-    if (schema && typeof schema === 'object') {
-      if (schema.properties) {
-        fields.push(...Object.keys(schema.properties));
-      }
+    console.log('Extracting fields from schema:', JSON.stringify(schema, null, 2));
 
-      // Handle nested structures if needed
-      for (const [key, value] of Object.entries(schema)) {
-        if (typeof value === 'object' && value !== null && 'properties' in value) {
-          const nestedFields = Object.keys((value as any).properties).map(
-            (field) => `${key}.${field}`
-          );
-          fields.push(...nestedFields);
+    if (!schema || typeof schema !== 'object') {
+      console.log('Schema is not a valid object');
+      return fields;
+    }
+
+    // METHOD 1: Handle MongoDB MCP specific format
+    // Your schema has direct field names as keys, each with a "types" array
+    for (const [fieldName, fieldDef] of Object.entries(schema)) {
+      if (typeof fieldDef === 'object' && fieldDef !== null) {
+        const fieldDefObj = fieldDef as any;
+
+        // Check if this looks like a field definition (has "types" array)
+        if (fieldDefObj.types && Array.isArray(fieldDefObj.types)) {
+          fields.push(fieldName);
+          console.log(`Found field: ${fieldName} with types:`, fieldDefObj.types);
+
+          // Handle nested objects if they exist
+          if (
+            fieldDefObj.types.some((type: any) => type.bsonType === 'Object' && type.properties)
+          ) {
+            for (const typeObj of fieldDefObj.types) {
+              if (typeObj.bsonType === 'Object' && typeObj.properties) {
+                const nestedFields = Object.keys(typeObj.properties).map(
+                  (nestedField) => `${fieldName}.${nestedField}`
+                );
+                fields.push(...nestedFields);
+                console.log(`Found nested fields in ${fieldName}:`, nestedFields);
+              }
+            }
+          }
+
+          // Handle arrays of objects
+          if (fieldDefObj.types.some((type: any) => type.bsonType === 'Array' && type.types)) {
+            for (const typeObj of fieldDefObj.types) {
+              if (typeObj.bsonType === 'Array' && typeObj.types) {
+                for (const arrayType of typeObj.types) {
+                  if (arrayType.bsonType === 'Object' && arrayType.properties) {
+                    const arrayFields = Object.keys(arrayType.properties).map(
+                      (arrayField) => `${fieldName}.${arrayField}`
+                    );
+                    fields.push(...arrayFields);
+                    console.log(`Found array object fields in ${fieldName}:`, arrayFields);
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
 
-    return fields;
+    // METHOD 2: Fallback - Standard JSON Schema format (just in case)
+    if (fields.length === 0 && schema.properties && typeof schema.properties === 'object') {
+      const directFields = Object.keys(schema.properties);
+      fields.push(...directFields);
+      console.log('Found standard JSON Schema properties:', directFields);
+    }
+
+    // METHOD 3: Fallback - BSON Schema format
+    if (fields.length === 0 && schema.bsonType === 'object' && schema.properties) {
+      const bsonFields = Object.keys(schema.properties);
+      fields.push(...bsonFields);
+      console.log('Found BSON properties:', bsonFields);
+    }
+
+    // Remove duplicates and return
+    const uniqueFields = [...new Set(fields)];
+    console.log('Final extracted fields:', uniqueFields);
+
+    return uniqueFields;
   }
 
   private isSchemaCacheValid(): boolean {
@@ -221,30 +327,37 @@ export class MCPClient {
       context += `Collection: ${collectionName}\n`;
       context += `Available Fields (${schemaInfo.fields.length}): ${schemaInfo.fields.join(', ')}\n`;
 
-      // Add important field types for common fields
-      if (schemaInfo.schema?.properties) {
+      // Add field types for MongoDB MCP format
+      if (schemaInfo.schema && typeof schemaInfo.schema === 'object') {
         const fieldTypes: string[] = [];
 
-        Object.entries(schemaInfo.schema.properties).forEach(
-          ([field, fieldSchema]: [string, any]) => {
-            const type = fieldSchema.type || 'unknown';
-            const format = fieldSchema.format ? ` (${fieldSchema.format})` : '';
-            fieldTypes.push(`${field}: ${type}${format}`);
+        for (const [fieldName, fieldDef] of Object.entries(schemaInfo.schema)) {
+          if (typeof fieldDef === 'object' && fieldDef !== null) {
+            const fieldDefObj = fieldDef as any;
+
+            if (fieldDefObj.types && Array.isArray(fieldDefObj.types)) {
+              // Get the primary BSON type
+              const primaryType = fieldDefObj.types[0]?.bsonType || 'unknown';
+              fieldTypes.push(`${fieldName}: ${primaryType}`);
+            }
           }
-        );
+        }
 
         if (fieldTypes.length > 0) {
           context += `Field Types: ${fieldTypes.join(', ')}\n`;
         }
       }
 
+      // Add sample queries for common collections
       if (collectionName === 'logs') {
         context += `Common Query Fields: app_id, timestamp, log_type, message\n`;
         context += `Example Filter: { "app_id": { "$oid": "..." }, "timestamp": { "$gte": { "$date": "..." } } }\n`;
       } else if (collectionName === 'applications') {
         context += `Common Query Fields: _id, name, status\n`;
       } else if (collectionName === 'users') {
-        context += `Common Query Fields: _id, email, username\n`;
+        context += `Common Query Fields: _id, email, username, pinned_apps\n`;
+      } else if (collectionName === 'usergroups') {
+        context += `Common Query Fields: _id, name, status, is_active, is_deleted\n`;
       }
 
       context += '\n';
