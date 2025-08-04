@@ -803,8 +803,6 @@ This is the start of our conversation. I will provide you with queries about the
       await this.connect();
     }
 
-    console.log('DB info', this.databaseInfo);
-
     console.log('User ID:', userId);
     console.log('Is Admin:', isAdmin);
 
@@ -819,7 +817,7 @@ This is the start of our conversation. I will provide you with queries about the
 
     let finalOutput = '';
     let iterationCount = 0;
-    const MAX_ITERATIONS = 5; // Limit iterations to prevent infinite loops
+    const MAX_ITERATIONS = 5;
     let searchComplete = false;
 
     // Send message with full conversation history
@@ -836,35 +834,14 @@ This is the start of our conversation. I will provide you with queries about the
         const text = response.text();
         console.log(`Gemini response text: ${text}`);
 
-        if (
-          text.includes('Access denied') ||
-          text.includes('You are only allowed to view logs') ||
-          text.includes('not allowed') ||
-          text.includes('restricted') ||
-          text.includes('Unable to answer the query at this time.') ||
-          text.includes('No result')
-        ) {
+        // IMPROVED: Check for completion conditions first
+        if (this.isResponseComplete(text, iterationCount)) {
           finalOutput = text;
           searchComplete = true;
-
-          // Add final response to history
           this.conversationHistory.push({
             role: 'model',
             parts: [{ text }],
           });
-          break;
-        }
-
-        if (text.includes('Do you want to proceed')) {
-          searchComplete = true;
-          finalOutput = text;
-
-          // Stop iteration to wait for user's actual "yes"/"no" input
-          this.conversationHistory.push({
-            role: 'model',
-            parts: [{ text }],
-          });
-
           break;
         }
 
@@ -923,25 +900,24 @@ This is the start of our conversation. I will provide you with queries about the
             contents: this.conversationHistory,
           });
         } else {
-          // No function calls, check if we're done
-          if (text.includes('SUCCESS') || text.includes('COMPLETED')) {
+          // No function calls - this is likely a final response
+          // IMPROVED: Be more aggressive about stopping when we get a substantive answer
+          if (this.isSubstantiveAnswer(text)) {
             searchComplete = true;
             finalOutput = text;
-
-            // Add final response to history
             this.conversationHistory.push({
               role: 'model',
               parts: [{ text }],
             });
           } else {
-            // Continue the conversation
+            // Continue the conversation only if the response seems incomplete
             this.conversationHistory.push({
               role: 'model',
               parts: [{ text }],
             });
 
-            const continuePrompt =
-              'Continue with your analysis. Use the available tools to query the database.';
+            // IMPROVED: Give more specific continuation prompts
+            const continuePrompt = this.generateContinuationPrompt(text, iterationCount);
             this.conversationHistory.push({
               role: 'user',
               parts: [{ text: continuePrompt }],
@@ -955,8 +931,6 @@ This is the start of our conversation. I will provide you with queries about the
       } catch (error) {
         console.error('Error in chat iteration:', error);
         finalOutput = `Error occurred: ${error}`;
-
-        // Add error to history
         this.conversationHistory.push({
           role: 'model',
           parts: [{ text: finalOutput }],
@@ -967,8 +941,6 @@ This is the start of our conversation. I will provide you with queries about the
 
     if (!finalOutput) {
       finalOutput = `\nREACHED MAXIMUM ITERATIONS (${MAX_ITERATIONS}): Search stopped after trying multiple approaches.`;
-
-      // Add timeout message to history
       this.conversationHistory.push({
         role: 'model',
         parts: [{ text: finalOutput }],
@@ -977,6 +949,115 @@ This is the start of our conversation. I will provide you with queries about the
 
     console.log(`Conversation history length: ${this.conversationHistory.length} messages`);
     return finalOutput;
+  }
+
+  private isResponseComplete(text: string, iterationCount: number): boolean {
+    const trimmedText = text.trim();
+
+    // Immediate completion indicators
+    if (
+      trimmedText.includes('Access denied') ||
+      trimmedText.includes('You are only allowed to view logs') ||
+      trimmedText.includes('not allowed') ||
+      trimmedText.includes('restricted') ||
+      trimmedText.includes('Unable to answer the query at this time.') ||
+      trimmedText.includes('No results found') ||
+      trimmedText.includes('SUCCESS:') ||
+      trimmedText.includes('COMPLETED') ||
+      trimmedText.includes('Do you want to proceed')
+    ) {
+      return true;
+    }
+
+    // IMPROVED: Detect natural language completions
+    // Check for sentences that indicate completion
+    const completionPatterns = [
+      /belongs to the following/i,
+      /here are the/i,
+      /found \d+ (logs?|applications?|users?|groups?)/i,
+      /the (logs?|applications?|users?|groups?) (are|is)/i,
+      /summary of/i,
+      /total of \d+/i,
+      /shows? that/i,
+      /indicates? that/i,
+      /based on the/i,
+      /according to/i,
+      /the answer is/i,
+      /in conclusion/i,
+      /to summarize/i,
+    ];
+
+    const hasCompletionPattern = completionPatterns.some((pattern) => pattern.test(trimmedText));
+
+    // If we have a substantive answer (more than just a few words) and it matches completion patterns
+    if (hasCompletionPattern && trimmedText.length > 20) {
+      console.log('Detected natural language completion pattern');
+      return true;
+    }
+
+    // After iteration 3, be more aggressive about stopping if we have any substantive content
+    if (iterationCount >= 3 && this.isSubstantiveAnswer(trimmedText)) {
+      console.log('Stopping after iteration 3 with substantive answer');
+      return true;
+    }
+
+    return false;
+  }
+
+  // NEW: Method to determine if text is a substantive answer
+  private isSubstantiveAnswer(text: string): boolean {
+    const trimmedText = text.trim();
+
+    // Empty or very short responses are not substantive
+    if (trimmedText.length < 10) {
+      return false;
+    }
+
+    // Responses that are just continuation prompts or system messages
+    const nonSubstantivePatterns = [
+      /^continue/i,
+      /^let me/i,
+      /^i'll/i,
+      /^searching/i,
+      /^looking/i,
+      /^checking/i,
+      /^querying/i,
+      /^now let me/i,
+      /^i need to/i,
+      /^first, let me/i,
+    ];
+
+    if (nonSubstantivePatterns.some((pattern) => pattern.test(trimmedText))) {
+      return false;
+    }
+
+    // Substantive patterns that indicate a real answer
+    const substantivePatterns = [
+      /\w+\s+(belongs to|is in|has|contains|shows|indicates)/i,
+      /found \d+/i,
+      /there are \d+/i,
+      /the \w+ (are|is)/i,
+      /based on/i,
+      /according to/i,
+      /here (are|is)/i,
+      /summary/i,
+      /total/i,
+      /list/i,
+      /following/i,
+    ];
+
+    return substantivePatterns.some((pattern) => pattern.test(trimmedText));
+  }
+
+  // NEW: Generate more specific continuation prompts
+  private generateContinuationPrompt(text: string, iterationCount: number): string {
+    // If we're past iteration 2, be more direct about wanting completion
+    if (iterationCount >= 2) {
+      return "Please provide the final answer to the user's question. Do not make additional queries unless absolutely necessary.";
+    }
+
+    // Default continuation
+    return 'Continue with your analysis. Use the available tools to query the database if needed.';
   }
 
   async cleanup() {
